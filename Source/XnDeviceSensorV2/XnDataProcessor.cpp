@@ -1,0 +1,193 @@
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.0 Alpha                                               *
+*  Copyright (C) 2010 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Common.                                   *
+*                                                                            *
+*  PrimeSense Sensor is free software: you can redistribute it and/or modify *
+*  it under the terms of the GNU Lesser General Public License as published  *
+*  by the Free Software Foundation, either version 3 of the License, or      *
+*  (at your option) any later version.                                       *
+*                                                                            *
+*  PrimeSense Sensor is distributed in the hope that it will be useful,      *
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of            *
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
+*  GNU Lesser General Public License for more details.                       *
+*                                                                            *
+*  You should have received a copy of the GNU Lesser General Public License  *
+*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>. *
+*                                                                            *
+*****************************************************************************/
+
+
+
+
+
+
+//---------------------------------------------------------------------------
+// Includes
+//---------------------------------------------------------------------------
+#include "XnDataProcessor.h"
+#include <XnProfiling.h>
+#include "XnSensor.h"
+
+//---------------------------------------------------------------------------
+// Code
+//---------------------------------------------------------------------------
+XnDataProcessor::XnDataProcessor(XnDevicePrivateData* pDevicePrivateData, const XnChar* csName) :
+	m_pDevicePrivateData(pDevicePrivateData),
+	m_csName(csName),
+	m_nLastPacketID(0),
+	m_nBytesReceived(0)
+{
+	m_TimeStampData.csStreamName = csName;
+	m_TimeStampData.bFirst = TRUE;
+}
+
+XnDataProcessor::~XnDataProcessor()
+{}
+
+XnStatus XnDataProcessor::Init()
+{
+	return (XN_STATUS_OK);
+}
+
+void XnDataProcessor::ProcessData(const XnSensorProtocolResponseHeader* pHeader, const XnUChar* pData, XnUInt32 nDataOffset, XnUInt32 nDataSize)
+{
+	XN_PROFILING_START_SECTION("XnDataProcessor::ProcessData")
+
+	// count these bytes
+	m_nBytesReceived += nDataSize;
+
+	// check if we start a new packet
+	if (nDataOffset == 0)
+	{
+		// make sure no packet was lost
+		if (pHeader->nReserve != m_nLastPacketID+1 && pHeader->nReserve != 0)
+		{
+			xnLogWarning(XN_MASK_SENSOR_PROTOCOL, "%s: Expected %x, got %x", m_csName, m_nLastPacketID+1, pHeader->nReserve);
+			OnPacketLost();
+		}
+
+		m_nLastPacketID = pHeader->nReserve;
+
+		// log packet arrival
+		XnUInt64 nNow;
+		xnOSGetHighResTimeStamp(&nNow);
+		xnDumpWriteString(m_pDevicePrivateData->MiniPacketsDump, "%llu,0x%hx,0x%hx,0x%hx,%u\n", nNow, pHeader->nType, pHeader->nReserve, pHeader->nBufSize, pHeader->nTimeStamp);
+	}
+
+	ProcessPacketChunk(pHeader, pData, nDataOffset, nDataSize);
+
+	XN_PROFILING_END_SECTION
+}
+
+void XnDataProcessor::OnPacketLost()
+{}
+
+XnUInt64 XnDataProcessor::GetTimeStamp(XnUInt32 nDeviceTimeStamp)
+{
+	const XnUInt64 nWrapPoint = ((XnUInt64)XN_MAX_UINT32) + 1;
+	XnUInt64 nResultInTicks;
+
+	XnUInt64 nNow;
+	xnOSGetHighResTimeStamp(&nNow);
+
+	XnChar csDumpComment[200] = "";
+
+	XnBool bCheckSanity = TRUE;
+
+	// we register the first TS calculated as time-zero. Every stream's TS data will be 
+	// synchronized with it
+	if (m_pDevicePrivateData->nGlobalReferenceTS == 0)
+	{
+		xnOSEnterCriticalSection(&m_pDevicePrivateData->hEndPointsCS);
+		if (m_pDevicePrivateData->nGlobalReferenceTS == 0)
+		{
+			m_pDevicePrivateData->nGlobalReferenceTS = nDeviceTimeStamp;
+			m_pDevicePrivateData->nGlobalReferenceOSTime = nNow;
+		}
+		xnOSLeaveCriticalSection(&m_pDevicePrivateData->hEndPointsCS);
+	}
+
+	if (m_TimeStampData.bFirst)
+	{
+		// check how much OS time passed since global reference was taken
+		XnUInt64 nOSTime = nNow - m_pDevicePrivateData->nGlobalReferenceOSTime;
+
+		// check how many full wrap-arounds occurred (according to OS time)
+		XnFloat fWrapAroundInMicroseconds = nWrapPoint / (XnDouble)m_pDevicePrivateData->fDeviceFrequency;
+		XnUInt32 nWraps = nOSTime / fWrapAroundInMicroseconds; // floor
+
+		// now check, if current timestamp is less than global, then we have one more wrap-around
+		// (make sure it's significant - we allow up to 10 ms before - otherwise it could just be a
+		// matter of race-condition)
+		if (m_pDevicePrivateData->nGlobalReferenceTS > nDeviceTimeStamp && 
+			nOSTime > XN_SENSOR_TIMESTAMP_SANITY_DIFF*1000)
+		{
+			++nWraps;
+		}
+
+		m_TimeStampData.nReferenceTS = m_pDevicePrivateData->nGlobalReferenceTS;
+		m_TimeStampData.nTotalTicksAtReferenceTS = nWrapPoint * nWraps;
+		m_TimeStampData.nLastDeviceTS = 0;
+		m_TimeStampData.bFirst = FALSE;
+		nResultInTicks = 0;
+		bCheckSanity = FALSE; // no need.
+		sprintf(csDumpComment, "Init. Total Ticks in Ref TS: %llu", m_TimeStampData.nTotalTicksAtReferenceTS);
+	}
+
+	if (nDeviceTimeStamp > m_TimeStampData.nLastDeviceTS) // this is the normal case
+	{
+		nResultInTicks = m_TimeStampData.nTotalTicksAtReferenceTS + nDeviceTimeStamp - m_TimeStampData.nReferenceTS;
+	}
+	else // wrap around occurred
+	{
+		// add the passed time to the reference time
+		m_TimeStampData.nTotalTicksAtReferenceTS += (nWrapPoint + nDeviceTimeStamp - m_TimeStampData.nReferenceTS);
+		// mark reference timestamp
+		m_TimeStampData.nReferenceTS = nDeviceTimeStamp;
+
+		sprintf(csDumpComment, "Wrap around. Refernce TS: %u / TotalTicksAtReference: %llu", m_TimeStampData.nReferenceTS, m_TimeStampData.nTotalTicksAtReferenceTS);
+
+		nResultInTicks = m_TimeStampData.nTotalTicksAtReferenceTS;
+	}
+
+	m_TimeStampData.nLastDeviceTS = nDeviceTimeStamp;
+
+	// calculate result in microseconds
+	// NOTE: Intel compiler does too much optimization, and we loose up to 5 milliseconds. We perform
+	// the entire calculation in XnDouble as a workaround
+	XnDouble dResultTimeMicroSeconds = (XnDouble)nResultInTicks / (XnDouble)m_pDevicePrivateData->fDeviceFrequency;
+	XnUInt64 nResultTimeMilliSeconds = (XnUInt64)(dResultTimeMicroSeconds / 1000.0);
+
+	XnBool bIsSane = TRUE;
+
+	// perform sanity check
+	if (bCheckSanity && (nResultTimeMilliSeconds > (m_TimeStampData.nLastResultTime + XN_SENSOR_TIMESTAMP_SANITY_DIFF*1000)))
+	{
+		bIsSane = FALSE;
+		sprintf(csDumpComment, "%s,Didn't pass sanity. Will try to re-sync.", csDumpComment);
+	}
+
+	// calc result
+	XnUInt64 nResult = (m_pDevicePrivateData->pSensor->IsHighResTimestamps() ? (XnUInt64)dResultTimeMicroSeconds : nResultTimeMilliSeconds);
+
+	// dump it
+	xnDumpWriteString(m_pDevicePrivateData->TimestampsDump, "%llu,%s,%u,%llu,%s\n", nNow, m_TimeStampData.csStreamName, nDeviceTimeStamp, nResult, csDumpComment);
+
+	if (bIsSane)
+	{
+		m_TimeStampData.nLastResultTime = nResultTimeMilliSeconds;
+		return (nResult);
+	}
+	else
+	{
+		// sanity failed. We lost sync. restart
+		m_TimeStampData.bFirst = TRUE;
+		return GetTimeStamp(nDeviceTimeStamp);
+	}
+}
+
+
