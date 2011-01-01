@@ -47,10 +47,10 @@
 //---------------------------------------------------------------------------
 // XnSensorIRStream class
 //---------------------------------------------------------------------------
-XnSensorIRStream::XnSensorIRStream(const XnChar* StreamName, XnSensorObjects* pObjects, XnUInt32 nBufferCount) : 
+XnSensorIRStream::XnSensorIRStream(const XnChar* strDeviceName, const XnChar* StreamName, XnSensorObjects* pObjects, XnUInt32 nBufferCount) : 
 	XnIRStream(StreamName, FALSE),
 	m_Helper(pObjects),
-	m_BufferPool(nBufferCount, StreamName, XN_IR_MAX_BUFFER_SIZE),
+	m_BufferPool(nBufferCount, strDeviceName, StreamName, XN_IR_MAX_BUFFER_SIZE),
 	m_SharedBufferName(XN_STREAM_PROPERTY_SHARED_BUFFER_NAME, m_BufferPool.GetSharedMemoryName()),
 	m_FirmwareCropSizeX("FirmwareCropSizeX", 0, StreamName),
 	m_FirmwareCropSizeY("FirmwareCropSizeY", 0, StreamName),

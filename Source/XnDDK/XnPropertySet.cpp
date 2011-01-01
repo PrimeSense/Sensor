@@ -647,7 +647,7 @@ XN_DDK_API XnStatus XnPropertySetDataDetachModule(XnPropertySetData* pSetData, c
 	return (XN_STATUS_OK);
 }
 
-XN_DDK_API XnStatus XnPropertySetCloneModule(XnPropertySet* pSource, XnPropertySet* pDest, const XnChar* strModule, const XnChar* strNewName)
+XN_DDK_API XnStatus XnPropertySetCloneModule(const XnPropertySet* pSource, XnPropertySet* pDest, const XnChar* strModule, const XnChar* strNewName)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	

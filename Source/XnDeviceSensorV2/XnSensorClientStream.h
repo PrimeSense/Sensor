@@ -83,7 +83,12 @@ public:
 	XnSensorClientAudioStream(XnSensorClient* pClient, const XnChar* strType, const XnChar* strName);
 	~XnSensorClientAudioStream();
 
+	XnStatus Init();
+	XnStatus Free();
+
 	XnStatus OpenSharedMemory();
+
+	virtual void NewDataAvailable(XnUInt64 nTimestamp, XnUInt32 nFrameID);
 
 protected:
 	XnStatus ReadImpl(XnStreamData* pStreamOutput);
@@ -93,6 +98,7 @@ private:
 	XnUChar* m_pBuffer;
 	XnUInt32 m_nLastReadIndex;
 	XnUInt64* m_pTimestamps;
+	XN_CRITICAL_SECTION_HANDLE m_hLock;
 };
 
 #endif // __XN_SENSOR_CLIENT_STREAM_H__

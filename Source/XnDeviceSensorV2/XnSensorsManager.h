@@ -19,89 +19,53 @@
 *  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>. *
 *                                                                            *
 *****************************************************************************/
-
-
-
-
-
-
-#ifndef __XN_DEVICE_SENSOR_I_O_H__
-#define __XN_DEVICE_SENSOR_I_O_H__
+#ifndef __XN_SENSORS_MANAGER_H__
+#define __XN_SENSORS_MANAGER_H__
 
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
-#include <XnPlatform.h>
-#include <XnUSB.h>
-#include <XnStreamParams.h>
-#include <XnDevice.h>
+#include "XnServerSensorInvoker.h"
+#include <XnStringsHash.h>
 
 //---------------------------------------------------------------------------
-// Structures & Enums
+// Types
 //---------------------------------------------------------------------------
-typedef struct XnUsbConnection
-{
-	XN_USB_EP_HANDLE UsbEp;
-
-	XnBool bIsOpen;
-	XnUInt8* pUSBBuffer;
-	XnUInt32 nUSBBufferReadOffset;
-	XnUInt32 nUSBBufferWriteOffset;
-
-	XnUInt32 bIsISO;
-	XnUInt32 nMaxPacketSize;
-} XnUsbConnection;
-
-typedef struct XnUsbControlConnection
-{
-	/* When true, control connection is implemented using bulk end points. */
-	XnBool bIsBulk;
-	XN_USB_EP_HANDLE ControlOutConnectionEp;
-	XN_USB_EP_HANDLE ControlInConnectionEp;
-} XnUsbControlConnection;
-
-typedef struct XN_SENSOR_HANDLE
-{
-	XN_USB_DEV_HANDLE USBDevice;
-
-	XnUsbControlConnection ControlConnection;
-	XnUsbConnection DepthConnection;
-	XnUsbConnection ImageConnection;
-	XnUsbConnection MiscConnection;
-//	XnSensorRes SensorRes;	
-	XnUInt8 nBoardVer;
-} XN_SENSOR_HANDLE;
-
-//---------------------------------------------------------------------------
-// Functions Declaration
-//---------------------------------------------------------------------------
-class XnSensorIO
+class XnSensorsManager
 {
 public:
-	XnSensorIO(XN_SENSOR_HANDLE* pSensorHandle);
-	~XnSensorIO();
+	XnSensorsManager(const XnChar* strGlobalConfigFile);
+	~XnSensorsManager();
 
-	XnStatus OpenDevice(const XnChar* strPath);
+	XnStatus Init();
+	void Free();
 
-	XnStatus OpenDataEndPoints(XnSensorUsbInterface nInterface);
+	XnUInt64 GetTimeout() { return m_noClientTimeout.GetValue(); }
 
-	XnSensorUsbInterface GetCurrentInterface() { return m_interface; }
+	XnStatus GetSensor(const XnChar* strDevicePath, XnServerSensorInvoker** ppInvoker);
+	void ReleaseSensor(XnServerSensorInvoker* pInvoker);
 
-	XnStatus CloseDevice();
-
-	static XnStatus EnumerateSensors(XnConnectionString* aConnectionStrings, XnUInt32* pnCount);
-
-	inline XnBool IsMiscEndpointSupported() const { return m_bMiscSupported; }
-
-	XnStatus SetCallback(XnUSBEventCallbackFunctionPtr pCallbackPtr, void* pCallbackData);
-
-	const XnChar* GetDevicePath();
+	void CleanUp();
+	inline XnBool HasOpenSensors() { return m_sensors.begin() != m_sensors.end(); }
 
 private:
-	XN_SENSOR_HANDLE* m_pSensorHandle;
-	XnBool m_bMiscSupported;
-	XnSensorUsbInterface m_interface;
-	XnChar m_strDeviceName[XN_DEVICE_MAX_STRING_LENGTH];
+	typedef struct
+	{
+		XnUInt64 nNoClientsTime;
+		XnServerSensorInvoker* pInvoker;
+		XnUInt32 nRefCount;
+	} ReferencedSensor;
+
+	XN_DECLARE_STRINGS_HASH(ReferencedSensor, XnSensorsHash);
+
+	static XnStatus XN_CALLBACK_TYPE StartNewLogCallback(XnIntProperty* pSender, XnUInt64 nValue, void* pCookie);
+
+	XnChar m_strGlobalConfigFile[XN_FILE_MAX_PATH];
+	XN_CRITICAL_SECTION_HANDLE m_hLock;
+	XnSensorsHash m_sensors;
+	XnActualIntProperty m_noClientTimeout;
+	XnIntProperty m_startNewLog;
+	XnUInt64 nNoClientsTime;
 };
 
-#endif //__XN_DEVICE_SENSOR_I_O_H__
+#endif // __XN_SENSORS_MANAGER_H__

@@ -113,7 +113,7 @@ XnStatus XnExportedSensorDevice::Create(xn::Context& context, const XnChar* strI
 
 	XnBool bEnableMultiProcess = TRUE;
 	XnUInt32 nValue;
-	if (XN_STATUS_OK == xnOSReadIntFromINI(strGlobalConfigFile, XN_CONFIG_FILE_SERVER_SECTION, XN_MODULE_PROPERTY_ENABLE_MULTI_PROCESS, &nValue))
+	if (XN_STATUS_OK == xnOSReadIntFromINI(strGlobalConfigFile, XN_SENSOR_SERVER_CONFIG_FILE_SECTION, XN_MODULE_PROPERTY_ENABLE_MULTI_PROCESS, &nValue))
 	{
 		bEnableMultiProcess = (nValue == TRUE);
 	}

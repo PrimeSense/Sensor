@@ -43,7 +43,7 @@
 /** Xiron maintenance version. */ 
 #define XN_PS_MAINTENANCE_VERSION 0
 /** Xiron build version. */ 
-#define XN_PS_BUILD_VERSION 24
+#define XN_PS_BUILD_VERSION 25
 
 /** Xiron version (in brief string format): "Major.Minor.Maintenance (Build)" */ 
 #define XN_PS_BRIEF_VERSION_STRING \

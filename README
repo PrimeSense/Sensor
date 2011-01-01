@@ -1,6 +1,22 @@
-PrimeSensor Modules for OpenNI
-------------------------------
+PrimeSensor Modules for OpenNI (Unstable branch)
+------------------------------------------------
 Website: www.primesense.com
+Forum: http://groups.google.com/group/openni-dev
+Wiki: Coming soon!
+
+A binary installer is available at:
+Coming soon!
+
+Please use this with the unstable OpenNI located at:
+https://github.com/OpenNI/OpenNI/tree/unstable
+
+Unstable branch new features:
+* Audio streams are now supported.
+* Sensor Server now supports multiple sensors. 
+
+Unstable branch fixes:
+* Server: a potential dead lock was solved.
+* GetStringProperty would always return XN_STATUS_ERROR.
 
 Release Notes:
 --------------

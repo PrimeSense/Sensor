@@ -103,7 +103,7 @@ XnStatus XnStreamReaderStream::CalcRequiredSize(XnUInt32* pnRequiredSize) const
 	return XN_STATUS_OK;
 }
 
-void XnStreamReaderStream::NewDataAvailable()
+void XnStreamReaderStream::NewDataAvailable(XnUInt64 nTimestamp, XnUInt32 nFrameID)
 {
 	m_pLastData->nFrameID = ++m_nLastFrameIDFromStream;
 	XnDeviceStream::NewDataAvailable(m_pLastData->nTimestamp, m_pLastData->nFrameID);

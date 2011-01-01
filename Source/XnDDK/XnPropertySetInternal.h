@@ -58,6 +58,6 @@ public:
 
 XN_DDK_API XnStatus XnPropertySetDataAttachModule(XnPropertySetData* pSetData, const XnChar* strModuleName, XnActualPropertiesHash* pModule);
 XN_DDK_API XnStatus XnPropertySetDataDetachModule(XnPropertySetData* pSetData, const XnChar* strModuleName, XnActualPropertiesHash** ppModule);
-XN_DDK_API XnStatus XnPropertySetCloneModule(XnPropertySet* pSource, XnPropertySet* pDest, const XnChar* strModule, const XnChar* strNewName);
+XN_DDK_API XnStatus XnPropertySetCloneModule(const XnPropertySet* pSource, XnPropertySet* pDest, const XnChar* strModule, const XnChar* strNewName);
 
 #endif //__XN_PROPERTY_SET_INTERNAL_H__

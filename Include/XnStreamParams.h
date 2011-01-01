@@ -263,6 +263,8 @@
 #define XN_MODULE_PROPERTY_SDK_VERSION				"SDKVersion"
 /** String */
 #define XN_MODULE_PROPERTY_DEVICE_NAME				"DeviceName"
+/** String */
+#define XN_MODULE_PROPERTY_USB_PATH					"USBPath"
 /** Integer (XnSensorUsbInterface) */
 #define XN_MODULE_PROPERTY_USB_INTERFACE			"UsbInterface"
 /** Integer */

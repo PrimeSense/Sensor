@@ -40,7 +40,7 @@
 class XnSensorIRStream : public XnIRStream, public IXnSensorStream
 {
 public:
-	XnSensorIRStream(const XnChar* StreamName, XnSensorObjects* pObjects, XnUInt32 nBufferCount);
+	XnSensorIRStream(const XnChar* strDeviceName, const XnChar* StreamName, XnSensorObjects* pObjects, XnUInt32 nBufferCount);
 	~XnSensorIRStream() { Free(); }
 
 	//---------------------------------------------------------------------------

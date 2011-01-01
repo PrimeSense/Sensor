@@ -46,8 +46,9 @@
 #define XN_SENSOR_PROTOCOL_AUDIO_PACKET_SIZE_BULK		424
 #define XN_SENSOR_PROTOCOL_AUDIO_PACKET_SIZE_ISO		180
 
-XnSensorAudioStream::XnSensorAudioStream(const XnChar* StreamName, XnSensorObjects* pObjects) :
+XnSensorAudioStream::XnSensorAudioStream(const XnChar* strDeviceName, const XnChar* StreamName, XnSensorObjects* pObjects) :
 	XnAudioStream(StreamName, XN_AUDIO_MAX_NUMBER_OF_CHANNELS),
+	m_strDeviceName(strDeviceName),
 	m_Helper(pObjects),
 	m_LeftChannelVolume(XN_STREAM_PROPERTY_LEFT_CHANNEL_VOLUME, XN_AUDIO_STREAM_DEFAULT_VOLUME),
 	m_RightChannelVolume(XN_STREAM_PROPERTY_RIGHT_CHANNEL_VOLUME, XN_AUDIO_STREAM_DEFAULT_VOLUME),
@@ -467,7 +468,7 @@ XnStatus XnSensorAudioStream::ReallocBuffer()
 		XN_PROCESS_ID procID;
 		xnOSGetCurrentProcessID(&procID);
 		XnChar strSharedName[XN_DEVICE_MAX_STRING_LENGTH];
-		sprintf(strSharedName, "%u_%s", procID, GetName());
+		sprintf(strSharedName, "%u_%s_%s", procID, m_strDeviceName, GetName());
 
 		nRetVal = m_SharedBufferName.UnsafeUpdateValue(strSharedName);
 		XN_IS_STATUS_OK(nRetVal);

@@ -40,7 +40,7 @@
 class XnSensorAudioStream : public XnAudioStream, public IXnSensorStream
 {
 public:
-	XnSensorAudioStream(const XnChar* StreamName, XnSensorObjects* pObjects);
+	XnSensorAudioStream(const XnChar* strDeviceName, const XnChar* StreamName, XnSensorObjects* pObjects);
 	~XnSensorAudioStream() { Free(); }
 
 	//---------------------------------------------------------------------------
@@ -102,6 +102,7 @@ private:
 	//---------------------------------------------------------------------------
 	XnSensorStreamHelper m_Helper;
 
+	const XnChar* m_strDeviceName;
 	XnActualStringProperty m_SharedBufferName;
 	XnActualIntProperty m_LeftChannelVolume;
 	XnActualIntProperty m_RightChannelVolume;

@@ -82,6 +82,7 @@ XnSensor::XnSensor() :
 	m_ID(XN_MODULE_PROPERTY_ID),
 	m_pThis(this),
 	m_InstancePointer(XN_SENSOR_PROPERTY_INSTANCE_POINTER, &m_pThis, sizeof(m_pThis), NULL),
+	m_USBPath(XN_MODULE_PROPERTY_USB_PATH),
 	m_Firmware(&m_DevicePrivateData),
 	m_FixedParams(&m_Firmware, &m_DevicePrivateData),
 	m_SensorIO(&m_DevicePrivateData.SensorHandle),
@@ -138,35 +139,10 @@ XnStatus XnSensor::GetDefinition(XnDeviceDefinition* pDeviceDefinition)
 XnStatus XnSensor::Enumerate(XnConnectionString* aConnectionStrings, XnUInt32* pnCount)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-	XnUInt32 nNumSensors = 0;
-	XnUInt32 nSensorIndex = 0;
-	XnChar cpBoardID[16];
-	XnDevicePrivateData DevicePrivateData;	
-	XnVersions Versions;
-	XnChar* pCurrConnectionString;
-
 	XN_VALIDATE_INPUT_PTR(pnCount);
 
-	xnOSMemSet(&DevicePrivateData, 0, sizeof(DevicePrivateData));
-
-	nRetVal = XnSensorIO::GetNumOfSensors(&nNumSensors);
+	nRetVal = XnSensorIO::EnumerateSensors(aConnectionStrings, pnCount);
 	XN_IS_STATUS_OK(nRetVal);
-
-	XnUInt32 nArraySize = *pnCount;
-
-	*pnCount = nNumSensors;
-	if (nArraySize < nNumSensors)
-	{
-		return (XN_STATUS_OUTPUT_BUFFER_OVERFLOW);
-	}
-
-	// for now, the driver only supports telling if we have a sensor or not (and not how many),
-	// so result is always 0 or 1.
-	if (nNumSensors != 0)
-	{
-		XN_ASSERT(nNumSensors == 1);
-		strcpy(aConnectionStrings[0], "*:0");
-	}
 
 	return (XN_STATUS_OK);
 }
@@ -241,6 +217,9 @@ XnStatus XnSensor::InitSensor(const XnDeviceConfig* pDeviceConfig)
 
 	// open IO
 	nRetVal = m_SensorIO.OpenDevice(pDeviceConfig->cpConnectionString);
+	XN_IS_STATUS_OK(nRetVal);
+
+	nRetVal = m_USBPath.UnsafeUpdateValue(m_SensorIO.GetDevicePath());
 	XN_IS_STATUS_OK(nRetVal);
 
 	// initialize
@@ -340,6 +319,7 @@ XnStatus XnSensor::CreateDeviceModule(XnDeviceModuleHolder** ppModuleHolder)
 		&m_ReadFromEP2, &m_ReadFromEP3, &m_ReadData, &m_NumberOfBuffers, &m_FirmwareParam, 
 		&m_CmosBlankingUnits, &m_CmosBlankingTime, &m_Reset, &m_FirmwareMode, &m_Version, 
 		&m_FixedParam, &m_FrameSync, &m_CloseStreamsOnShutdown, &m_InstancePointer, &m_ID,
+		&m_USBPath,
 	};
 
 	nRetVal = pModule->AddProperties(pProps, sizeof(pProps)/sizeof(XnProperty*));
@@ -392,28 +372,28 @@ XnStatus XnSensor::CreateStreamModule(const XnChar* StreamType, const XnChar* St
 	if (strcmp(StreamType, XN_STREAM_TYPE_DEPTH) == 0)
 	{
 		XnSensorDepthStream* pDepthStream;
-		XN_VALIDATE_NEW(pDepthStream, XnSensorDepthStream, StreamName, &m_Objects, m_NumberOfBuffers.GetValue());
+		XN_VALIDATE_NEW(pDepthStream, XnSensorDepthStream, GetUSBPath(), StreamName, &m_Objects, m_NumberOfBuffers.GetValue());
 		pStream = pDepthStream;
 		pHelper = pDepthStream->GetHelper();
 	}
 	else if (strcmp(StreamType, XN_STREAM_TYPE_IMAGE) == 0)
 	{
 		XnSensorImageStream* pImageStream;
-		XN_VALIDATE_NEW(pImageStream, XnSensorImageStream, StreamName, &m_Objects, m_NumberOfBuffers.GetValue());
+		XN_VALIDATE_NEW(pImageStream, XnSensorImageStream, GetUSBPath(), StreamName, &m_Objects, m_NumberOfBuffers.GetValue());
 		pStream = pImageStream;
 		pHelper = pImageStream->GetHelper();
 	}
 	else if (strcmp(StreamType, XN_STREAM_TYPE_IR) == 0)
 	{
 		XnSensorIRStream* pIRStream;
-		XN_VALIDATE_NEW(pIRStream, XnSensorIRStream, StreamName, &m_Objects, m_NumberOfBuffers.GetValue());
+		XN_VALIDATE_NEW(pIRStream, XnSensorIRStream, GetUSBPath(), StreamName, &m_Objects, m_NumberOfBuffers.GetValue());
 		pStream = pIRStream;
 		pHelper = pIRStream->GetHelper();
 	}
 	else if (strcmp(StreamType, XN_STREAM_TYPE_AUDIO) == 0)
 	{
 		XnSensorAudioStream* pAudioStream;
-		XN_VALIDATE_NEW(pAudioStream, XnSensorAudioStream, StreamName, &m_Objects);
+		XN_VALIDATE_NEW(pAudioStream, XnSensorAudioStream, GetUSBPath(), StreamName, &m_Objects);
 		pStream = pAudioStream;
 		pHelper = pAudioStream->GetHelper();
 	}

@@ -601,37 +601,73 @@
 				Name="ClientServer"
 				>
 				<File
-					RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorClient.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorClient.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorClientServer.h"
 					>
 				</File>
-				<File
-					RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorClientStream.cpp"
+				<Filter
+					Name="Client"
 					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorClientStream.h"
+					<File
+						RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorClient.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorClient.h"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorClientStream.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorClientStream.h"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="Server"
 					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorServer.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorServer.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorServerRunner.h"
-					>
-				</File>
+					<File
+						RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorServer.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorServer.h"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorServerRunner.h"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorsManager.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorsManager.h"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnServerLogger.h"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnServerSensorInvoker.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnServerSensorInvoker.h"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnServerSession.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnServerSession.h"
+						>
+					</File>
+				</Filter>
 			</Filter>
 			<Filter
 				Name="OpenNIImpl"

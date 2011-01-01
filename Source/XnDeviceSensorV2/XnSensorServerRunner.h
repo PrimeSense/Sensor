@@ -19,11 +19,6 @@
 *  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>. *
 *                                                                            *
 *****************************************************************************/
-
-
-
-
-
 #ifndef __XN_SENSOR_SERVER_RUNNER_H__
 #define __XN_SENSOR_SERVER_RUNNER_H__
 

@@ -67,7 +67,7 @@ public:
 	void SetNewDataCallback(NewDataCallbackPtr pFunc, void* pCookie);
 
 	/** Notifies new data is available in this stream. */
-	void NewDataAvailable(XnUInt64 nTimestamp, XnUInt32 nFrameID);
+	virtual void NewDataAvailable(XnUInt64 nTimestamp, XnUInt32 nFrameID);
 
 	void ResetLastTimestampAndFrameID();
 

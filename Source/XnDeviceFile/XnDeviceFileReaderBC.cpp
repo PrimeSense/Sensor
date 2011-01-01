@@ -936,7 +936,7 @@ XnStatus XnDeviceFileReader::BCSeekFrame(XnUInt32 nFrameID)
 		for (XnDeviceModuleHolderList::Iterator it = streams.begin(); it != streams.end(); ++it)
 		{
 			XnStreamReaderStream* pStream = (XnStreamReaderStream*)(*it)->GetModule();
-			pStream->NewDataAvailable();
+			pStream->NewDataAvailable(0, 0);
 		}
 
 		// Make sure frame ids are sequential
@@ -1087,7 +1087,7 @@ XnStatus XnDeviceFileReader::BCReadFrame(XnBool* pbWrapOccured)
 
 		pPackedBuffer += PackedStreamHeader.nCompDepthBufferSize;
 
-		pStream->NewDataAvailable();
+		pStream->NewDataAvailable(pStreamData->nTimestamp, pStreamData->nFrameID);
 	}
 
 	// Image
@@ -1110,7 +1110,7 @@ XnStatus XnDeviceFileReader::BCReadFrame(XnBool* pbWrapOccured)
 
 		pPackedBuffer += PackedStreamHeader.nCompImageBufferSize;
 
-		pStream->NewDataAvailable();
+		pStream->NewDataAvailable(pStreamData->nTimestamp, pStreamData->nFrameID);
 	}
 
 	// we do not support MISC
@@ -1136,7 +1136,7 @@ XnStatus XnDeviceFileReader::BCReadFrame(XnBool* pbWrapOccured)
 
 		pPackedBuffer += PackedStreamHeader.nCompAudioBufferSize;
 
-		pStream->NewDataAvailable();
+		pStream->NewDataAvailable(pStreamData->nTimestamp, pStreamData->nFrameID);
 	}
 
 	// Increase the file frame position

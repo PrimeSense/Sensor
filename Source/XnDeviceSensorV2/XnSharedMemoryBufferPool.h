@@ -39,7 +39,7 @@
 class XnSharedMemoryBufferPool : public XnBufferPool
 {
 public:
-	XnSharedMemoryBufferPool(XnUInt32 nBufferCount, const XnChar* strName, XnUInt32 nMaxBufferSize);
+	XnSharedMemoryBufferPool(XnUInt32 nBufferCount, const XnChar* strDeviceName, const XnChar* strStreamName, XnUInt32 nMaxBufferSize);
 	~XnSharedMemoryBufferPool();
 
 	void Free();

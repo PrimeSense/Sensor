@@ -43,7 +43,7 @@
 class XnSensorDepthStream : public XnDepthStream, public IXnSensorStream
 {
 public:
-	XnSensorDepthStream(const XnChar* strName, XnSensorObjects* pObjects, XnUInt32 nBufferCount);
+	XnSensorDepthStream(const XnChar* strDeviceName, const XnChar* strName, XnSensorObjects* pObjects, XnUInt32 nBufferCount);
 	~XnSensorDepthStream() { Free(); }
 
 	//---------------------------------------------------------------------------

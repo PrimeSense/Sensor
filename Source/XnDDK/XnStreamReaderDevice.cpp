@@ -505,7 +505,7 @@ XnStatus XnStreamReaderDevice::HandleStreamData(XnStreamData* pDataProps, XnComp
 	nRetVal = GetDataPacker()->ReadStreamData(pStreamData, pStreamHolder->GetCodec());
 	XN_IS_STATUS_OK(nRetVal);
 
-	pStream->NewDataAvailable();
+	pStream->NewDataAvailable(pStreamData->nTimestamp, pStreamData->nFrameID);
 	
 	return (XN_STATUS_OK);
 }

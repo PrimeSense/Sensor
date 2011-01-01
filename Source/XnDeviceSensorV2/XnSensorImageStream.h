@@ -40,7 +40,7 @@
 class XnSensorImageStream : public XnImageStream, public IXnSensorStream
 {
 public:
-	XnSensorImageStream(const XnChar* StreamName, XnSensorObjects* pObjects, XnUInt32 nBufferCount);
+	XnSensorImageStream(const XnChar* strDeviceName, const XnChar* StreamName, XnSensorObjects* pObjects, XnUInt32 nBufferCount);
 	~XnSensorImageStream() { Free(); }
 
 	//---------------------------------------------------------------------------

@@ -804,7 +804,7 @@ XnStatus XnFileDevice::CreateCodec(xn::ProductionNode& node)
 		{
 			// release old codec
 			XN_DELETE(pNodeInfo->pXnCodec);
-			pNodeInfo->codec.Unref();
+			pNodeInfo->codec.Release();
 
 			// special case: IR recorded with JPEG. This mode is no longer allowed by OpenNI (JPEG
 			// can now only be used for image). We'll have to handle it ourselves.

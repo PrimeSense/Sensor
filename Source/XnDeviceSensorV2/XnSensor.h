@@ -52,7 +52,7 @@
 //---------------------------------------------------------------------------
 class XnSensor : public XnDeviceBase
 {
-	friend class XnSensorServer;
+	friend class XnServerSensorInvoker;
 
 public:
 	XnSensor();
@@ -94,6 +94,8 @@ public:
 	static XnStatus ResolveGlobalConfigFileName(XnChar* strConfigFile, XnUInt32 nBufSize, const XnChar* strConfigDir);
 	XnStatus SetGlobalConfigFile(const XnChar* strConfigFile);
 	XnStatus ConfigureModuleFromGlobalFile(const XnChar* strModule, const XnChar* strSection = NULL);
+
+	const XnChar* GetUSBPath() { return m_USBPath.GetValue(); }
 
 
 protected:
@@ -192,6 +194,7 @@ private:
 	XnSensor* m_pThis;
 	XnActualGeneralProperty m_InstancePointer;
 	XnActualStringProperty m_ID;
+	XnActualStringProperty m_USBPath;
 
 	XnSensorFirmware m_Firmware;
 	XnDevicePrivateData m_DevicePrivateData;
