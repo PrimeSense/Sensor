@@ -3,10 +3,10 @@
 SCRIPT_DIR=`pwd`
 
 # Take version
-MAJOR=`grep "#define XN_PS_MAJOR_VERSION" ../../../Include/XnPsVersion.h | awk '{ print $3 }'`
-MINOR=`grep "#define XN_PS_MINOR_VERSION" ../../../Include/XnPsVersion.h | awk '{ print $3 }'`
-MAINTENANCE=`grep "#define XN_PS_MAINTENANCE_VERSION" ../../../Include/XnPsVersion.h | awk '{ print $3 }'`
-BUILD=`grep "#define XN_PS_BUILD_VERSION" ../../../Include/XnPsVersion.h | awk '{ print $3 }'`
+MAJOR=`grep "#define XN_PS_MAJOR_VERSION" ../../../Include/XnPsVersion.h | awk '{ print $3 }' | strings -n 1`
+MINOR=`grep "#define XN_PS_MINOR_VERSION" ../../../Include/XnPsVersion.h | awk '{ print $3 }' | strings -n 1`
+MAINTENANCE=`grep "#define XN_PS_MAINTENANCE_VERSION" ../../../Include/XnPsVersion.h | awk '{ print $3 }' | strings -n 1`
+BUILD=`grep "#define XN_PS_BUILD_VERSION" ../../../Include/XnPsVersion.h | awk '{ print $3 }' | strings -n 1`
 
 PS_VERSION="$MAJOR.$MINOR.$MAINTENANCE.$BUILD"
 
@@ -27,11 +27,11 @@ mkdir -p ../Redist/Config
 # copy files to redist
 cp ../../../GPL.txt ../Redist
 cp ../../../LGPL.txt ../Redist
-cp ../Bin/Release/libXnDeviceSensorV2.so ../Redist/Lib
-cp ../Bin/Release/libXnDeviceFile.so ../Redist/Lib
-cp ../Bin/Release/libXnDDK.so ../Redist/Lib
-cp ../Bin/Release/libXnFormats.so ../Redist/Lib
-cp ../Bin/Release/libXnCore.so ../Redist/Lib
+cp ../Bin/Release/libXnDeviceSensorV2.* ../Redist/Lib
+cp ../Bin/Release/libXnDeviceFile.* ../Redist/Lib
+cp ../Bin/Release/libXnDDK.* ../Redist/Lib
+cp ../Bin/Release/libXnFormats.* ../Redist/Lib
+cp ../Bin/Release/libXnCore.* ../Redist/Lib
 cp ../Bin/Release/XnSensorServer ../Redist/Bin
 cp ../Install/* ../Redist/Install
 cp ../../../Data/GlobalDefaults.ini ../Redist/Config
@@ -40,7 +40,17 @@ cp install.sh ../Redist
 # create tar
 mkdir -p Final
 cd ../Redist
-tar -cjf $SCRIPT_DIR/Final/Engine.v$PS_VERSION.tar.bz2 *
+
+if [ "`uname -s`" == "Darwin" ]; then
+	TAR_TARGET="MacOSX"
+elif [ "`uname -m`" == "i686" ]; then
+	TAR_TARGET="Linux32"
+elif [ "`uname -m`" == "x86_64" ]; then
+	TAR_TARGET="Linux64"
+else
+	TAR_TARGET="Linux"
+fi
+
+tar -cjf $SCRIPT_DIR/Final/Sensor-Bin-$TAR_TARGET-v$PS_VERSION.tar.bz2 *
+
 cd -
-
-

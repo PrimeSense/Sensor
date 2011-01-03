@@ -4,19 +4,29 @@ Website: www.primesense.com
 Forum: http://groups.google.com/group/openni-dev
 Wiki: Coming soon!
 
-A binary installer is available at:
-Coming soon!
-
-Please use this with the unstable OpenNI located at:
-https://github.com/OpenNI/OpenNI/tree/unstable
-
 Unstable branch new features:
 * Audio streams are now supported.
 * Sensor Server now supports multiple sensors. 
+* Added MacOSX platform support.
+* Improved README! (much more detailed instructions...)
 
 Unstable branch fixes:
 * Server: a potential dead lock was solved.
 * GetStringProperty would always return XN_STATUS_ERROR.
+
+Binaries are available at:
+Windows:
+http://downloads.primesense.com/unstable/Sensor-Bin-Win32-v5.0.0.25.exe
+Ubuntu 10.10 x86:
+http://downloads.primesense.com/unstable/Sensor-Bin-Linux32-v5.0.0.25.tar.bz2
+Ubuntu 10.10 x64:
+http://downloads.primesense.com/unstable/Sensor-Bin-Linux64-v5.0.0.25.tar.bz2
+MacOSX 10.6:
+http://downloads.primesense.com/unstable/Sensor-Bin-MacOSX-v5.0.0.25.tar.bz2
+
+Please use this with the OpenNI unstable branch located at:
+https://github.com/OpenNI/OpenNI/tree/unstable
+(Please check www.openni.org for the latest links of the latest binaries)
 
 Release Notes:
 --------------
@@ -30,50 +40,101 @@ Release Notes:
   - if the device was connected, unplug and reconnect it.
   This part is done automatically by the install script, but you will need to do it manually if you choose not to use the automated install.
 * The device driver contains a thread for reading from the USB device. This thread should have high priority in order to function correctly. Each process using the device driver should have the CAP_SYS_NICE capability in order to raise thread priority. Failing to have that capability, will cause a failure in setting priority, consequently causing loss of data.
+* MacOSX: Only OSX 10.6 (Snow Leopard) with a 64-bit Intel based CPU is currently supported.
+  Client/Server is not supported yet so do not attempt to access the sensor with more then one application.
+  
   
 Build Notes:
 ------------
 Windows:
 	Requirements:
 		1) Microsoft Visual Studio 2008/2010
-		2) Python 2.x/3.x (must be at least 2.6 and above)
-		3) PyWin32 
+		   From: http://msdn.microsoft.com/en-us/vstudio/bb984878.aspx
+		2) Python 2.6+/3.x
+		   From: http://www.python.org/download/
+		3) PyWin32
+		   From: http://sourceforge.net/projects/pywin32/files/pywin32/
+		   Please make sure you download the version that matches your exact python version.
 		4) NSIS 2.46
-		5) NSIS-2.46-strlen_8192.zip patch (An important patch to fix problems with adding strings to the path. you can find it in the Platform\Win32\Build\Prerequisites\ directory)
-		6) Doxygen & GraphViz (to create docs...)
-		7) OpenNI 1.x
-		
+		   From: http://sourceforge.net/projects/nsis/files/NSIS%202/2.46/
+		5) NSIS-2.46-strlen_8192.zip patch
+		   From: http://sourceforge.net/projects/nsis/files/NSIS%202/2.46/
+		   This is a required patch to fix a critical bug in NSIS with long environment variables.
+		   Simply unpack it into the directory where NSIS is installed and overwrite all files.
+		6) OpenNI v1.x
+		   From: http://www.openni.org/?q=node/2	
+
+	Optional Requirements (To build the documentation):
+		1) Doxygen
+		   From: http://www.stack.nl/~dimitri/doxygen/download.html#latestsrc
+		2) GraphViz
+		   From: http://www.graphviz.org/Download_windows.php
+		   
 	Building Sensor:
-		1) Go into the directory: "Platform\Win32\CreateRedist". Run the script: "Redist.py". This will compile and prepare the redist exe files that includes everything.
-		2) Install the exe you've just made which is located in Platform\Win32\CreateRedist\Output\Sensor-Win32-5.0.0.exe
+		1) Go to the directory: "Platform\Win32\CreateRedist".
+		   Run the script: "Redist.py".
+		   This will compile and prepare the redist exe files that includes everything.
+		2) Install the exe you've just made which is located in Platform\Win32\CreateRedist\Final\Output\Sensor-Win32-5.x.x.x.exe
 		   The installer will also automatically register all the modules into OpenNI via the NiReg utility.
 		   
 		The visual studio solution is located in: Platform\Win32\Build\EngineWin32.sln.
 		
-	Important: Please note that even though the directory is called Win32, you can also use it to compile it for 64-bit targets (AMD64/x64).
-	   
+		Important: Please note that even though the directory is called Win32, you can also use it to compile it for 64-bit targets (AMD64/x64).
+   
 Linux:
 	Requirements:
 		1) GCC 4.x
-		2) Python 2.6/2.7/3.0/3.1
-		3) libusb 1.0.8 (libusb-1.0-0-dev)
-		4) freeglut3 (freeglut3-dev)
-		5) Doxygen & GraphViz (to create docs...)
-		6) OpenNI 1.x
-
+		   From: http://gcc.gnu.org/releases.html
+		   Or via apt:
+		   sudo apt-get install g++
+		2) Python 2.6+/3.x
+		   From: http://www.python.org/download/
+		   Or via apt:
+		   sudo apt-get install python
+		3) OpenNI v1.x
+		   From: http://www.openni.org/?q=node/2
+		   
 	Building Sensor:
-		1) Go into the directory: "Platform/Linux-x86/CreateRedist". Run the script: "RedistMaker". This will compile everything and create a redist package in the "Platform/Linux-x86/Redist" directory.
-		2) Go into the directory: "Platform/Linux-x86/Redist". Run the script: "sudo ./install.sh" (needs to run as root)
-		
-		The install script copies key files to the following location:
-			Libs into: /usr/lib 
-			Bins into: /usr/bin
-			Config files: /usr/etc/primesense
-			USB rules: /etc/udev/rules.d 
-			Logs will be created in: /var/log/primesense
+		1) Go into the directory: "Platform/Linux-x86/CreateRedist".
+		   Run the script: "./RedistMaker".
+		   This will compile everything and create a redist package in the "Platform/Linux-x86/Redist" directory.
+		   It will also create a distribution in the "Platform/Linux-x86/CreateRedist/Final" directory.
+		2) Go into the directory: "Platform/Linux-x86/Redist".
+		   Run the script: "sudo ./install.sh" (needs to run as root)
+
+  		   The install script copies key files to the following location:
+		       Libs into: /usr/lib
+		       Bins into: /usr/bin
+		       Config files into: /usr/etc/primesense
+		       USB rules into: /etc/udev/rules.d 
+		       Logs will be created in: /var/log/primesense
 			
-		To build the package manually, you can run make in the "Platform\Linux-x86\Build" directory.
-		(You can also find a SlickEdit project there...)
+		To build the package manually, you can run "make" in the "Platform\Linux-x86\Build" directory.
 		
-	Important: Please note that even though the directory is called Linux-x86, you can also use it to compile it for 64-bit targets and pretty much any other linux based environment.
-	
+		Important: Please note that even though the directory is called Linux-x86, you can also use it to compile it for 64-bit targets and pretty much any other linux based environment.	
+
+MacOSX:
+	Requirements:
+		1) Xcode 3.2.5
+		   From: http://developer.apple.com/devcenter/mac/index.action
+		   https://developer.apple.com/ios/download.action?path=/ios/ios_sdk_4.2__final/xcode_3.2.5_and_ios_sdk_4.2_final.dmg
+		   Please note that you need to register as a mac developer (It's free!).
+		2) OpenNI v1.x
+		   From: http://www.openni.org/?q=node/2	   
+	   
+	Building Sensor:
+		1) Go into the directory: "Platform/Linux-x86/CreateRedist".
+		   Run the script: "./RedistMaker".
+		   This will compile everything and create a redist package in the "Platform/Linux-x86/Redist" directory.
+		   It will also create a distribution in the "Platform/Linux-x86/CreateRedist/Final" directory.
+		2) Go into the directory: "Platform/Linux-x86/Redist".
+		   Run the script: "sudo ./install.sh" (needs to run as root)
+
+  		   The install script copies key files to the following location:
+		       Libs into: /usr/lib
+		       Bins into: /usr/bin
+		       Config files into: /usr/etc/primesense
+		       USB rules into: /etc/udev/rules.d 
+		       Logs will be created in: /var/log/primesense
+			
+		To build the package manually, you can run "make" in the "Platform\Linux-x86\Build" directory.

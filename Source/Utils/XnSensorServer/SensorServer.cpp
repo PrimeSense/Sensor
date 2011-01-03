@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
 	nRetVal = XnFormatsInitFromINIFile(strConfigFile);
 	XN_CHECK_RC(nRetVal, "Initializing DDK");
 	
-#if (XN_PLATFORM == XN_PLATFORM_LINUX_X86 || XN_PLATFORM == XN_PLATFORM_LINUX_ARM)
+#if (XN_PLATFORM == XN_PLATFORM_LINUX_X86 || XN_PLATFORM == XN_PLATFORM_LINUX_ARM || XN_PLATFORM == XN_PLATFORM_MACOSX)
 	xnLogSetOutputFolder("/var/log/primesense/XnSensorServer/");
 #endif
 

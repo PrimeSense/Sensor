@@ -7,7 +7,12 @@ INSTALL_BIN=/usr/bin
 INSTALL_ETC=/usr/etc/primesense
 INSTALL_RULES=/etc/udev/rules.d
 
-MODULES="libXnDeviceSensorV2.so libXnDeviceFile.so"
+if [ "`uname -s`" == "Darwin" ]; then
+    MODULES="libXnDeviceSensorV2.dylib libXnDeviceFile.dylib"
+else
+    MODULES="libXnDeviceSensorV2.so libXnDeviceFile.so"
+fi
+
 RULES_FILE="55-primesense-usb.rules"
 
 # read arguments
@@ -78,10 +83,12 @@ if [ "$INSTALL" == "1" ]; then
     chmod a+w /var/log/primesense/XnSensorServer
     printf "OK\n"
 
-    # install USB rules (so that PrimeSense sensors will be mounted with write permissions)
-    printf "installing usb rules..."
-    cp Install/$RULES_FILE $INSTALL_RULES
-    printf "OK\n"
+    if [ "`uname -s`" != "Darwin" ]; then
+        # install USB rules (so that PrimeSense sensors will be mounted with write permissions)
+        printf "installing usb rules..."
+        cp Install/$RULES_FILE $INSTALL_RULES
+        printf "OK\n"
+    fi
 
 else #uninstall
 
@@ -112,10 +119,12 @@ else #uninstall
 	rm -rf $INSTALL_ETC
     printf "OK\n"
 
-    # remove USB rules
-    printf "removing usb rules..."
-	rm -f $INSTALL_RULES/$RULES_FILE
-    printf "OK\n"
+    if [ "`uname -s`" != "Darwin" ]; then
+        # remove USB rules
+        printf "removing usb rules..."
+	    rm -f $INSTALL_RULES/$RULES_FILE
+        printf "OK\n"
+    fi
 
 fi
 

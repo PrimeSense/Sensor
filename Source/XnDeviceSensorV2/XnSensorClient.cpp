@@ -864,7 +864,7 @@ XnStatus XnSensorClient::StartServerProcess()
 	
 #if (XN_PLATFORM == XN_PLATFORM_WIN32)
 	strServerDir = ms_strDir;
-#elif (XN_PLATFORM == XN_PLATFORM_LINUX_X86 || XN_PLATFORM == XN_PLATFORM_LINUX_ARM)
+#elif (XN_PLATFORM == XN_PLATFORM_LINUX_X86 || XN_PLATFORM == XN_PLATFORM_LINUX_ARM || XN_PLATFORM == XN_PLATFORM_MACOSX)
 	strServerDir = "/usr/bin";
 #endif
 
