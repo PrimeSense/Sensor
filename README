@@ -21,7 +21,7 @@ Ubuntu 10.10 x86:
 http://downloads.primesense.com/unstable/Sensor-Bin-Linux32-v5.0.0.25.tar.bz2
 Ubuntu 10.10 x64:
 http://downloads.primesense.com/unstable/Sensor-Bin-Linux64-v5.0.0.25.tar.bz2
-MacOSX 10.6:
+MacOSX 10.6 (i386 & x86_64 universal):
 http://downloads.primesense.com/unstable/Sensor-Bin-MacOSX-v5.0.0.25.tar.bz2
 
 Please use this with the OpenNI unstable branch located at:
