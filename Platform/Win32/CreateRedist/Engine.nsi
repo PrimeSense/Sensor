@@ -26,7 +26,9 @@
 
 ;SetCompress off
 SetCompress auto
-SetCompressor ZLIB
+SetCompressor /FINAL /SOLID lzma
+SetCompressorDictSize 64
+SetDatablockOptimize on
 
 !include "MUI.nsh"
 !include "x64.nsh"

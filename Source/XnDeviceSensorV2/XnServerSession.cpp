@@ -243,17 +243,20 @@ XnStatus XnServerSession::CloseSensorImpl()
 
 	// release all streams
 	XnAutoCSLocker locker(m_hStreamsLock);
-	while (m_streamsHash.begin() != m_streamsHash.end())
+	SessionStreamsHash::Iterator it = m_streamsHash.begin();
+	while (it != m_streamsHash.end())
 	{
-		const XnChar* strName = m_streamsHash.begin().Key();
+		SessionStreamsHash::Iterator curr = it;
+		++it;
+		const XnChar* strName = curr.Key();
 		if (strcmp(strName, XN_MODULE_NAME_DEVICE) != 0)
 		{
-			RemoveStreamImpl(m_streamsHash.begin().Key());
+			RemoveStreamImpl(strName);
 		}
 		else
 		{
 			// just remove it from the map
-			m_streamsHash.Remove(m_streamsHash.begin());
+			m_streamsHash.Remove(curr);
 		}
 	}
 

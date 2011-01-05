@@ -13,16 +13,17 @@ Unstable branch new features:
 Unstable branch fixes:
 * Server: a potential dead lock was solved.
 * GetStringProperty would always return XN_STATUS_ERROR.
+* Bug fix: infinite loop in server when a client tries to disconnect and streams can't be closed (usb timeout for example).
 
 Binaries are available at:
 Windows:
-http://downloads.primesense.com/unstable/Sensor-Bin-Win32-v5.0.0.25.exe
+Coming soon... (switching to new web site...)
 Ubuntu 10.10 x86:
-http://downloads.primesense.com/unstable/Sensor-Bin-Linux32-v5.0.0.25.tar.bz2
+Coming soon... (switching to new web site...)
 Ubuntu 10.10 x64:
-http://downloads.primesense.com/unstable/Sensor-Bin-Linux64-v5.0.0.25.tar.bz2
+Coming soon... (switching to new web site...)
 MacOSX 10.6 (i386 & x86_64 universal):
-http://downloads.primesense.com/unstable/Sensor-Bin-MacOSX-v5.0.0.25.tar.bz2
+Coming soon... (switching to new web site...)
 
 Please use this with the OpenNI unstable branch located at:
 https://github.com/OpenNI/OpenNI/tree/unstable
