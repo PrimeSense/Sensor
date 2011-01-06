@@ -16,18 +16,14 @@ Unstable branch fixes:
 * Bug fix: infinite loop in server when a client tries to disconnect and streams can't be closed (usb timeout for example).
 
 Binaries are available at:
-Windows:
-Coming soon... (switching to new web site...)
-Ubuntu 10.10 x86:
-Coming soon... (switching to new web site...)
-Ubuntu 10.10 x64:
-Coming soon... (switching to new web site...)
-MacOSX 10.6 (i386 & x86_64 universal):
-Coming soon... (switching to new web site...)
+http://www.openni.org/downloadfiles/openni-compliant-hardware/31-latest-unstable
 
 Please use this with the OpenNI unstable branch located at:
+Source:
 https://github.com/OpenNI/OpenNI/tree/unstable
-(Please check www.openni.org for the latest links of the latest binaries)
+Binaries:
+http://www.openni.org/downloadfiles/openni-binaries/20-latest-unstable
+
 
 Release Notes:
 --------------
