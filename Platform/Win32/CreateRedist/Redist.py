@@ -26,11 +26,56 @@ import os
 import sys
 import shutil
 import win32con, pywintypes, win32api
+import re
+import subprocess
+from xml.dom.minidom import parse, parseString
+
+#------------Check args---------------------------------------------#
+
+Make_Doxy=1
+vc_build_bits = "32"
+vc_build_type = "/Rebuild"
+VC_version = 9
+
+if len(sys.argv) in [4,5]:
+    if sys.argv[1] == 'n':
+        Make_Doxy=0
+    if sys.argv[2] == '64':
+        vc_build_bits = "64"
+    if sys.argv[3] == 'n':
+        vc_build_type = "/Build"
+    if len(sys.argv) > 4:
+        if sys.argv[4] == '10':
+            VC_version = 10    
+
+CONFIG_XML = parse("Engine_Config.xml")
+SDK_VER = str(CONFIG_XML.getElementsByTagName("VERSION_NUMBER")[0].firstChild.data)
 
 ROOT_DIR = os.path.abspath(os.path.dirname(sys.argv[0]))
 REDIST_DIR = os.path.join(ROOT_DIR, "..", "Redist")
 OUTPUT_DIR = os.path.join(ROOT_DIR, "Output")
 SCRIPT_DIR = os.getcwd()
+
+print 'work dir of redist.py:'
+print SCRIPT_DIR
+
+def finish_script(exit_code):
+    os.chdir(SCRIPT_DIR)
+    #logging.shutdown()
+    exit(exit_code)
+
+def regx_replace(findStr,repStr,filePath):
+    "replaces all findStr by repStr in file filePath using regualr expression"
+    findStrRegx = re.compile(findStr)
+    tempName=filePath+'~~~'
+    input = open(filePath)
+    output = open(tempName,'w')
+    for s in input:
+        output.write(findStrRegx.sub(repStr,s))
+    output.close()
+    input.close()
+    os.remove(filePath)
+    os.rename(tempName,filePath)
 
 def get_reg_values(reg_key, value_list):
     # open the reg key
@@ -57,6 +102,9 @@ def get_reg_values(reg_key, value_list):
             pass
     return tuple(values)
 
+
+
+
 # remove output dir
 if os.path.exists(REDIST_DIR):
     os.system("rmdir /S /Q \"" + REDIST_DIR + "\"")
@@ -65,18 +113,24 @@ if os.path.exists(OUTPUT_DIR):
 os.mkdir(REDIST_DIR)
 os.mkdir(OUTPUT_DIR)
 
+try:
+    VS_NEED_UPGRADE = 0
+    MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\VisualStudio\9.0")
+    MSVC_VALUES = [("InstallDir", win32con.REG_SZ)]
+    VS_INST_DIR = get_reg_values(MSVC_KEY, MSVC_VALUES)[0]
+except Exception as e:
+    VC_version = 10
+
+if VC_version == 10:    
+    VS_NEED_UPGRADE = 1
+    MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\VisualStudio\10.0")
+    MSVC_VALUES = [("InstallDir", win32con.REG_SZ)]
+    VS_INST_DIR = get_reg_values(MSVC_KEY, MSVC_VALUES)[0]
+
+
+
 # build
 print("Building...")
-try:
-	MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\VisualStudio\9.0")
-	MSVC_VALUES = [("InstallDir", win32con.REG_SZ)]
-	VS_INST_DIR = get_reg_values(MSVC_KEY, MSVC_VALUES)[0]
-	VS_NEED_UPGRADE = 0
-except Exception as e:
-	MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\VisualStudio\10.0")
-	MSVC_VALUES = [("InstallDir", win32con.REG_SZ)]
-	VS_INST_DIR = get_reg_values(MSVC_KEY, MSVC_VALUES)[0]
-	VS_NEED_UPGRADE = 1
 
 os.chdir(os.path.join(ROOT_DIR, "..", "Build"))
 
@@ -114,13 +168,46 @@ for file in os.listdir(DATA_DIR):
     
 # create installer
 print("Creating installer...")
-NSIS_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\NSIS")
-NSIS_VALUES = [("InstallLocation", win32con.REG_EXPAND_SZ)]
-NSIS_INST_DIR = get_reg_values(NSIS_KEY, NSIS_VALUES)[0]
-# make installer
-os.chdir(ROOT_DIR)
-res = os.system("\"" + NSIS_INST_DIR + "\\makensis.exe\" " + "Engine.nsi" + " > ..\\CreateRedist\\Output\\nsis.log")
+os.chdir(SCRIPT_DIR + "\\EE_NI")
+#print "* move XnLeanDeviceSensorV2.dll"
+#os.system("move /Y " + WORK_DIR + "\\Platform\\Win32\\Bin\\XnLeanDeviceSensorV2.dll \\Platform\\Win32\\Bin\\XnDeviceSensorV2.dll")
+
+print "* Set BinaryOnlyRedist=True"
+os.system("attrib -r Includes\\EENIVariables.wxi")
+regx_replace("BinaryOnlyRedist=(.*)", "BinaryOnlyRedist=True?>", "Includes\\EENIVariables.wxi")
+
+logFilename = "BuildEngine"
+
+
+
+print "* Build EE_NI.wixproj"
+
+if VS_NEED_UPGRADE == 1:
+    res = subprocess.call("\""+VS_INST_DIR + "devenv\" EE_NI.sln /upgrade /out " + SCRIPT_DIR + "\\Output\\" + logFilename + ".txt",close_fds=True)
+    if res != 0:
+        raise Exception("Failed upgrade installer!")
+
+res = subprocess.call("\""+VS_INST_DIR + "devenv\" EE_NI.wixproj /build \"release|x86"\
+		+"\" /out "+SCRIPT_DIR+"\\Output\\" + logFilename + ".txt",close_fds=True)
 if res != 0:
     raise Exception("Failed creating installer!")
 
+currDir = os.getcwd()
+print currDir
+moveCmd = "move bin\\Release\\en-US\\EE_NI.msi " + SCRIPT_DIR + "\\Output\\Sensor-Win-OpenSource" + str(vc_build_bits) + "-" + SDK_VER + ".msi"
+print moveCmd + "..."
+os.system(moveCmd)
+#print "* Move installers"
+#os.system("move .\\Output\\*.msi " + SCRIPT_DIR + "\\Output")
+
+#NSIS_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\NSIS")
+#NSIS_VALUES = [("InstallLocation", win32con.REG_EXPAND_SZ)]
+#NSIS_INST_DIR = get_reg_values(NSIS_KEY, NSIS_VALUES)[0]
+# make installer
+#os.chdir(ROOT_DIR)
+#res = os.system("\"" + NSIS_INST_DIR + "\\makensis.exe\" " + "Engine.nsi" + " > ..\\CreateRedist\\Output\\nsis.log")
+#if res != 0:
+    #raise Exception("Failed creating installer!")
+
 print("Done.")
+finish_script(0)

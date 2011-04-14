@@ -65,8 +65,6 @@ public:
 
 	void SetConfigDir(const XnChar* strConfigDir);
 
-	static XnStatus TakeServerLocation();
-
 protected:
 	XnStatus SendBye();
 	virtual XnStatus InitImpl(const XnDeviceConfig* pDeviceConfig);
@@ -107,8 +105,6 @@ private:
 
 	XN_CRITICAL_SECTION_HANDLE m_hLock;
 	XnChar m_strConfigDir[XN_FILE_MAX_PATH];
-
-	static XnChar ms_strDir[];
 };
 
 #endif //__XN_SENSOR_CLIENT_H__

@@ -52,7 +52,7 @@
 //---------------------------------------------------------------------------
 class XnSensor : public XnDeviceBase
 {
-	friend class XnSensorServer;
+	friend class XnServerSensorInvoker;
 
 public:
 	XnSensor();
@@ -85,6 +85,7 @@ public:
 	XnStatus ConfigPropertyFromFile(XnIntProperty* pProperty, const XnChar* csINIFilePath, const XnChar* csSectionName);
 
 	inline XnBool IsMiscSupported() const { return m_SensorIO.IsMiscEndpointSupported(); }
+	inline XnBool IsLowBandwidth() const { return m_SensorIO.IsLowBandwidth(); }
 
 	XnStatus GetSharedBufferPool(const XnChar* strStream, XnSharedMemoryBufferPool** ppBufferPool);
 
@@ -94,6 +95,8 @@ public:
 	static XnStatus ResolveGlobalConfigFileName(XnChar* strConfigFile, XnUInt32 nBufSize, const XnChar* strConfigDir);
 	XnStatus SetGlobalConfigFile(const XnChar* strConfigFile);
 	XnStatus ConfigureModuleFromGlobalFile(const XnChar* strModule, const XnChar* strSection = NULL);
+
+	const XnChar* GetUSBPath() { return m_USBPath.GetValue(); }
 
 
 protected:
@@ -192,6 +195,9 @@ private:
 	XnSensor* m_pThis;
 	XnActualGeneralProperty m_InstancePointer;
 	XnActualStringProperty m_ID;
+	XnActualStringProperty m_USBPath;
+	XnActualStringProperty m_DeviceName;
+	XnActualStringProperty m_VendorSpecificData;
 
 	XnSensorFirmware m_Firmware;
 	XnDevicePrivateData m_DevicePrivateData;

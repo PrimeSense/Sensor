@@ -88,9 +88,14 @@ XnStatus XnSensorProductionNode::GetRealProperty(const XnChar* strName, XnDouble
 	return m_pSensor->GetProperty(m_strModule, strName, &dValue);
 }
 
-XnStatus XnSensorProductionNode::GetStringProperty(const XnChar* strName, XnChar* csValue) const
+XnStatus XnSensorProductionNode::GetStringProperty(const XnChar* strName, XnChar* csValue, XnUInt32 nBufSize) const
 {
-	return m_pSensor->GetProperty(m_strModule, strName, csValue);
+	XnChar strValue[XN_DEVICE_MAX_STRING_LENGTH];
+	XnStatus nRetVal = m_pSensor->GetProperty(m_strModule, strName, strValue);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = xnOSStrCopy(csValue, strValue, nBufSize);
+	XN_IS_STATUS_OK(nRetVal);
+	return XN_STATUS_OK;
 }
 
 XnStatus XnSensorProductionNode::GetGeneralProperty(const XnChar* strName, XnUInt32 nBufferSize, void* pBuffer) const

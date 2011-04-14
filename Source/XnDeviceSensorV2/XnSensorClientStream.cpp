@@ -180,11 +180,42 @@ XnSensorClientAudioStream::XnSensorClientAudioStream(XnSensorClient* pClient, co
 	XnSensorClientStream(pClient, strType, strName),
 	m_pHeader(NULL),
 	m_pBuffer(NULL),
-	m_nLastReadIndex(0)
+	m_nLastReadIndex(0),
+	m_hLock(NULL),
+	m_nFrameID(0)
 {}
 
 XnSensorClientAudioStream::~XnSensorClientAudioStream()
 {}
+
+XnStatus XnSensorClientAudioStream::Init()
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+	
+	nRetVal = XnSensorClientStream::Init();
+	XN_IS_STATUS_OK(nRetVal);
+
+	nRetVal = xnOSCreateCriticalSection(&m_hLock);
+	XN_IS_STATUS_OK(nRetVal);
+	
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensorClientAudioStream::Free()
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+	
+	if (m_hLock != NULL)
+	{
+		xnOSCloseCriticalSection(&m_hLock);
+		m_hLock = NULL;
+	}
+
+	nRetVal = XnSensorClientStream::Free();
+	XN_IS_STATUS_OK(nRetVal);
+	
+	return (XN_STATUS_OK);
+}
 
 XnStatus XnSensorClientAudioStream::OpenSharedMemory()
 {
@@ -200,17 +231,28 @@ XnStatus XnSensorClientAudioStream::OpenSharedMemory()
 	return (XN_STATUS_OK);
 }
 
+void XnSensorClientAudioStream::NewDataAvailable(XnUInt64 nTimestamp, XnUInt32 nFrameID)
+{
+	// if a read is in progress, wait for it to complete
+	XnAutoCSLocker locker(m_hLock);
+
+	// check if we still have new data
+	if (m_pHeader->nWritePacketIndex != m_nLastReadIndex)
+	{
+		XnSensorClientStream::NewDataAvailable(m_pTimestamps[m_nLastReadIndex], 0);
+	}
+}
+
 XnStatus XnSensorClientAudioStream::ReadImpl(XnStreamData* pStreamOutput)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
 	pStreamOutput->nDataSize = 0;
 
-	// take last write index
-	XnUInt32 nWriteIndex = m_pHeader->nWritePacketIndex;
+	// take last write index (note: this is taken from shared memory)
+	XnAutoCSLocker locker(m_hLock);
 
-	// take timestamp
-	pStreamOutput->nTimestamp = m_pTimestamps[m_nLastReadIndex];
+	XnUInt32 nWriteIndex = m_pHeader->nWritePacketIndex;
 
 	// check how many buffers we have
 	XnInt32 nAvailbalePackets = nWriteIndex - m_nLastReadIndex;
@@ -223,6 +265,9 @@ XnStatus XnSensorClientAudioStream::ReadImpl(XnStreamData* pStreamOutput)
 		m_nLastReadIndex = (m_nLastReadIndex + 1) % m_pHeader->nPacketCount;
 		nAvailbalePackets--;
 	}
+
+	// take timestamp
+	pStreamOutput->nTimestamp = m_pTimestamps[m_nLastReadIndex];
 
 	// now copy data from last read position to this one
 	XnUChar* pAudioBuf = (XnUChar*)pStreamOutput->pData;
@@ -239,6 +284,9 @@ XnStatus XnSensorClientAudioStream::ReadImpl(XnStreamData* pStreamOutput)
 
 		m_nLastReadIndex = (m_nLastReadIndex + 1) % m_pHeader->nPacketCount;
 	}
+
+	m_nFrameID++;
+	pStreamOutput->nFrameID = m_nFrameID;
 
 	return (XN_STATUS_OK);
 }

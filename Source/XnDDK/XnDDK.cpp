@@ -32,6 +32,7 @@
 #include <XnFormats/XnFormats.h>
 #include <XnOS.h>
 #include "XnDeviceManager.h"
+#include <XnUtils.h>
 
 // The following line is needed to be once in *ALL* of the high level shared library modules. DO NOT REMOVE!!! 
 XN_API_EXPORT_INIT()
@@ -142,3 +143,138 @@ XN_DDK_API XnStatus XnDDKShutdown()
 	return (XN_STATUS_OK);
 }
 
+XnResolution OldResToOpenNIRes(XnResolutions res)
+{
+	switch (res)
+	{
+	case XN_RESOLUTION_CUSTOM: return XN_RES_CUSTOM;
+	case XN_RESOLUTION_QVGA: return XN_RES_QVGA;
+	case XN_RESOLUTION_VGA: return XN_RES_VGA;
+	case XN_RESOLUTION_SXGA: return XN_RES_SXGA;
+	case XN_RESOLUTION_UXGA: return XN_RES_UXGA;
+	case XN_RESOLUTION_QQVGA: return XN_RES_QQVGA;
+	case XN_RESOLUTION_QCIF: return XN_RES_QCIF;
+	case XN_RESOLUTION_240P: return XN_RES_240P;
+	case XN_RESOLUTION_CIF: return XN_RES_CIF;
+	case XN_RESOLUTION_WVGA: return XN_RES_WVGA;
+	case XN_RESOLUTION_480P: return XN_RES_480P;
+	case XN_RESOLUTION_800_448: return XN_RES_CUSTOM;
+	case XN_RESOLUTION_SVGA: return XN_RES_SVGA;
+	case XN_RESOLUTION_576P: return XN_RES_576P;
+	case XN_RESOLUTION_DV: return XN_RES_DV;
+	case XN_RESOLUTION_720P: return XN_RES_720P;
+	case XN_RESOLUTION_1280_960: return XN_RES_CUSTOM;
+	default: 
+		XN_ASSERT(FALSE);
+		return XN_RES_CUSTOM;
+	}
+}
+
+XnResolutions OpenNIResToOldRes(XnResolution res)
+{
+	switch (res)
+	{
+	case XN_RES_CUSTOM: return XN_RESOLUTION_CUSTOM;
+	case XN_RES_QQVGA: return XN_RESOLUTION_QQVGA;
+	case XN_RES_CGA: return XN_RESOLUTION_CUSTOM;
+	case XN_RES_QVGA: return XN_RESOLUTION_QVGA;
+	case XN_RES_VGA: return XN_RESOLUTION_VGA;
+	case XN_RES_SVGA: return XN_RESOLUTION_SVGA;
+	case XN_RES_XGA: return XN_RESOLUTION_CUSTOM;
+	case XN_RES_720P: return XN_RESOLUTION_720P;
+	case XN_RES_SXGA: return XN_RESOLUTION_SXGA;
+	case XN_RES_UXGA: return XN_RESOLUTION_UXGA;
+	case XN_RES_1080P: return XN_RESOLUTION_CUSTOM;
+	case XN_RES_QCIF: return XN_RESOLUTION_QCIF;
+	case XN_RES_240P: return XN_RESOLUTION_240P;
+	case XN_RES_CIF: return XN_RESOLUTION_CIF;
+	case XN_RES_WVGA: return XN_RESOLUTION_WVGA;
+	case XN_RES_480P: return XN_RESOLUTION_480P;
+	case XN_RES_576P: return XN_RESOLUTION_576P;
+	case XN_RES_DV: return XN_RESOLUTION_DV;
+	default: 
+		XN_ASSERT(FALSE);
+		return XN_RESOLUTION_CUSTOM;
+	}
+}
+
+XN_DDK_API XnResolutions XnDDKGetResolutionFromXY(XnUInt32 nXRes, XnUInt32 nYRes)
+{
+	// check if this is a known OpenNI resolution
+	XnResolution res = xnResolutionGetFromXYRes(nXRes, nYRes);
+	if (res == XN_RES_CUSTOM)
+	{
+		// check if this is one of our special resolutions
+		if (nXRes == 800 && nYRes == 448)
+		{
+			return XN_RESOLUTION_800_448;
+		}
+		else if (nXRes == 1280 && nYRes == 960)
+		{
+			return XN_RESOLUTION_1280_960;
+		}
+	}
+
+	return OpenNIResToOldRes(res);
+}
+
+XN_DDK_API XnBool XnDDKGetXYFromResolution(XnResolutions res, XnUInt32* pnXRes, XnUInt32* pnYRes)
+{
+	// check if this is a known OpenNI resolution
+	XnResolution openRes = OldResToOpenNIRes(res);
+	if (openRes == XN_RES_CUSTOM)
+	{
+		// check if this is one of our special resolutions
+		if (res == XN_RESOLUTION_800_448)
+		{
+			*pnXRes = 800; 
+			*pnYRes = 448; 
+			return TRUE;
+		}
+		else if (res == XN_RESOLUTION_1280_960)
+		{
+			*pnXRes = 1280;
+			*pnYRes = 960;
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	else
+	{
+		*pnXRes = xnResolutionGetXRes(openRes);
+		*pnYRes = xnResolutionGetYRes(openRes);
+		return TRUE;
+	}
+}
+
+XN_DDK_API const XnChar* XnDDKGetResolutionName(XnResolutions res)
+{
+	const XnChar* strName = NULL;
+
+	// check if this is a known OpenNI resolution
+	XnResolution openRes = OldResToOpenNIRes(res);
+
+	if (openRes == XN_RES_CUSTOM)
+	{
+		// check if this is one of our special resolutions
+		if (res == XN_RESOLUTION_800_448)
+		{
+			return "800x448";
+		}
+		else if (res == XN_RESOLUTION_1280_960)
+		{
+			return "1280x960";
+		}
+		else
+		{
+			return "Custom";
+		}
+	}
+	else
+	{
+		return xnResolutionGetName(openRes);
+	}
+}

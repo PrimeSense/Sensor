@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <!-- Include wxi files -->
+  <?include $(sys.CURRENTDIR)Includes\EENIVariables.wxi ?>
+    <Fragment>
+        <DirectoryRef Id="INSTALLLOCATION">
+            <Component Id="GPL" Guid="*">
+                <File Id="fil04BD68110BAAE6738D69A12AA064B5B9" KeyPath="yes" Source="$(var.EE_NIFilesDir)\GPL.txt" />
+            </Component>
+            <Component Id="LGPL" Guid="*">
+                <File Id="fil8EFDF8514913AD728CF1798610E899A6" KeyPath="yes" Source="$(var.EE_NIFilesDir)\LGPL.txt" />
+            </Component>
+            <Directory Id="dir6EFCBF7ED6CB01D780B79C4D86427BA8" Name="Bin$(var.PlatformSuffix)">
+                <Component Id="XnCore" Guid="*">
+                    <File Id="filF374558A6F08B598A4FA106492D94FA6" KeyPath="yes" Source="$(var.EE_NIFilesDir)\Bin$(var.PlatformSuffix)\XnCore$(var.PlatformSuffix).dll" />
+                </Component>
+                <Component Id="XnDDK" Guid="*">
+                    <File Id="fil93064D2C3DECF68909CBF7C610A6FFEB" KeyPath="yes" Source="$(var.EE_NIFilesDir)\Bin$(var.PlatformSuffix)\XnDDK$(var.PlatformSuffix).dll" />
+                </Component>
+                <Component Id="XnDeviceFile" Guid="*">
+                    <File Id="fil1AE1A78AFB768F6BE201C2F7F7BB1B76" KeyPath="yes" Source="$(var.EE_NIFilesDir)\Bin$(var.PlatformSuffix)\XnDeviceFile$(var.PlatformSuffix).dll" />
+                </Component>
+                <Component Id="XnDeviceSensorV2" Guid="*">
+                    <File Id="fil9B94B798603106A9EED4994EC16B4A27" KeyPath="yes" Source="$(var.EE_NIFilesDir)\Bin$(var.PlatformSuffix)\XnDeviceSensorV2$(var.PlatformSuffix).dll" />
+                </Component>                
+                <Component Id="XnFormats" Guid="*">
+                    <File Id="fil38183B691E2EDD1B1609E37F2664DB2D" KeyPath="yes" Source="$(var.EE_NIFilesDir)\Bin$(var.PlatformSuffix)\XnFormats$(var.PlatformSuffix).dll" />
+                </Component>                
+                <Component Id="XnSensorServer" Guid="*">
+                    <File Id="filC8F42179992CC29DA8701FE4AF2FFDD2" KeyPath="yes" Source="$(var.EE_NIFilesDir)\Bin$(var.PlatformSuffix)\XnSensorServer$(var.PlatformSuffix).exe" />
+                </Component>
+            </Directory>
+            <Directory Id="dir82E287C749A0533338ECB68223E0D9A9" Name="Data">
+                <Component Id="GlobalDefaults" Guid="*">
+                    <File Id="filC7C2030C8D2CE9E28311BE630BC01055" KeyPath="yes" Source="$(var.EE_NIFilesDir)\Data\GlobalDefaults.ini" />
+                </Component>                
+            </Directory>            
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="EE_NIBinaryFiles">            
+            <ComponentRef Id="GPL" />
+            <ComponentRef Id="LGPL" />
+            <ComponentRef Id="XnCore" />
+            <ComponentRef Id="XnDDK" />
+            <ComponentRef Id="XnDeviceFile" />
+            <ComponentRef Id="XnDeviceSensorV2" />
+            <ComponentRef Id="XnFormats" />            
+            <ComponentRef Id="XnSensorServer" />
+            <ComponentRef Id="GlobalDefaults" />
+            </ComponentGroup>
+    </Fragment>
+</Wix>

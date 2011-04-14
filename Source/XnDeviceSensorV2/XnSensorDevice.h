@@ -39,7 +39,8 @@
 class XnSensorDevice : 
 	public XnSensorProductionNode,
 	virtual public xn::ModuleDevice,
-	virtual public xn::ModuleErrorStateInterface
+	virtual public xn::ModuleErrorStateInterface,
+	virtual public xn::ModuleDeviceIdentificationInterface
 {
 public:
 	XnSensorDevice(xn::Context& context, XnDeviceBase* pSensor, const XnChar* strInstanceName);
@@ -51,6 +52,11 @@ public:
 	virtual XnStatus GetErrorState();
 	virtual XnStatus RegisterToErrorStateChange(XnModuleStateChangedHandler handler, void* pCookie, XnCallbackHandle& hCallback);
 	virtual void UnregisterFromErrorStateChange(XnCallbackHandle hCallback);
+
+	virtual ModuleDeviceIdentificationInterface* GetIdentificationInterface() { return this; }
+	virtual XnStatus GetDeviceName(XnChar* strBuffer, XnUInt32& nBufferSize);
+	virtual XnStatus GetVendorSpecificData(XnChar* strBuffer, XnUInt32& nBufferSize);
+	virtual XnStatus GetSerialNumber(XnChar* strBuffer, XnUInt32& nBufferSize);
 };
 
 #endif // __XN_SENSOR_DEVICE_H__

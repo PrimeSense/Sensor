@@ -1,0 +1,7 @@
+d:\Projects\SDK\Engine\Platform\Win32\Install\EE_NI\bin\Release\en-us\EE_NI.msi
+d:\Projects\SDK\Engine\Platform\Win32\Install\EE_NI\bin\Release\en-us\EE_NI.wixpdb
+obj\Release\Fragments\BinariesFragment.wixobj
+obj\Release\EE_NI.wixobj
+obj\Release\Fragments\FilesFragment.wixobj
+obj\Release\UI\CustomeInstallUI.wixobj
+obj\Release\Product.Generated.wixobj

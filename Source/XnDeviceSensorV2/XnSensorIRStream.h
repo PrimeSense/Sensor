@@ -35,12 +35,20 @@
 #include "XnSharedMemoryBufferPool.h"
 
 //---------------------------------------------------------------------------
+// Defines
+//---------------------------------------------------------------------------
+#define XN_IR_STREAM_DEFAULT_FPS				30
+#define XN_IR_STREAM_DEFAULT_RESOLUTION			XN_RESOLUTION_QVGA
+#define XN_IR_STREAM_DEFAULT_OUTPUT_FORMAT		XN_OUTPUT_FORMAT_RGB24
+#define XN_IR_STREAM_DEFAULT_MIRROR				FALSE
+
+//---------------------------------------------------------------------------
 // XnSensorIRStream class
 //---------------------------------------------------------------------------
 class XnSensorIRStream : public XnIRStream, public IXnSensorStream
 {
 public:
-	XnSensorIRStream(const XnChar* StreamName, XnSensorObjects* pObjects, XnUInt32 nBufferCount);
+	XnSensorIRStream(const XnChar* strDeviceName, const XnChar* StreamName, XnSensorObjects* pObjects, XnUInt32 nBufferCount);
 	~XnSensorIRStream() { Free(); }
 
 	//---------------------------------------------------------------------------
@@ -89,6 +97,8 @@ private:
 
 	static XnStatus XN_CALLBACK_TYPE IsMirroredChangedCallback(const XnProperty* pSender, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE SetActualReadCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
+
+	XnActualIntProperty m_InputFormat;
 
 	XnSensorStreamHelper m_Helper;
 	XnSharedMemoryBufferPool m_BufferPool;

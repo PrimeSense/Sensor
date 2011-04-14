@@ -77,11 +77,22 @@ XnStatus XnDeviceSensorOpenInputThreads(XnDevicePrivateData* pDevicePrivateData,
 
 		if (pDevicePrivateData->pSpecificDepthUsb->pUsbConnection->bIsISO == TRUE)
 		{
-			pDevicePrivateData->pSpecificDepthUsb->nChunkReadBytes = XN_SENSOR_USB_DEPTH_BUFFER_SIZE_MULTIPLIER_ISO * pDevicePrivateData->SensorHandle.DepthConnection.nMaxPacketSize;
+			if (pDevicePrivateData->pSensor->IsLowBandwidth())
+			{
+				pDevicePrivateData->pSpecificDepthUsb->nChunkReadBytes = XN_SENSOR_USB_DEPTH_BUFFER_SIZE_MULTIPLIER_LOWBAND_ISO * pDevicePrivateData->SensorHandle.DepthConnection.nMaxPacketSize;
+			}
+			else
+			{
+				pDevicePrivateData->pSpecificDepthUsb->nChunkReadBytes = XN_SENSOR_USB_DEPTH_BUFFER_SIZE_MULTIPLIER_ISO * pDevicePrivateData->SensorHandle.DepthConnection.nMaxPacketSize;
+			}
+
+			pDevicePrivateData->pSpecificDepthUsb->nTimeout = XN_SENSOR_READ_THREAD_TIMEOUT_ISO;
 		}
 		else
 		{
 			pDevicePrivateData->pSpecificDepthUsb->nChunkReadBytes = XN_SENSOR_USB_DEPTH_BUFFER_SIZE_MULTIPLIER_BULK * pDevicePrivateData->SensorHandle.DepthConnection.nMaxPacketSize;
+
+			pDevicePrivateData->pSpecificDepthUsb->nTimeout = XN_SENSOR_READ_THREAD_TIMEOUT_BULK;
 		}
 
 		pDevicePrivateData->pSpecificDepthUsb->nIgnoreBytes = (pDevicePrivateData->FWInfo.nFWVer >= XN_SENSOR_FW_VER_5_0) ? 0 : pDevicePrivateData->pSpecificDepthUsb->nChunkReadBytes;
@@ -97,11 +108,22 @@ XnStatus XnDeviceSensorOpenInputThreads(XnDevicePrivateData* pDevicePrivateData,
 
 		if (pDevicePrivateData->pSpecificImageUsb->pUsbConnection->bIsISO == TRUE)
 		{
-			pDevicePrivateData->pSpecificImageUsb->nChunkReadBytes = XN_SENSOR_USB_IMAGE_BUFFER_SIZE_MULTIPLIER_ISO * pDevicePrivateData->SensorHandle.ImageConnection.nMaxPacketSize;
+			if (pDevicePrivateData->pSensor->IsLowBandwidth())
+			{
+				pDevicePrivateData->pSpecificImageUsb->nChunkReadBytes = XN_SENSOR_USB_IMAGE_BUFFER_SIZE_MULTIPLIER_LOWBAND_ISO * pDevicePrivateData->SensorHandle.ImageConnection.nMaxPacketSize;
+			}
+			else
+			{
+				pDevicePrivateData->pSpecificImageUsb->nChunkReadBytes = XN_SENSOR_USB_IMAGE_BUFFER_SIZE_MULTIPLIER_ISO * pDevicePrivateData->SensorHandle.ImageConnection.nMaxPacketSize;
+			}
+
+			pDevicePrivateData->pSpecificImageUsb->nTimeout = XN_SENSOR_READ_THREAD_TIMEOUT_ISO;
 		}
 		else
 		{
 			pDevicePrivateData->pSpecificImageUsb->nChunkReadBytes = XN_SENSOR_USB_IMAGE_BUFFER_SIZE_MULTIPLIER_BULK * pDevicePrivateData->SensorHandle.ImageConnection.nMaxPacketSize;
+
+			pDevicePrivateData->pSpecificImageUsb->nTimeout = XN_SENSOR_READ_THREAD_TIMEOUT_BULK;
 		}
 
 		pDevicePrivateData->pSpecificImageUsb->nIgnoreBytes = (pDevicePrivateData->FWInfo.nFWVer >= XN_SENSOR_FW_VER_5_0) ? 0 : pDevicePrivateData->pSpecificImageUsb->nChunkReadBytes;
@@ -117,11 +139,22 @@ XnStatus XnDeviceSensorOpenInputThreads(XnDevicePrivateData* pDevicePrivateData,
 
 		if (pDevicePrivateData->pSpecificMiscUsb->pUsbConnection->bIsISO == TRUE)
 		{
-			pDevicePrivateData->pSpecificMiscUsb->nChunkReadBytes = XN_SENSOR_USB_MISC_BUFFER_SIZE_MULTIPLIER_ISO * pDevicePrivateData->SensorHandle.MiscConnection.nMaxPacketSize;
+			if (pDevicePrivateData->pSensor->IsLowBandwidth())
+			{
+				pDevicePrivateData->pSpecificMiscUsb->nChunkReadBytes = XN_SENSOR_USB_MISC_BUFFER_SIZE_MULTIPLIER_LOWBAND_ISO * pDevicePrivateData->SensorHandle.MiscConnection.nMaxPacketSize;
+			}
+			else
+			{
+				pDevicePrivateData->pSpecificMiscUsb->nChunkReadBytes = XN_SENSOR_USB_MISC_BUFFER_SIZE_MULTIPLIER_ISO * pDevicePrivateData->SensorHandle.MiscConnection.nMaxPacketSize;
+			}
+
+			pDevicePrivateData->pSpecificMiscUsb->nTimeout = XN_SENSOR_READ_THREAD_TIMEOUT_ISO;
 		}
 		else
 		{
 			pDevicePrivateData->pSpecificMiscUsb->nChunkReadBytes = XN_SENSOR_USB_MISC_BUFFER_SIZE_MULTIPLIER_BULK * pDevicePrivateData->SensorHandle.MiscConnection.nMaxPacketSize;
+
+			pDevicePrivateData->pSpecificMiscUsb->nTimeout = XN_SENSOR_READ_THREAD_TIMEOUT_BULK;
 		}
 
 		pDevicePrivateData->pSpecificMiscUsb->nIgnoreBytes = (pDevicePrivateData->FWInfo.nFWVer >= XN_SENSOR_FW_VER_5_0) ? 0 : pDevicePrivateData->pSpecificMiscUsb->nChunkReadBytes;

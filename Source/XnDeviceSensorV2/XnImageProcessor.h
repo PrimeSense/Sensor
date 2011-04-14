@@ -39,7 +39,7 @@
 class XnImageProcessor : public XnFrameStreamProcessor
 {
 public:
-	XnImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper);
+	XnImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper, XnBool bCompressedOutput = FALSE);
 	virtual ~XnImageProcessor();
 
 	XnStatus Init();
@@ -75,6 +75,8 @@ private:
 	XnCallbackHandle m_hXCropCallback;
 	XnCallbackHandle m_hYCropCallback;
 	XnCallbackHandle m_hCropEnabledCallback;
+
+	XnBool m_bCompressedOutput;
 };
 
 #endif //__XN_IMAGE_PROCESSOR_H__

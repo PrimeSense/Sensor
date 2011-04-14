@@ -37,8 +37,9 @@
 //---------------------------------------------------------------------------
 // XnExportedSensorGenerator class
 //---------------------------------------------------------------------------
-XnExportedSensorGenerator::XnExportedSensorGenerator(XnProductionNodeType Type, const XnChar* strStreamType) : 
-m_Type(Type)
+XnExportedSensorGenerator::XnExportedSensorGenerator(XnProductionNodeType Type, const XnChar* strStreamType, XnBool isAvailbaleInLowBand /* = TRUE */) : 
+	m_Type(Type),
+	m_bIsAvailableInLowBand(isAvailbaleInLowBand)
 {
 	strcpy(m_strStreamType, strStreamType);
 }
@@ -61,6 +62,37 @@ XnStatus XnExportedSensorGenerator::EnumerateProductionTrees(xn::Context& contex
 
 	nRetVal = context.AutoEnumerateOverSingleInput(TreesList, Description, NULL, XN_NODE_TYPE_DEVICE, pErrors, &query);
 	XN_IS_STATUS_OK(nRetVal);
+
+	if (!m_bIsAvailableInLowBand)
+	{
+		xn::NodeInfoList::Iterator it = TreesList.Begin();
+		while (it != TreesList.End())
+		{
+			xn::NodeInfoList::Iterator curr = it;
+			it++;
+
+			xn::NodeInfo node = *curr;
+
+			// take sensor node
+			xn::NodeInfo sensorNode = *node.GetNeededNodes().Begin();
+
+			XnBool bIsLowBand;
+			nRetVal = XnSensorIO::IsSensorLowBandwidth(sensorNode.GetCreationInfo(), &bIsLowBand);
+			XN_IS_STATUS_OK(nRetVal);
+
+			if (bIsLowBand)
+			{
+				// sensor is low band
+				nRetVal = TreesList.Remove(curr);
+				XN_IS_STATUS_OK(nRetVal);
+			}
+		}
+
+		if (TreesList.IsEmpty())
+		{
+			return XN_STATUS_NO_NODE_PRESENT;
+		}
+	}
 	
 	return (XN_STATUS_OK);
 }

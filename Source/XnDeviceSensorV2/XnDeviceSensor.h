@@ -249,6 +249,12 @@ typedef struct XnCmosBlankingInformation
 	XnCmosBlankingCoefficients Coefficients[2];
 } XnCmosBlankingInformation;
 
+typedef struct XnDeviceInformation
+{
+	XnChar strDeviceName[128];
+	XnChar strVendorData[128];
+} XnDeviceInformation;
+
 typedef XnStatus (XN_CALLBACK_TYPE* NewAudioDataCallback)(void* pCookie);
 
 struct XnSpecificUsbDevice; // Forward Declaration

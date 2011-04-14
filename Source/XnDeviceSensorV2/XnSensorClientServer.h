@@ -45,6 +45,7 @@
 #define XN_MASK_SENSOR_SERVER					"SensorServer"
 #define XN_SENSOR_SERVER_RUNNING_EVENT_NAME		"XnSensorServerRunningEvent"
 #define XN_SENSOR_SERVER_RUNNING_MUTEX_NAME		"XnSensorServerRunningMutex"
+#define XN_SENSOR_SERVER_CONFIG_FILE_SECTION	"Server"
 
 //---------------------------------------------------------------------------
 // Enums

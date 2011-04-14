@@ -542,12 +542,21 @@ void XnRegistration::Apply1080(XnDepthPixel* pInput, XnDepthPixel* pOutput)
 
 					if ((nOutValue == XN_DEVICE_SENSOR_NO_DEPTH_VALUE) || (nOutValue > nValue))
 					{
-						if (nArrPos > nDepthXRes+1)
+						if ( nNewX > 0 && nNewY > 0 )
 						{
+							pOutput[nArrPos-nDepthXRes] = nValue;
 							pOutput[nArrPos-nDepthXRes-1] = nValue;
+							pOutput[nArrPos-1] = nValue;
+						}
+						else if( nNewY > 0 )
+						{
 							pOutput[nArrPos-nDepthXRes] = nValue;
 						}
-						pOutput[nArrPos-1] = nValue;
+						else if( nNewX > 0 )
+						{
+							pOutput[nArrPos-1] = nValue;
+						}
+
 						pOutput[nArrPos] = nValue;
 					}
 				}

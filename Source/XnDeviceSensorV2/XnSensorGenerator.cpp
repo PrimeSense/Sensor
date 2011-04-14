@@ -201,3 +201,8 @@ void XN_CALLBACK_TYPE XnSensorGenerator::OnDeviceNewStreamData(XnDeviceHandle pD
 		pNewDataCBParams->m_handler(pNewDataCBParams->m_pCookie);
 	}
 }
+
+const void* XnSensorGenerator::GetData()
+{
+	return m_pStreamData->pData;
+}

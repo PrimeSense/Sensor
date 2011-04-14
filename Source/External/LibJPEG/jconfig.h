@@ -4,10 +4,9 @@
 #elif SN_TARGET_PS3
 	#include "jconfig.ps3"
 	#include <stdio.h>
-#elif (linux && i386)
+#elif ((linux) || (__APPLE__))
 	#include "jconfig.lnx86"
 	#include <stdio.h>
 #else
-	#include "jconfig.lnx86"
-	#include <stdio.h>
+	#error "LibJPEG: Unsupported Platform!"
 #endif

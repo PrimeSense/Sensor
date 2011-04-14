@@ -35,12 +35,21 @@
 #include "XnSharedMemoryBufferPool.h"
 
 //---------------------------------------------------------------------------
+// Defines
+//---------------------------------------------------------------------------
+#define XN_AUDIO_STREAM_DEFAULT_VOLUME					12
+#define XN_AUDIO_STREAM_DEFAULT_SAMPLE_RATE				48000
+#define XN_AUDIO_STREAM_DEFAULT_NUMBER_OF_CHANNELS		2
+#define XN_AUDIO_STREAM_DEFAULT_OUTPUT_FORMAT			XN_OUTPUT_FORMAT_PCM
+#define XN_AUDIO_STREAM_DEFAULT_CHUNK_SIZE				2120
+
+//---------------------------------------------------------------------------
 // XnSensorAudioStream class
 //---------------------------------------------------------------------------
 class XnSensorAudioStream : public XnAudioStream, public IXnSensorStream
 {
 public:
-	XnSensorAudioStream(const XnChar* StreamName, XnSensorObjects* pObjects);
+	XnSensorAudioStream(const XnChar* strDeviceName, const XnChar* StreamName, XnSensorObjects* pObjects);
 	~XnSensorAudioStream() { Free(); }
 
 	//---------------------------------------------------------------------------
@@ -102,6 +111,7 @@ private:
 	//---------------------------------------------------------------------------
 	XnSensorStreamHelper m_Helper;
 
+	const XnChar* m_strDeviceName;
 	XnActualStringProperty m_SharedBufferName;
 	XnActualIntProperty m_LeftChannelVolume;
 	XnActualIntProperty m_RightChannelVolume;
@@ -112,6 +122,7 @@ private:
 
 	XN_SHARED_MEMORY_HANDLE m_hSharedMemory;
 	XnAudioSharedBuffer* m_pSharedHeader;
+	XnUInt32 m_nFrameID;
 };
 
 #endif //__XN_SENSOR_AUDIO_STREAM_H__

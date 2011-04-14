@@ -182,7 +182,7 @@ void XnSensorAudioGenerator::FilterProperties(XnActualPropertiesHash* pHash)
 // XnExportedSensorAudioGenerator class
 //---------------------------------------------------------------------------
 XnExportedSensorAudioGenerator::XnExportedSensorAudioGenerator() :
-	XnExportedSensorGenerator(XN_NODE_TYPE_AUDIO, XN_STREAM_TYPE_AUDIO)
+	XnExportedSensorGenerator(XN_NODE_TYPE_AUDIO, XN_STREAM_TYPE_AUDIO, FALSE)
 {}
 
 XnSensorGenerator* XnExportedSensorAudioGenerator::CreateGenerator(xn::Context& context, xn::Device& sensor, XnDeviceBase* pSensor, const XnChar* strStreamName)

@@ -49,13 +49,6 @@
 //---------------------------------------------------------------------------
 // XnSensorClient class
 //---------------------------------------------------------------------------
-XnChar XnSensorClient::ms_strDir[XN_FILE_MAX_PATH];
-
-XnStatus XnSensorClient::TakeServerLocation()
-{
-	return xnOSGetCurrentDir(ms_strDir, XN_FILE_MAX_PATH);
-}
-
 XnSensorClient::XnSensorClient() :
 	XnStreamReaderDevice(XN_DEVICE_NAME, XN_SENSOR_SERVER_MAX_MESSAGE_SIZE),
 	m_hSocket(NULL),
@@ -856,30 +849,52 @@ XN_THREAD_PROC XnSensorClient::ListenThread(XN_THREAD_PARAM pThreadParam)
 	XN_THREAD_PROC_RETURN(nRetVal);
 }
 
+#if (XN_PLATFORM == XN_PLATFORM_WIN32)
+static XnStatus GetModuleDir(XnChar* strBuffer)
+{
+	// get current module handle
+	HMODULE hModule;
+	BOOL bRes = GetModuleHandleEx(
+		GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | // get by address
+		GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, // don't increase refcount (so we don't need to release the handle)
+		(LPCSTR)GetModuleDir, // give any address inside this DLL
+		&hModule);
+
+	if (bRes == 0)
+	{
+		return XN_STATUS_ERROR;
+	}
+
+	XnChar strModuleFileName[XN_FILE_MAX_PATH];
+	bRes = GetModuleFileName(hModule, strModuleFileName, XN_FILE_MAX_PATH);
+	if (bRes == 0)
+	{
+		return XN_STATUS_ERROR;
+	}
+
+	return xnOSGetDirName(strModuleFileName, strBuffer, XN_FILE_MAX_PATH);
+}
+#endif
+
 XnStatus XnSensorClient::StartServerProcess()
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	const XnChar* strServerDir;
+	XnChar strServerDir[XN_FILE_MAX_PATH];
 	
 #if (XN_PLATFORM == XN_PLATFORM_WIN32)
-	strServerDir = ms_strDir;
-#elif (XN_PLATFORM == XN_PLATFORM_LINUX_X86 || XN_PLATFORM == XN_PLATFORM_LINUX_ARM)
-	strServerDir = "/usr/bin";
+	nRetVal = GetModuleDir(strServerDir);
+#elif (XN_PLATFORM == XN_PLATFORM_LINUX_X86 || XN_PLATFORM == XN_PLATFORM_LINUX_ARM || XN_PLATFORM == XN_PLATFORM_MACOSX)
+	sprintf(strServerDir, "/usr/bin");
 #endif
-
-	// we'll start it in it's directory
-	XnChar strCurrDir[XN_FILE_MAX_PATH];
-	nRetVal = xnOSGetCurrentDir(strCurrDir, XN_FILE_MAX_PATH);
-	XN_IS_STATUS_OK(nRetVal);
-
-	nRetVal = xnOSSetCurrentDir(strServerDir);
-	XN_IS_STATUS_OK(nRetVal);
 
 	XnChar strProcessName[XN_FILE_MAX_PATH];
 	sprintf(strProcessName, "%s%sXnSensorServer", strServerDir, XN_FILE_DIR_SEP);
 
 #if (XN_PLATFORM == XN_PLATFORM_WIN32)
+	#ifdef _M_X64
+		XN_VALIDATE_STR_APPEND(strProcessName, "64", XN_FILE_MAX_PATH, nRetVal);
+	#endif
 	XN_VALIDATE_STR_APPEND(strProcessName, ".exe", XN_FILE_MAX_PATH, nRetVal);
 #endif
 
@@ -887,11 +902,6 @@ XnStatus XnSensorClient::StartServerProcess()
 
 	XN_PROCESS_ID procID;
 	nRetVal = xnOSCreateProcess(strProcessName, 1, strArguments, &procID);
-
-	// in any case, return to working dir
-	xnOSSetCurrentDir(strCurrDir);
-
-	// now check for errors
 	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);

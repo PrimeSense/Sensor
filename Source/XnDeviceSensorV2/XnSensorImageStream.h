@@ -35,12 +35,36 @@
 #include "XnSharedMemoryBufferPool.h"
 
 //---------------------------------------------------------------------------
+// Defines
+//---------------------------------------------------------------------------
+#define XN_IMAGE_STREAM_DEFAULT_FPS				30
+#define XN_IMAGE_STREAM_DEFAULT_RESOLUTION		XN_RESOLUTION_QVGA
+#define XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT	XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422
+#define XN_IMAGE_STREAM_DEFAULT_OUTPUT_FORMAT	XN_OUTPUT_FORMAT_RGB24
+#define XN_IMAGE_STREAM_DEFAULT_FLICKER			0
+#define XN_IMAGE_STREAM_DEFAULT_QUALITY			10
+#define XN_IMAGE_STREAM_DEFAULT_BRIGHTNESS		128
+#define XN_IMAGE_STREAM_DEFAULT_CONTRAST		32
+#define XN_IMAGE_STREAM_DEFAULT_SATURATION		128
+#define XN_IMAGE_STREAM_DEFAULT_SHARPNESS		32
+#define XN_IMAGE_STREAM_DEFAULT_AWB				TRUE
+#define XN_IMAGE_STREAM_DEFAULT_COLOR_TEMP		5000
+#define XN_IMAGE_STREAM_DEFAULT_BACKLIGHT_COMP	1
+#define XN_IMAGE_STREAM_DEFAULT_GAIN			128
+#define XN_IMAGE_STREAM_DEFAULT_ZOOM			100
+#define XN_IMAGE_STREAM_DEFAULT_AUTO_EXPOSURE	TRUE
+#define XN_IMAGE_STREAM_DEFAULT_EXPOSURE_BAR	100
+#define XN_IMAGE_STREAM_DEFAULT_PAN				0
+#define XN_IMAGE_STREAM_DEFAULT_TILT			0
+#define XN_IMAGE_STREAM_DEFAULT_LOW_LIGHT_COMP	TRUE
+
+//---------------------------------------------------------------------------
 // XnSensorImageStream class
 //---------------------------------------------------------------------------
 class XnSensorImageStream : public XnImageStream, public IXnSensorStream
 {
 public:
-	XnSensorImageStream(const XnChar* StreamName, XnSensorObjects* pObjects, XnUInt32 nBufferCount);
+	XnSensorImageStream(const XnChar* strDeviceName, const XnChar* StreamName, XnSensorObjects* pObjects, XnUInt32 nBufferCount);
 	~XnSensorImageStream() { Free(); }
 
 	//---------------------------------------------------------------------------
@@ -89,6 +113,12 @@ protected:
 	virtual XnStatus SetImageQuality(XnUInt32 nQuality);
 	XnStatus SetCropping(const XnCropping* pCropping);
 	XnStatus SetActualRead(XnBool bRead);
+	XnStatus SetSharpness(XnInt32 nValue);
+	XnStatus SetColorTemperature(XnInt32 nValue);
+	XnStatus SetBacklightCompensation(XnInt32 nValue);
+	XnStatus SetGain(XnInt32 nValue);
+	XnStatus SetExposure(XnInt32 nValue);
+	XnStatus SetLowLightCompensation(XnInt32 nValue);
 
 private:
 	XnStatus ValidateMode();
@@ -98,6 +128,12 @@ private:
 	static XnStatus XN_CALLBACK_TYPE SetAntiFlickerCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE SetImageQualityCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE SetActualReadCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE SetSharpnessCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE SetColorTemperatureCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE SetBacklightCompensationCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE SetGainCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE SetExposureCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE SetLowLightCompensationCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
 
 	//---------------------------------------------------------------------------
 	// Members
@@ -110,6 +146,19 @@ private:
 	XnActualIntProperty m_AntiFlicker;
 	XnActualIntProperty m_ImageQuality;
 
+	XnActualIntProperty m_Brightness;
+	XnActualIntProperty m_Contrast;
+	XnActualIntProperty m_Saturation;
+	XnActualIntProperty m_Sharpness;
+	XnActualIntProperty m_ColorTemperature;
+	XnActualIntProperty m_BackLightCompensation;
+	XnActualIntProperty m_Gain;
+	XnActualIntProperty m_Exposure;
+	XnActualIntProperty m_Zoom;
+	XnActualIntProperty m_Pan;
+	XnActualIntProperty m_Tilt;
+	XnActualIntProperty m_LowLightCompensation;
+
 	XnActualIntProperty m_FirmwareMirror;
 
 	XnActualIntProperty m_FirmwareCropSizeX;
@@ -117,6 +166,10 @@ private:
 	XnActualIntProperty m_FirmwareCropOffsetX;
 	XnActualIntProperty m_FirmwareCropOffsetY;
 	XnActualIntProperty m_FirmwareCropEnabled;
+	XnActualIntProperty m_FirmwareExposure;
+	XnActualIntProperty m_FirmwareAutoExposure;
+	XnActualIntProperty m_FirmwareColorTemperature;
+	XnActualIntProperty m_FirmwareAutoWhiteBalance;
 
 	XnActualIntProperty m_ActualRead;
 };

@@ -3,7 +3,7 @@ SRC_FILES = \
 			../../../../Source/External/LibJPEG/*.c
 
 LIB_NAME = XnFormats
-LIB_USED = XnCore OpenNI
+USED_LIBS = XnCore OpenNI
 DEFINES = XN_FORMATS_EXPORTS
 INC_DIRS = ../../../../Source/External/LibJPEG
 

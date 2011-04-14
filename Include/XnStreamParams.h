@@ -138,11 +138,18 @@
 /** XnCropping */ 
 #define XN_STREAM_PROPERTY_CROPPING					"Cropping"
 
+/** Boolean */
+#define XN_STREAM_PROPERTY_WHITE_BALANCE_ENABLED	"WhiteBalancedEnabled"
+/** Integer */ 
+#define XN_STREAM_PROPERTY_GAIN						"Gain"
+/** Integer */
+#define XN_STREAM_PROPERTY_SUPPORT_MODES_COUNT		"SupportedModesCount"
+/** General (XnCmosPreset array) */
+#define XN_STREAM_PROPERTY_SUPPORT_MODES			"SupportedModes"
+
 //---------------------------------------------------------------------------
 // Depth Specific Properties
 //---------------------------------------------------------------------------
-/** Integer */ 
-#define XN_STREAM_PROPERTY_GAIN						"Gain"
 /** Integer */ 
 #define XN_STREAM_PROPERTY_HOLE_FILTER				"HoleFilter"
 /** Integer */ 
@@ -157,8 +164,6 @@
 #define XN_STREAM_PROPERTY_REGISTRATION				"Registration"
 /** XnProcessingType */ 
 #define XN_STREAM_PROPERTY_REGISTRATION_TYPE		"RegistrationType"
-/** Boolean */
-#define XN_STREAM_PROPERTY_WHITE_BALANCE_ENABLED	"WhiteBalancedEnabled"
 /** XnDepthAGCBin* */
 #define XN_STREAM_PROPERTY_AGC_BIN					"AGCBin"
 /** Integer */ 
@@ -231,6 +236,28 @@
 #define XN_STREAM_PROPERTY_FLICKER					"Flicker"
 /** Integer */ 
 #define XN_STREAM_PROPERTY_QUALITY					"Quality"
+/** Float */
+#define XN_STREAM_PROPERTY_BRIGHTNESS				XN_CAPABILITY_BRIGHTNESS
+/** Float */
+#define XN_STREAM_PROPERTY_CONTRAST					XN_CAPABILITY_CONTRAST
+/** Float */
+#define XN_STREAM_PROPERTY_SATURATION				XN_CAPABILITY_SATURATION
+/** Float */
+#define XN_STREAM_PROPERTY_SHARPNESS				XN_CAPABILITY_SHARPNESS
+/** Float */
+#define XN_STREAM_PROPERTY_COLOR_TEMPERATURE		XN_CAPABILITY_COLOR_TEMPERATURE
+/** Float */
+#define XN_STREAM_PROPERTY_BACKLIGHT_COMPENSATION	XN_CAPABILITY_BACKLIGHT_COMPENSATION
+/** Float */
+#define XN_STREAM_PROPERTY_ZOOM						XN_CAPABILITY_ZOOM
+/** Integer (in microseconds) */
+#define XN_STREAM_PROPERTY_EXPOSURE					XN_CAPABILITY_EXPOSURE
+/** Float */
+#define XN_STREAM_PROPERTY_PAN						XN_CAPABILITY_PAN
+/** Float */
+#define XN_STREAM_PROPERTY_TILT						XN_CAPABILITY_TILT
+/** Boolean */
+#define XN_STREAM_PROPERTY_LOW_LIGHT_COMPENSATION	XN_CAPABILITY_LOW_LIGHT_COMPENSATION
 
 //---------------------------------------------------------------------------
 // Audio Specific Properties
@@ -263,6 +290,8 @@
 #define XN_MODULE_PROPERTY_SDK_VERSION				"SDKVersion"
 /** String */
 #define XN_MODULE_PROPERTY_DEVICE_NAME				"DeviceName"
+/** String */
+#define XN_MODULE_PROPERTY_USB_PATH					"USBPath"
 /** Integer (XnSensorUsbInterface) */
 #define XN_MODULE_PROPERTY_USB_INTERFACE			"UsbInterface"
 /** Integer */
@@ -317,6 +346,10 @@
 #define XN_MODULE_PROPERTY_ERROR_STATE				"ErrorState"
 /** Boolean */
 #define XN_MODULE_PROPERTY_ENABLE_MULTI_PROCESS		"EnableMultiProcess"
+/** String */
+#define XN_MODULE_PROPERTY_PHYSICAL_DEVICE_NAME		"PhysicalDeviceName"
+/** String */
+#define XN_MODULE_PROPERTY_VENDOR_SPECIFIC_DATA		"VendorSpecificData"
 
 
 //---------------------------------------------------------------------------
@@ -349,8 +382,18 @@ typedef enum XnResolutions
 	XN_RESOLUTION_VGA = 1, // 640x480
 	XN_RESOLUTION_SXGA = 2, // 1280x1024
 	XN_RESOLUTION_UXGA = 3, // 1600x1200
-
-	XN_RESOLUTION_COUNT,
+	XN_RESOLUTION_QQVGA = 4, // 160x120
+	XN_RESOLUTION_QCIF = 5, // 176x144
+	XN_RESOLUTION_240P = 6, // 432x240
+	XN_RESOLUTION_CIF = 7, // 352x288
+	XN_RESOLUTION_WVGA = 8, // 640x360
+	XN_RESOLUTION_480P = 9, // 864x480
+	XN_RESOLUTION_800_448 = 10, // 800x448
+	XN_RESOLUTION_SVGA = 11, // 800x600
+	XN_RESOLUTION_576P = 12, // 1024x576
+	XN_RESOLUTION_DV = 13, // 960x720
+	XN_RESOLUTION_720P = 14, // 1280x720
+	XN_RESOLUTION_1280_960 = 15, // 1280x960
 } XnResolutions;
 
 typedef enum 
@@ -365,6 +408,7 @@ typedef enum
 	XN_SENSOR_FW_VER_5_1 = 7,
 	XN_SENSOR_FW_VER_5_2 = 8,
 	XN_SENSOR_FW_VER_5_3 = 9,
+	XN_SENSOR_FW_VER_5_4 = 10,
 } XnFWVer;
 
 typedef enum
@@ -523,6 +567,13 @@ typedef struct XnDynamicSizeBuffer
 	XnUInt32 nMaxSize;
 	XnUInt32 nDataSize;
 } XnDynamicSizeBuffer;
+
+typedef struct XnCmosPreset
+{
+	XnUInt16 nFormat;
+	XnUInt16 nResolution;
+	XnUInt16 nFPS;
+} XnCmosPreset;
 
 
 #pragma pack (pop)

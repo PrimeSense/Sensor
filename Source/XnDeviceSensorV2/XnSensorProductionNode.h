@@ -58,7 +58,7 @@ public:
 	XnStatus SetGeneralProperty(const XnChar* strName, XnUInt32 nBufferSize, const void* pBuffer);
 	XnStatus GetIntProperty(const XnChar* strName, XnUInt64& nValue) const;
 	XnStatus GetRealProperty(const XnChar* strName, XnDouble& dValue) const;
-	XnStatus GetStringProperty(const XnChar* strName, XnChar* csValue) const;
+	XnStatus GetStringProperty(const XnChar* strName, XnChar* csValue, XnUInt32 nBufSize) const;
 	XnStatus GetGeneralProperty(const XnChar* strName, XnUInt32 nBufferSize, void* pBuffer) const;
 
 	// Lock Aware

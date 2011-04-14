@@ -104,6 +104,14 @@ public:
 	XnActualIntProperty m_ReferenceResolution;
 	XnActualIntProperty m_DepthWhiteBalance;
 	XnActualIntProperty m_GMCMode;
+	XnActualIntProperty m_ImageSharpness;
+	XnActualIntProperty m_ImageAutoWhiteBalance;
+	XnActualIntProperty m_ImageColorTemperature;
+	XnActualIntProperty m_ImageBacklightCompensation;
+	XnActualIntProperty m_ImageAutoExposure;
+	XnActualIntProperty m_ImageExposureBar;
+	XnActualIntProperty m_ImageLowLightCompensation;
+	XnActualIntProperty m_ImageGain;
 
 private:
 	typedef struct XnFirmwareParam

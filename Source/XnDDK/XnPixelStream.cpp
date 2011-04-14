@@ -32,6 +32,7 @@
 #include <XnLog.h>
 #include <XnFormats/XnFormats.h>
 #include <XnOS.h>
+#include <XnUtils.h>
 
 //---------------------------------------------------------------------------
 // XnPixelStream
@@ -44,9 +45,13 @@ XnPixelStream::XnPixelStream(const XnChar* csType, const XnChar* csName, XnBool 
 	m_YRes(XN_STREAM_PROPERTY_Y_RES, XN_VGA_Y_RES),
 	m_BytesPerPixel(XN_STREAM_PROPERTY_BYTES_PER_PIXEL),
 	m_Cropping(XN_STREAM_PROPERTY_CROPPING, &m_CroppingData, sizeof(XnCropping), ReadCroppingFromFileCallback),
+	m_SupportedModesCount(XN_STREAM_PROPERTY_SUPPORT_MODES_COUNT, 0),
+	m_SupportedModes(XN_STREAM_PROPERTY_SUPPORT_MODES),
 	m_bAllowCustomResolutions(bAllowCustomResolutions)
 {
 	xnOSMemSet(&m_CroppingData, 0, sizeof(XnCropping));
+	m_supportedModesData.Reserve(30);
+	m_SupportedModes.UpdateGetCallback(GetSupportedModesCallback, this);
 }
 
 XnStatus XnPixelStream::Init()
@@ -64,7 +69,8 @@ XnStatus XnPixelStream::Init()
 	m_Cropping.UpdateSetCallback(SetCroppingCallback, this);
 
 	// add properties
-	XN_VALIDATE_ADD_PROPERTIES(this, &m_IsPixelStream, &m_Resolution, &m_XRes, &m_YRes, &m_BytesPerPixel, &m_Cropping);
+	XN_VALIDATE_ADD_PROPERTIES(this, &m_IsPixelStream, &m_Resolution, &m_XRes, &m_YRes, 
+		&m_BytesPerPixel, &m_Cropping, &m_SupportedModesCount, &m_SupportedModes);
 
 	// register required size properties
 	nRetVal = RegisterRequiredSizeProperty(&m_XRes);
@@ -93,6 +99,34 @@ XnStatus XnPixelStream::Init()
 	return (XN_STATUS_OK);
 }
 
+XnStatus XnPixelStream::AddSupportedModes(XnCmosPreset* aPresets, XnUInt32 nCount)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+	
+	nRetVal = m_supportedModesData.AddLast(aPresets, nCount);
+	XN_IS_STATUS_OK(nRetVal);
+
+	// update our general property
+	XnCmosPreset* aAllPresets = m_supportedModesData.GetData();
+	XnUInt32 nAllPresetsCount = m_supportedModesData.GetSize();
+
+	nRetVal = m_SupportedModesCount.UnsafeUpdateValue(nAllPresetsCount);
+	XN_IS_STATUS_OK(nRetVal);
+
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnPixelStream::GetSupportedModes(XnCmosPreset* aPresets, XnUInt32& nCount)
+{
+	if (nCount < m_supportedModesData.GetSize())
+	{
+		return XN_STATUS_OUTPUT_BUFFER_OVERFLOW;
+	}
+
+	xnOSMemCopy(aPresets, m_supportedModesData.GetData(), m_supportedModesData.GetSize() * sizeof(XnCmosPreset));
+	return XN_STATUS_OK;
+}
+
 XnStatus XnPixelStream::SetResolution(XnResolutions nResolution)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
@@ -107,37 +141,16 @@ XnStatus XnPixelStream::SetXRes(XnUInt32 nXRes)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	if (m_bAllowCustomResolutions)
+	XnResolutions res = XnDDKGetResolutionFromXY(nXRes, GetYRes());
+
+	// set resolution (this will also set X and Y resolution)
+	nRetVal = SetResolution(res);
+	XN_IS_STATUS_OK(nRetVal);
+
+	if (res == XN_RESOLUTION_CUSTOM)
 	{
-		// just update the value
+		// update X res ourselves
 		nRetVal = m_XRes.UnsafeUpdateValue(nXRes);
-		XN_IS_STATUS_OK(nRetVal);
-	}
-	else
-	{
-		// instead of updating XRes, we'll update the resolution, and XRes will be updated
-		// via ValueChanged event
-		XnResolutions nRes;
-
-		switch (nXRes)
-		{
-		case XN_QVGA_X_RES:
-			nRes = XN_RESOLUTION_QVGA;
-			break;
-		case XN_VGA_X_RES:
-			nRes = XN_RESOLUTION_VGA;
-			break;
-		case XN_SXGA_X_RES:
-			nRes = XN_RESOLUTION_SXGA;
-			break;
-		case XN_UXGA_X_RES:
-			nRes = XN_RESOLUTION_UXGA;
-			break;
-		default:
-			return (XN_STATUS_DEVICE_BAD_PARAM);
-		}		
-
-		nRetVal = SetResolution(nRes);
 		XN_IS_STATUS_OK(nRetVal);
 	}
 	
@@ -148,37 +161,16 @@ XnStatus XnPixelStream::SetYRes(XnUInt32 nYRes)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	if (m_bAllowCustomResolutions)
+	XnResolutions res = XnDDKGetResolutionFromXY(GetXRes(), nYRes);
+
+	// set resolution (this will also set X and Y resolution)
+	nRetVal = SetResolution(res);
+	XN_IS_STATUS_OK(nRetVal);
+
+	if (res == XN_RESOLUTION_CUSTOM)
 	{
-		// just update the value
+		// update Y res ourselves
 		nRetVal = m_YRes.UnsafeUpdateValue(nYRes);
-		XN_IS_STATUS_OK(nRetVal);
-	}
-	else
-	{
-		// instead of updating YRes, we'll update the resolution, and YRes will be updated
-		// via ValueChanged event
-		XnResolutions nRes;
-
-		switch (nYRes)
-		{
-		case XN_QVGA_Y_RES:
-			nRes = XN_RESOLUTION_QVGA;
-			break;
-		case XN_VGA_Y_RES:
-			nRes = XN_RESOLUTION_VGA;
-			break;
-		case XN_SXGA_Y_RES:
-			nRes = XN_RESOLUTION_SXGA;
-			break;
-		case XN_UXGA_Y_RES:
-			nRes = XN_RESOLUTION_UXGA;
-			break;
-		default:
-			return (XN_STATUS_DEVICE_BAD_PARAM);
-		}		
-
-		nRetVal = SetResolution(nRes);
 		XN_IS_STATUS_OK(nRetVal);
 	}
 
@@ -225,30 +217,15 @@ XnStatus XnPixelStream::OnResolutionChanged()
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	if (m_Resolution.GetValue() != XN_RESOLUTION_CUSTOM)
+	XnResolutions res = (XnResolutions)m_Resolution.GetValue();
+	if (res != XN_RESOLUTION_CUSTOM)
 	{
 		// update XRes and YRes accordingly
 		XnUInt32 nXRes;
 		XnUInt32 nYRes;
-
-		switch (m_Resolution.GetValue())
+		if (!XnDDKGetXYFromResolution(res, &nXRes, &nYRes))
 		{
-		case XN_RESOLUTION_QVGA:
-			nXRes = XN_QVGA_X_RES;
-			nYRes = XN_QVGA_Y_RES;
-			break;
-		case XN_RESOLUTION_VGA:
-			nXRes = XN_VGA_X_RES;
-			nYRes = XN_VGA_Y_RES;
-			break;
-		case XN_RESOLUTION_UXGA:
-			nXRes = XN_UXGA_X_RES;
-			nYRes = XN_UXGA_Y_RES;
-			break;
-		case XN_RESOLUTION_SXGA:
-			nXRes = XN_SXGA_X_RES;
-			nYRes = XN_SXGA_Y_RES;
-			break;
+			XN_ASSERT(FALSE);
 		}
 
 		nRetVal = m_XRes.UnsafeUpdateValue(nXRes);
@@ -460,4 +437,36 @@ XnStatus XN_CALLBACK_TYPE XnPixelStream::ReadCroppingFromFileCallback(XnGeneralP
 	}
 
 	return (XN_STATUS_OK);
+}
+
+XnStatus XN_CALLBACK_TYPE XnPixelStream::GetSupportedModesCallback(const XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie)
+{
+	XnPixelStream* pThis = (XnPixelStream*)pCookie;
+	if ((gbValue.nDataSize % sizeof(XnCmosPreset)) != 0)
+	{
+		return XN_STATUS_INVALID_BUFFER_SIZE;
+	}
+
+	XnUInt32 nCount = gbValue.nDataSize / sizeof(XnCmosPreset);
+	if (pThis->m_SupportedModesCount.GetValue() != nCount)
+	{
+		return XN_STATUS_INVALID_BUFFER_SIZE;
+	}
+
+	return pThis->GetSupportedModes((XnCmosPreset*)gbValue.pData, nCount);
+}
+
+//---------------------------------------------------------------------------
+// XnResolutionProperty
+//---------------------------------------------------------------------------
+XnPixelStream::XnResolutionProperty::XnResolutionProperty(const XnChar* strName, XnUInt64 nInitialValue /* = 0 */, const XnChar* strModule /* = "" */) :
+	XnActualIntProperty(strName, nInitialValue, strModule)
+{
+}
+
+XnBool XnPixelStream::XnResolutionProperty::ConvertValueToString(XnChar* csValue, const void* pValue) const
+{
+	XnUInt64 nValue = *(XnUInt64*)pValue;
+	strcpy(csValue, XnDDKGetResolutionName((XnResolutions)nValue));
+	return TRUE;
 }

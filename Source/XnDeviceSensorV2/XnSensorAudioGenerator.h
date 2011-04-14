@@ -49,6 +49,7 @@ public:
 
 	XnBool IsCapabilitySupported(const XnChar* strCapabilityName);
 
+	const void* GetData() { return XnSensorGenerator::GetData(); }
 	XnUChar* GetAudioBuffer();
 	XnUInt32 GetSupportedWaveOutputModesCount();
 	XnStatus GetSupportedWaveOutputModes(XnWaveOutputMode aSupportedModes[], XnUInt32& nCount);

@@ -41,7 +41,7 @@
 class XnExportedSensorGenerator : public xn::ModuleExportedProductionNode
 {
 public:
-	XnExportedSensorGenerator(XnProductionNodeType Type, const XnChar* strStreamType);
+	XnExportedSensorGenerator(XnProductionNodeType Type, const XnChar* strStreamType, XnBool isAvailbaleInLowBand = TRUE);
 
 	void GetDescription(XnProductionNodeDescription* pDescription);
 	XnStatus EnumerateProductionTrees(xn::Context& context, xn::NodeInfoList& TreesList, xn::EnumerationErrors* pErrors);
@@ -54,6 +54,7 @@ protected:
 private:
 	XnProductionNodeType m_Type;
 	XnChar m_strStreamType[XN_DEVICE_MAX_STRING_LENGTH];
+	XnBool m_bIsAvailableInLowBand;
 };
 
 #endif // __XN_EXPORTED_SENSOR_GENERATOR_H__

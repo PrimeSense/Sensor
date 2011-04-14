@@ -20,11 +20,6 @@
 *                                                                            *
 *****************************************************************************/
 
-
-
-
-
-
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -36,79 +31,28 @@
 //---------------------------------------------------------------------------
 
 XnJpegImageProcessor::XnJpegImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper) :
-	XnImageProcessor(pStream, pHelper)
+	XnImageProcessor(pStream, pHelper, TRUE)
 {
+	SetAllowDoubleSOFPackets(TRUE);
 }
 
 XnJpegImageProcessor::~XnJpegImageProcessor()
 {
-	XnStreamFreeUncompressImageJ(&m_JPEGContext);
-}
-
-XnStatus XnJpegImageProcessor::Init()
-{
-	XnStatus nRetVal = XN_STATUS_OK;
-
-	nRetVal = XnImageProcessor::Init();
-	XN_IS_STATUS_OK(nRetVal);
-
-	XN_VALIDATE_BUFFER_ALLOCATE(m_RawData, GetExpectedOutputSize());
-
-	nRetVal = XnStreamInitUncompressImageJ(&m_JPEGContext);
-	XN_IS_STATUS_OK(nRetVal);
-
-	return (XN_STATUS_OK);
 }
 
 void XnJpegImageProcessor::ProcessFramePacketChunk(const XnSensorProtocolResponseHeader* pHeader, const XnUChar* pData, XnUInt32 nDataOffset, XnUInt32 nDataSize)
 {
-	XN_PROFILING_START_SECTION("XnJpegImageProcessor::ProcessFramePacketChunk")
+	XN_PROFILING_START_SECTION("XnJpegImageProcessor::ProcessFramePacketChunk");
 
-	// append to raw buffer
-	if (m_RawData.GetFreeSpaceInBuffer() < nDataSize)
-	{
-		xnLogWarning(XN_MASK_SENSOR_PROTOCOL_IMAGE, "Bad overflow image! %d", m_RawData.GetSize());
-		FrameIsCorrupted();
-		m_RawData.Reset();
-	}
-	else
-	{
-		m_RawData.UnsafeWrite(pData, nDataSize);
-	}
-
-	XN_PROFILING_END_SECTION
-}
-
-void XnJpegImageProcessor::OnStartOfFrame(const XnSensorProtocolResponseHeader* pHeader)
-{
-	XnImageProcessor::OnStartOfFrame(pHeader);
-	m_RawData.Reset();
-}
-
-void XnJpegImageProcessor::OnEndOfFrame(const XnSensorProtocolResponseHeader* pHeader)
-{
-	XN_PROFILING_START_SECTION("XnJpegImageProcessor::OnEndOfFrame")
-
+	// when image is uncompressed, we can just copy it directly to write buffer
 	XnBuffer* pWriteBuffer = GetWriteBuffer();
 
-	XnUInt32 nOutputSize = pWriteBuffer->GetMaxSize();
-	XnStatus nRetVal = XnStreamUncompressImageJ(&m_JPEGContext, m_RawData.GetData(), m_RawData.GetSize(), pWriteBuffer->GetUnsafeWritePointer(), &nOutputSize);
-	if (nRetVal != XN_STATUS_OK)
+	// make sure we have enough room
+	if (CheckWriteBufferForOverflow(nDataSize))
 	{
-		xnLogWarning(XN_MASK_SENSOR_PROTOCOL_IMAGE, "Failed to uncompress JPEG for frame %d: %s (%d)\n", GetCurrentFrameID(), xnGetStatusString(nRetVal), pWriteBuffer->GetSize());
-		FrameIsCorrupted();
-
-		XnDump badImageDump = XN_DUMP_CLOSED;
-		xnDumpInit(&badImageDump, XN_DUMP_BAD_IMAGE, NULL, "BadImage_%d.jpeg", GetCurrentFrameID());
-		xnDumpWriteBuffer(badImageDump, m_RawData.GetData(), m_RawData.GetSize());
-		xnDumpClose(&badImageDump);
+		pWriteBuffer->UnsafeWrite(pData, nDataSize);
 	}
 
-	pWriteBuffer->UnsafeUpdateSize(nOutputSize);
-
-	m_RawData.Reset();
-	XnImageProcessor::OnEndOfFrame(pHeader);
-
-	XN_PROFILING_END_SECTION
+	XN_PROFILING_END_SECTION;
 }
 

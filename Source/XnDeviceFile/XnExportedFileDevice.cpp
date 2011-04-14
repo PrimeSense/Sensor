@@ -29,7 +29,7 @@
 // Includes
 //---------------------------------------------------------------------------
 #include "XnExportedFileDevice.h"
-#include <XnVersion.h>
+#include <XnPsVersion.h>
 #include "XnDeviceFileReader.h"
 #include "XnFileDevice.h"
 #include <XnOpenNI.h>
@@ -43,10 +43,10 @@ void XnExportedFileDevice::FillCommonDescriptionFields(XnProductionNodeDescripti
 	strcpy(pDescription->strName, XN_DEVICE_NAME);
 	strcpy(pDescription->strVendor, XN_VENDOR_PRIMESENSE);
 
-	pDescription->Version.nMajor = XN_MAJOR_VERSION;
-	pDescription->Version.nMinor = XN_MINOR_VERSION;
-	pDescription->Version.nMaintenance = XN_MAINTENANCE_VERSION;
-	pDescription->Version.nBuild = XN_BUILD_VERSION;
+	pDescription->Version.nMajor = XN_PS_MAJOR_VERSION;
+	pDescription->Version.nMinor = XN_PS_MINOR_VERSION;
+	pDescription->Version.nMaintenance = XN_PS_MAINTENANCE_VERSION;
+	pDescription->Version.nBuild = XN_PS_BUILD_VERSION;
 }
 
 void XnExportedFileDevice::GetDescription(XnProductionNodeDescription* pDescription)

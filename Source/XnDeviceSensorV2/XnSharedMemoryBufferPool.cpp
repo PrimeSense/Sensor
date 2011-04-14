@@ -34,7 +34,7 @@
 // Code
 //---------------------------------------------------------------------------
 
-XnSharedMemoryBufferPool::XnSharedMemoryBufferPool(XnUInt32 nBufferCount, const XnChar* strName, XnUInt32 nMaxBufferSize) :
+XnSharedMemoryBufferPool::XnSharedMemoryBufferPool(XnUInt32 nBufferCount, const XnChar* strDeviceName, const XnChar* strStreamName, XnUInt32 nMaxBufferSize) :
 	XnBufferPool(nBufferCount),
 	m_nMaxBufferSize(nMaxBufferSize),
 	m_hSharedMemory(NULL),
@@ -43,7 +43,7 @@ XnSharedMemoryBufferPool::XnSharedMemoryBufferPool(XnUInt32 nBufferCount, const 
 	// to make the name unique, we'll add process ID
 	XN_PROCESS_ID procID;
 	xnOSGetCurrentProcessID(&procID);
-	sprintf(m_strName, "%u_%s", procID, strName);
+	sprintf(m_strName, "%u_%s_%s", procID, strDeviceName, strStreamName);
 }
 
 XnSharedMemoryBufferPool::~XnSharedMemoryBufferPool()

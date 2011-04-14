@@ -45,7 +45,7 @@ public:
 	XnStatus Free();
 
 	inline XnStreamData* GetStreamData() { return m_pLastData; }
-	void NewDataAvailable();
+	virtual void NewDataAvailable(XnUInt64 nTimestamp, XnUInt32 nFrameID);
 	void ReMarkDataAsNew();
 	void Reset();
 

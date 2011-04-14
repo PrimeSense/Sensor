@@ -158,6 +158,8 @@ protected:
 	*/
 	void FrameIsCorrupted();
 
+	void SetAllowDoubleSOFPackets(XnBool bAllow) { m_bAllowDoubleSOF = bAllow; }
+
 private:
 	//---------------------------------------------------------------------------
 	// Class Members
@@ -174,6 +176,8 @@ private:
 	XnDump m_InDump;
 	XnDump m_InternalDump;
 	XnBool m_bFrameCorrupted;
+	XnBool m_bAllowDoubleSOF;
+	XnUInt16 m_nLastSOFPacketID;
 };
 
 #endif //__XN_FRAME_STREAM_PROCESSOR_H__

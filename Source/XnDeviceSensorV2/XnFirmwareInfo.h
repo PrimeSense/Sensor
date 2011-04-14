@@ -59,6 +59,7 @@ public:
 	XnUInt16 nOpcodeReset;
 	XnUInt16 nOpcodeSetCmosBlanking;
 	XnUInt16 nOpcodeGetCmosBlanking;
+	XnUInt16 nOpcodeGetCmosPresets;
 
 
 	XnBool bMirrorSupported;

@@ -405,7 +405,7 @@ XnStatus XnDeviceFileReader::HandleStreamData(XnStreamData* pDataProps, XnCompre
 		XN_IS_STATUS_OK(nRetVal);
 
 		XnStreamReaderStream* pStream = (XnStreamReaderStream*)pHolder->GetStream();
-		pStream->NewDataAvailable();
+		pStream->NewDataAvailable(pDataProps->nTimestamp, pDataProps->nFrameID);
 
 		// and remove it from list
 		nRetVal = m_PositionsToIgnore.Remove(it);

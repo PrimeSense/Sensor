@@ -37,20 +37,16 @@
 //---------------------------------------------------------------------------
 // Defines
 //---------------------------------------------------------------------------
-#define XN_IR_STREAM_DEFAULT_FPS				30
-#define XN_IR_STREAM_DEFAULT_RESOLUTION			XN_RESOLUTION_QVGA
-#define XN_IR_STREAM_DEFAULT_OUTPUT_FORMAT		XN_OUTPUT_FORMAT_RGB24
-#define XN_IR_STREAM_DEFAULT_MIRROR				FALSE
-
 #define XN_IR_MAX_BUFFER_SIZE					(XN_SXGA_X_RES * XN_SXGA_Y_RES * sizeof(XnRGB24Pixel))
 
 //---------------------------------------------------------------------------
 // XnSensorIRStream class
 //---------------------------------------------------------------------------
-XnSensorIRStream::XnSensorIRStream(const XnChar* StreamName, XnSensorObjects* pObjects, XnUInt32 nBufferCount) : 
+XnSensorIRStream::XnSensorIRStream(const XnChar* strDeviceName, const XnChar* StreamName, XnSensorObjects* pObjects, XnUInt32 nBufferCount) : 
 	XnIRStream(StreamName, FALSE),
 	m_Helper(pObjects),
-	m_BufferPool(nBufferCount, StreamName, XN_IR_MAX_BUFFER_SIZE),
+	m_InputFormat(XN_STREAM_PROPERTY_INPUT_FORMAT, 0),
+	m_BufferPool(nBufferCount, strDeviceName, StreamName, XN_IR_MAX_BUFFER_SIZE),
 	m_SharedBufferName(XN_STREAM_PROPERTY_SHARED_BUFFER_NAME, m_BufferPool.GetSharedMemoryName()),
 	m_FirmwareCropSizeX("FirmwareCropSizeX", 0, StreamName),
 	m_FirmwareCropSizeY("FirmwareCropSizeY", 0, StreamName),
@@ -74,7 +70,7 @@ XnStatus XnSensorIRStream::Init()
 	XN_IS_STATUS_OK(nRetVal);
 
 	// add properties
-	XN_VALIDATE_ADD_PROPERTIES(this, &m_SharedBufferName, &m_ActualRead);
+	XN_VALIDATE_ADD_PROPERTIES(this, &m_InputFormat, &m_SharedBufferName, &m_ActualRead);
 
 	// set base properties default values
 	nRetVal = ResolutionProperty().UnsafeUpdateValue(XN_IR_STREAM_DEFAULT_RESOLUTION);
@@ -89,6 +85,38 @@ XnStatus XnSensorIRStream::Init()
 	// init helper
 	nRetVal = m_Helper.Init(this, this);
 	XN_IS_STATUS_OK(nRetVal);
+
+	// register supported modes
+	XnCmosPreset aSupportedModes[] = 
+	{
+		{ 0, XN_RESOLUTION_QVGA, 30 },
+		{ 0, XN_RESOLUTION_QVGA, 60 },
+		{ 0, XN_RESOLUTION_VGA, 30 },
+		{ 0, XN_RESOLUTION_SXGA, 30 },
+	};
+	nRetVal = AddSupportedModes(aSupportedModes, sizeof(aSupportedModes)/sizeof(aSupportedModes[0]));
+	XN_IS_STATUS_OK(nRetVal);
+
+	if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_1)
+	{
+		XnCmosPreset aSupportedModesSXGA[] = 
+		{
+			{ 0, XN_RESOLUTION_SXGA, 30 },
+		};
+		nRetVal = AddSupportedModes(aSupportedModes, sizeof(aSupportedModes)/sizeof(aSupportedModes[0]));
+		XN_IS_STATUS_OK(nRetVal);
+	}
+
+	if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_2)
+	{
+		XnCmosPreset aSupportedModes25[] = 
+		{
+			{ 0, XN_RESOLUTION_QVGA, 25 },
+			{ 0, XN_RESOLUTION_VGA, 25 },
+		};
+		nRetVal = AddSupportedModes(aSupportedModes25, sizeof(aSupportedModes25)/sizeof(aSupportedModes25[0]));
+		XN_IS_STATUS_OK(nRetVal);
+	}
 
 	// data processor
 	nRetVal = m_Helper.RegisterDataProcessorProperty(ResolutionProperty());
@@ -113,13 +141,20 @@ XnStatus XnSensorIRStream::MapPropertiesToFirmware()
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(ResolutionProperty(), GetFirmwareParams()->m_IRResolution, FALSE));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(FPSProperty(), GetFirmwareParams()->m_IRFPS, FALSE));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(m_FirmwareCropSizeX, GetFirmwareParams()->m_IRCropSizeX, TRUE));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(m_FirmwareCropSizeY, GetFirmwareParams()->m_IRCropSizeY, TRUE));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(m_FirmwareCropOffsetX, GetFirmwareParams()->m_IRCropOffsetX, TRUE));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(m_FirmwareCropOffsetY, GetFirmwareParams()->m_IRCropOffsetY, TRUE));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(m_FirmwareCropEnabled, GetFirmwareParams()->m_IRCropEnabled, TRUE));
+	nRetVal = m_Helper.MapFirmwareProperty(ResolutionProperty(), GetFirmwareParams()->m_IRResolution, FALSE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(FPSProperty(), GetFirmwareParams()->m_IRFPS, FALSE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropSizeX, GetFirmwareParams()->m_IRCropSizeX, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropSizeY, GetFirmwareParams()->m_IRCropSizeY, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropOffsetX, GetFirmwareParams()->m_IRCropOffsetX, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropOffsetY, GetFirmwareParams()->m_IRCropOffsetY, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropEnabled, GetFirmwareParams()->m_IRCropEnabled, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
 
 	return (XN_STATUS_OK);
 }
@@ -133,8 +168,10 @@ XnStatus XnSensorIRStream::ConfigureStreamImpl()
 	nRetVal = SetActualRead(TRUE);
 	XN_IS_STATUS_OK(nRetVal);
 
-	XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(ResolutionProperty()));
-	XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(FPSProperty()));
+	nRetVal = m_Helper.ConfigureFirmware(ResolutionProperty());
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.ConfigureFirmware(FPSProperty());
+	XN_IS_STATUS_OK(nRetVal);;
 
 	// IR mirror is always off in firmware
 	nRetVal = GetFirmwareParams()->m_IRMirror.SetValue(FALSE);
@@ -159,7 +196,8 @@ XnStatus XnSensorIRStream::SetActualRead(XnBool bRead)
 		if (bRead)
 		{
 			xnLogVerbose(XN_MASK_DEVICE_SENSOR, "Creating USB IR read thread...");
-			nRetVal = xnUSBInitReadThread(GetHelper()->GetPrivateData()->pSpecificImageUsb->pUsbConnection->UsbEp, GetHelper()->GetPrivateData()->pSpecificImageUsb->nChunkReadBytes, XN_SENSOR_USB_IMAGE_BUFFERS, XN_SENSOR_READ_THREAD_TIMEOUT, XnDeviceSensorProtocolUsbEpCb, GetHelper()->GetPrivateData()->pSpecificImageUsb);
+			XnSpecificUsbDevice* pUSB = GetHelper()->GetPrivateData()->pSpecificImageUsb;
+			nRetVal = xnUSBInitReadThread(pUSB->pUsbConnection->UsbEp, pUSB->nChunkReadBytes, XN_SENSOR_USB_DEPTH_BUFFERS, pUSB->nTimeout, XnDeviceSensorProtocolUsbEpCb, pUSB);
 			XN_IS_STATUS_OK(nRetVal);
 		}
 		else
@@ -185,12 +223,17 @@ XnStatus XnSensorIRStream::OpenStreamImpl()
 	// Cropping
 	if (m_FirmwareCropEnabled.GetValue() == TRUE)
 	{
-		XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(m_FirmwareCropSizeX));
-		XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(m_FirmwareCropSizeY));
-		XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(m_FirmwareCropOffsetX));
-		XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(m_FirmwareCropOffsetY));
+		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropSizeX);
+		XN_IS_STATUS_OK(nRetVal);;
+		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropSizeY);
+		XN_IS_STATUS_OK(nRetVal);;
+		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropOffsetX);
+		XN_IS_STATUS_OK(nRetVal);;
+		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropOffsetY);
+		XN_IS_STATUS_OK(nRetVal);;
 	}
-	XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(m_FirmwareCropEnabled));
+	nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropEnabled);
+	XN_IS_STATUS_OK(nRetVal);;
 
 
 	nRetVal = XnIRStream::Open();
@@ -260,21 +303,6 @@ XnStatus XnSensorIRStream::SetFPS(XnUInt32 nFPS)
 XnStatus XnSensorIRStream::SetResolution(XnResolutions nResolution)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-
-	switch (nResolution)
-	{
-	case XN_RESOLUTION_QVGA:
-	case XN_RESOLUTION_VGA:
-		break;
-	case XN_RESOLUTION_SXGA:
-		if (m_Helper.GetFirmwareVersion() < XN_SENSOR_FW_VER_5_1)
-		{
-			XN_LOG_WARNING_RETURN(XN_STATUS_IO_INVALID_STREAM_IMAGE_RESOLUTION, XN_MASK_DEVICE_SENSOR, "IR resolution is not supported by this firmware!");
-		}
-		break;
-	default:
-		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Unsupported IR resolution: %d", nResolution);
-	}
 
 	nRetVal = m_Helper.BeforeSettingFirmwareParam(ResolutionProperty(), nResolution);
 	XN_IS_STATUS_OK(nRetVal);

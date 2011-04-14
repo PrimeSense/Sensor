@@ -40,13 +40,14 @@
 //---------------------------------------------------------------------------
 
 XnSensorDepthGenerator::XnSensorDepthGenerator(xn::Context& context, xn::Device& sensor, XnDeviceBase* pSensor, const XnChar* strStreamName) :
-	XnSensorMapGenerator(context, sensor, pSensor, strStreamName)
+	XnSensorMapGenerator(context, sensor, pSensor, strStreamName),
+	m_hRWPropCallback(NULL)
 {
 }
 
 XnSensorDepthGenerator::~XnSensorDepthGenerator()
 {
-	if (m_hRWPropCallback)
+	if (m_hRWPropCallback != NULL)
 	{
 		UnregisterFromProps(m_hRWPropCallback);
 	}

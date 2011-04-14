@@ -41,7 +41,9 @@ XnFrameStreamProcessor::XnFrameStreamProcessor(XnFrameStream* pStream, XnSensorS
 	m_pTripleBuffer(pStream->GetTripleBuffer()),
 	m_InDump(XN_DUMP_CLOSED),
 	m_InternalDump(XN_DUMP_CLOSED),
-	m_bFrameCorrupted(FALSE)
+	m_bFrameCorrupted(FALSE),
+	m_bAllowDoubleSOF(FALSE),
+	m_nLastSOFPacketID(0)
 {
 	sprintf(m_csInDumpMask, "%sIn", pStream->GetType());
 	sprintf(m_csInternalDumpMask, "Internal%s", pStream->GetType());
@@ -55,12 +57,16 @@ XnFrameStreamProcessor::~XnFrameStreamProcessor()
 
 void XnFrameStreamProcessor::ProcessPacketChunk(const XnSensorProtocolResponseHeader* pHeader, const XnUChar* pData, XnUInt32 nDataOffset, XnUInt32 nDataSize)
 {
-	XN_PROFILING_START_SECTION("XnFrameStreamProcessor::ProcessPacketChunk")
+	XN_PROFILING_START_SECTION("XnFrameStreamProcessor::ProcessPacketChunk");
 
 	// if first data from SOF packet
 	if (pHeader->nType == m_nTypeSOF && nDataOffset == 0)
 	{
-		OnStartOfFrame(pHeader);
+		if (!m_bAllowDoubleSOF || pHeader->nPacketID != (m_nLastSOFPacketID + 1))
+		{
+			m_nLastSOFPacketID = pHeader->nPacketID;
+			OnStartOfFrame(pHeader);
+		}
 	}
 
 	if (!m_bFrameCorrupted)
