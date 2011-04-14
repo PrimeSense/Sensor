@@ -40,15 +40,7 @@
 // Exporting
 //---------------------------------------------------------------------------
 
-class SensorModule : public xn::Module
-{
-	XnStatus Load()
-	{
-		return XnSensorClient::TakeServerLocation();
-	}
-};
-
-XN_EXPORT_MODULE(SensorModule)
+XN_EXPORT_MODULE(xn::Module)
 XN_EXPORT_DEVICE(XnExportedSensorDevice)
 XN_EXPORT_DEPTH(XnExportedSensorDepthGenerator)
 XN_EXPORT_IMAGE(XnExportedSensorImageGenerator)

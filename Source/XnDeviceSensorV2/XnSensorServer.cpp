@@ -50,7 +50,7 @@ XnSensorServer::XnSensorServer(const XnChar* strConfigFile) :
 
 XnSensorServer::~XnSensorServer()
 {
-	ShutdownServer();
+	Free();
 }
 
 XnStatus XnSensorServer::Run()
@@ -64,8 +64,7 @@ XnStatus XnSensorServer::Run()
 		nRetVal = ServerMainLoop();
 	}
 
-	//Shutdown the server
-	ShutdownServer();
+	Free();
 	
 	return nRetVal;
 }
@@ -146,24 +145,52 @@ XnStatus XnSensorServer::InitServer()
 	nRetVal = xnOSSetEvent(m_hServerRunningEvent);
 	XN_IS_STATUS_OK(nRetVal);
 
+	xnOSGetTimeStamp(&m_nLastSessionActivity);
+
 	return (XN_STATUS_OK);
 }
 
 XnStatus XnSensorServer::ServerMainLoop()
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-	XnUInt64 nNow = 0;
-	XnUInt64 nLastClientRemovedTimestamp = 0;
-	XnBool bQuit = FALSE;
-	XN_SOCKET_HANDLE hClientSocket = NULL;
-	XnBool bNoClients = FALSE;
 
-	xnOSGetTimeStamp(&nLastClientRemovedTimestamp);
-
-	while (!bQuit)
+	while (TRUE)
 	{
-		nRetVal = xnOSAcceptSocket(m_hListenSocket, &hClientSocket, XN_SENSOR_SERVER_ACCEPT_CONNECTION_TIMEOUT);
-		if (nRetVal == XN_STATUS_OK)
+		CheckForNewClients(XN_SENSOR_SERVER_ACCEPT_CONNECTION_TIMEOUT);
+
+		// do some clean-up
+		m_sensorsManager.CleanUp();
+		CleanUpSessions();
+
+		// now check if we should shutdown
+		if (ShutdownIfPossible())
+		{
+			break;
+		}
+	}
+
+	return XN_STATUS_OK;
+}
+
+void XnSensorServer::CheckForNewClients(XnUInt32 nTimeout)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	// run in loop until we break due to timeout
+	XN_SOCKET_HANDLE hClientSocket;
+	while (TRUE)
+	{
+		nRetVal = xnOSAcceptSocket(m_hListenSocket, &hClientSocket, nTimeout);
+		if (nRetVal == XN_STATUS_OS_NETWORK_TIMEOUT)
+		{
+			return;
+		}
+		else if (nRetVal != XN_STATUS_OK)
+		{
+			//Any other error beside timeout is not expected, but we treat it the same.
+			xnLogWarning(XN_MASK_SENSOR_SERVER, "failed to accept connection: %s", xnGetStatusString(nRetVal));
+		}
+		else
 		{
 			xnLogInfo(XN_MASK_SENSOR_SERVER, "New client trying to connect...");
 
@@ -176,59 +203,109 @@ XnStatus XnSensorServer::ServerMainLoop()
 				//Still in loop
 			}
 		}
-		else // no client trying to connect, do some clean up work
+	}
+}
+
+void XnSensorServer::CleanUpSessions()
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	XnAutoCSLocker locker(m_hSessionsLock);
+	if (!m_sessions.IsEmpty())
+	{
+		XnSessionsList::Iterator it = m_sessions.begin();
+		while (it != m_sessions.end())
 		{
-			if (nRetVal != XN_STATUS_OS_NETWORK_TIMEOUT)
+			XnSessionsList::Iterator curr = it;
+			++it;
+
+			XnServerSession* pSession = *curr;
+			if (pSession->HasEnded())
 			{
-				//Any other error beside timeout is not expected, but we treat it the same.
-				xnLogWarning(XN_MASK_SENSOR_SERVER, "failed to accept connection: %s", xnGetStatusString(nRetVal));
-			}
-
-			// clean sensors
-			m_sensorsManager.CleanUp();
-
-			// remove all non-active sessions
-			XnAutoCSLocker locker(m_hSessionsLock);
-			if (!m_sessions.IsEmpty())
-			{
-				XnSessionsList::Iterator it = m_sessions.begin();
-				while (it != m_sessions.end())
+				nRetVal = RemoveSession(curr);
+				if (nRetVal != XN_STATUS_OK)
 				{
-					XnSessionsList::Iterator curr = it;
-					++it;
-
-					XnServerSession* pSession = *curr;
-					if (pSession->HasEnded())
-					{
-						nRetVal = RemoveSession(curr);
-						if (nRetVal != XN_STATUS_OK)
-						{
-							xnLogWarning(XN_MASK_SENSOR_SERVER, "failed to remove session: %s", xnGetStatusString(nRetVal));
-						}
-					}
-				}
-
-				if (m_sessions.IsEmpty())
-				{
-					xnOSGetHighResTimeStamp(&nLastClientRemovedTimestamp);
+					xnLogWarning(XN_MASK_SENSOR_SERVER, "failed to remove session: %s", xnGetStatusString(nRetVal));
 				}
 			}
-			else
-			{
-				// no sessions
-				XnUInt64 nNow;
-				xnOSGetTimeStamp(&nNow);
-				if (!m_sensorsManager.HasOpenSensors() && (nNow - nLastClientRemovedTimestamp) > m_sensorsManager.GetTimeout())
-				{
-					// shutdown
-					xnLogInfo(XN_MASK_SENSOR_SERVER, "No sensors are open and no client is connected for %llu ms. Shutting down...", m_sensorsManager.GetTimeout());
-					bQuit = TRUE;
-				}
-			}
-		} // clean up
-	} // main loop
+		}
+	}
+}
 
-	return XN_STATUS_OK;
+XnBool XnSensorServer::ShutdownIfPossible()
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	// lock sessions list
+	XnAutoCSLocker locker(m_hSessionsLock);
+
+	// check if no sessions and no sensors
+	if (CanShutdown())
+	{
+		// lock the running lock
+		XnAutoMutexLocker serverRunningLock(m_hServerRunningMutex, XN_SENSOR_SERVER_RUNNING_MUTEX_TIMEOUT);
+		nRetVal = serverRunningLock.GetStatus();
+		if (nRetVal == XN_STATUS_OK)
+		{
+			// make sure no client is waiting to connect
+			CheckForNewClients(0);
+
+			// re-check shutdown condition
+			if (CanShutdown())
+			{
+				xnLogInfo(XN_MASK_SENSOR_SERVER, "No sensors are open and no client is connected. Shutting down...");
+
+				// reset the event (to notify server is no longer up)
+				nRetVal = xnOSResetEvent(m_hServerRunningEvent);
+				if (nRetVal != XN_STATUS_OK)
+				{
+					xnLogWarning(XN_MASK_SENSOR_SERVER, "Failed to reset sensor server event: %s - proceeding with shutdown.", xnGetStatusString(nRetVal));
+					XN_ASSERT(FALSE);
+				}
+
+				// and close the socket (to free the port for another server)
+				xnOSCloseSocket(m_hListenSocket);
+				m_hListenSocket = NULL;
+
+				return TRUE;
+			}
+		}
+	}
+
+	return FALSE;
+}
+
+void XnSensorServer::Free()
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	if (m_hServerRunningEvent != NULL)
+	{
+		xnOSCloseEvent(&m_hServerRunningEvent);
+		m_hServerRunningEvent = NULL;
+	}
+
+	if (m_hListenSocket != NULL)
+	{
+		xnOSCloseSocket(m_hListenSocket);
+		m_hListenSocket = NULL;
+	}
+
+	if (m_hSessionsLock != NULL)
+	{
+		xnOSCloseCriticalSection(&m_hSessionsLock);
+		m_hSessionsLock = NULL;
+	}
+}
+
+XnBool XnSensorServer::CanShutdown()
+{
+	XnUInt64 nNow;
+	xnOSGetTimeStamp(&nNow);
+
+	XnAutoCSLocker locker(m_hSessionsLock);
+	return (!m_sensorsManager.HasOpenSensors() && m_sessions.IsEmpty() && 
+		(nNow - m_nLastSessionActivity) > m_sensorsManager.GetTimeout());
 }
 
 void XnSensorServer::ShutdownServer()
@@ -322,6 +399,11 @@ XnStatus XnSensorServer::RemoveSession(XnSessionsList::ConstIterator it)
 		XnAutoCSLocker locker(m_hSessionsLock);
 		nRetVal = m_sessions.Remove(it);
 		XN_IS_STATUS_OK(nRetVal);
+
+		if (m_sessions.IsEmpty())
+		{
+			xnOSGetTimeStamp(&m_nLastSessionActivity);
+		}
 	}
 
 	pSession->Free();

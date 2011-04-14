@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Include>
+  <!--
+  Versioning. These have to be changed for upgrades.
+  It's not enough to just include newer files.
+  -->
+  <?define MajorVersion=5?>
+  <?define MinorVersion=0?>
+  <?define MaintenanceVersion=1?>
+  <!-- BuildVersion is NOT used by WiX in the upgrade procedure -->
+  <?define BuildVersion=32?>
+  
+  <!-- Full version number to display -->
+  <?define VersionNumber="$(var.MajorVersion).$(var.MinorVersion).$(var.MaintenanceVersion).$(var.BuildVersion)" ?>
+
+  <?define OpenNIVersion="1.1.0.39"?>
+  
+  <!--
+  Upgrade code HAS to be the same for all updates.
+  Once you've chosen it don't change it.
+  -->
+  
+  <!--
+  Path to the resources directory. resources don't really need to be included
+  in the project structure but I like to include them for for clarity 
+  -->
+  <?define ResourcesDir="$(var.ProjectDir)\Resources" ?>
+
+  <?define BinaryOnlyRedist=True?>
+
+
+  <?if $(var.Platform)="x86"?>
+    <?define PlatformSuffix=""?>
+    <?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
+    <?define ProductFullName=!(loc.ProductName) $(var.VersionNumber) !(loc.ProductNameSuffix)?>
+    <?define ProductShortName=Sensor?>
+    <?define UpgradeCode="E00A2C0F-15EA-447c-A976-0E76AEA89EBE"  ?>
+  <?else?>
+    <?define PlatformSuffix="64"?>        
+    <?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
+    <?define ProductFullName=!(loc.ProductName) $(var.VersionNumber) !(loc.ProductName64Suffix)?>
+    <?define ProductShortName=Sensor !(loc.ProductName64Suffix)?>
+    <?define UpgradeCode="E6674B5C-6086-480c-85D5-5559F5B546DA"  ?>
+  <?endif?>
+  
+</Include>

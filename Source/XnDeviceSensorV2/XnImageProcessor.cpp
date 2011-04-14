@@ -36,8 +36,9 @@
 // Code
 //---------------------------------------------------------------------------
 
-XnImageProcessor::XnImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper) :
-	XnFrameStreamProcessor(pStream, pHelper, XN_SENSOR_PROTOCOL_RESPONSE_IMAGE_START, XN_SENSOR_PROTOCOL_RESPONSE_IMAGE_END)
+XnImageProcessor::XnImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper, XnBool bCompressedOutput /* = FALSE */) :
+	XnFrameStreamProcessor(pStream, pHelper, XN_SENSOR_PROTOCOL_RESPONSE_IMAGE_START, XN_SENSOR_PROTOCOL_RESPONSE_IMAGE_END),
+	m_bCompressedOutput(bCompressedOutput)
 {
 }
 
@@ -95,11 +96,15 @@ XnUInt32 XnImageProcessor::CalculateExpectedSize()
 
 void XnImageProcessor::OnEndOfFrame(const XnSensorProtocolResponseHeader* pHeader)
 {
-	XnUInt32 nExpectedSize = CalculateExpectedSize();
-	if (GetWriteBuffer()->GetSize() != nExpectedSize)
+	if (!m_bCompressedOutput)
 	{
-		xnLogWarning(XN_MASK_SENSOR_READ, "Read: Image buffer is corrupt. Size is %u (!= %u)", GetWriteBuffer()->GetSize(), nExpectedSize);
-		FrameIsCorrupted();
+		// make sure data size is right
+		XnUInt32 nExpectedSize = CalculateExpectedSize();
+		if (GetWriteBuffer()->GetSize() != nExpectedSize)
+		{
+			xnLogWarning(XN_MASK_SENSOR_READ, "Read: Image buffer is corrupt. Size is %u (!= %u)", GetWriteBuffer()->GetSize(), nExpectedSize);
+			FrameIsCorrupted();
+		}
 	}
 
 	// call base

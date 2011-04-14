@@ -48,13 +48,16 @@ public:
 	XnBool IsServerRunning();
 
 private:
+	XN_DECLARE_LIST(XnServerSession*, XnSessionsList);
 
 	XnStatus InitServer();
 	XnStatus ServerMainLoop();
 	void ShutdownServer();
-
-	XN_DECLARE_LIST(XnServerSession*, XnSessionsList);
-
+	void CheckForNewClients(XnUInt32 nTimeout);
+	void CleanUpSessions();
+	XnBool ShutdownIfPossible();
+	XnBool CanShutdown();
+	void Free();
 	XnStatus AddSession(XN_SOCKET_HANDLE hClientSocket);
 	XnStatus RemoveSession(XnSessionsList::ConstIterator it);
 	XnStatus ReturnToDefaults();
@@ -69,9 +72,9 @@ private:
 	XnUInt32 m_nLastClientID;
 	XnStatus m_nErrorState;
 
-	// new stuff
 	XnSensorsManager m_sensorsManager;
 	XnServerLogger m_logger;
+	XnUInt64 m_nLastSessionActivity;
 };
 
 #endif //__XN_SENSOR_SERVER_H__

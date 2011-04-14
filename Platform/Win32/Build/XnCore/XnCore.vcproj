@@ -12,14 +12,17 @@
 		<Platform
 			Name="Win32"
 		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="..\..\Bin\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="2"
 			>
@@ -65,14 +68,14 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="openNI.lib "
-				OutputFile="../../Bin/$(ConfigurationName)/XnCore.dll"
+				OutputFile="../../Bin/$(ConfigurationName)/$(ProjectName).dll"
 				AdditionalLibraryDirectories="&quot;$(OPEN_NI_LIB)&quot;;../../Lib/$(ConfigurationName)"
 				GenerateManifest="true"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="../../Bin/$(ConfigurationName)/XnCore.pdb"
+				ProgramDatabaseFile="../../Bin/$(ConfigurationName)/$(ProjectName).pdb"
 				SubSystem="2"
-				ImportLibrary="../../Lib/$(ConfigurationName)/XnCore.lib"
+				ImportLibrary="../../Lib/$(ConfigurationName)/$(ProjectName).lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -99,9 +102,92 @@
 			/>
 		</Configuration>
 		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="..\..\Bin64\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="xcopy /D /Y ..\..\..\..\Source\XnCommon\XnCommon.h ..\..\..\..\Include"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions=""
+				Optimization="0"
+				AdditionalIncludeDirectories="&quot;$(OPEN_NI_INCLUDE)&quot;;..\..\..\..\Include;..\..\..\..\Source;..\..\..\..\Source\XnCore\Win32;..\..\..\..\Platform\Win32\Driver\Build\sys"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;XN_CORE_EXPORTS;XN_CROSS_PLATFORM"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				DebugInformationFormat="4"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				AdditionalIncludeDirectories="&quot;$(OPEN_NI_INCLUDE)&quot;;..\..\..\..\Include"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="openNI64.lib "
+				OutputFile="../../Bin64/$(ConfigurationName)/$(ProjectName)64.dll"
+				AdditionalLibraryDirectories="&quot;$(OPEN_NI_LIB64)&quot;;../../Lib64/$(ConfigurationName)"
+				GenerateManifest="true"
+				IgnoreDefaultLibraryNames=""
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="../../Bin64/$(ConfigurationName)/$(ProjectName)64.pdb"
+				SubSystem="2"
+				ImportLibrary="../../Lib64/$(ConfigurationName)/$(ProjectName)64.lib"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine=""
+			/>
+		</Configuration>
+		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="..\..\Bin\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
@@ -190,6 +276,99 @@
 				CommandLine=""
 			/>
 		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="..\..\Bin64\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="2"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="xcopy /D /Y ..\..\..\..\Source\XnCommon\XnCommon.h ..\..\..\..\Include"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="/fp:fast /Qprec-div- /Qprec-sqrt-"
+				Optimization="2"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
+				OmitFramePointers="true"
+				WholeProgramOptimization="true"
+				AdditionalIncludeDirectories="&quot;$(OPEN_NI_INCLUDE)&quot;;..\..\..\..\Include;..\..\..\..\Source;..\..\..\..\Source\XnCore\Win32;..\..\..\..\Platform\Win32\Driver\Build\sys"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;XN_CORE_EXPORTS;XN_CROSS_PLATFORM"
+				GeneratePreprocessedFile="0"
+				RuntimeLibrary="2"
+				BufferSecurityCheck="false"
+				EnableEnhancedInstructionSet="2"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				AdditionalIncludeDirectories="&quot;$(OPEN_NI_INCLUDE)&quot;;..\..\..\..\Include"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="openNI64.lib "
+				OutputFile="../../Bin64/$(ConfigurationName)/$(ProjectName)64.dll"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;$(OPEN_NI_LIB64)&quot;;../../Lib64/$(ConfigurationName)"
+				GenerateManifest="true"
+				IgnoreDefaultLibraryNames=""
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="../../Bin64/$(ConfigurationName)/$(ProjectName)64.pdb"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				ImportLibrary="../../Lib64/$(ConfigurationName)/$(ProjectName)64.lib"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine=""
+			/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -223,6 +402,14 @@
 							GeneratePreprocessedFile="0"
 						/>
 					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|x64"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							GeneratePreprocessedFile="0"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="..\..\..\..\Include\XnCore.h"
@@ -237,6 +424,14 @@
 					>
 					<FileConfiguration
 						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							GeneratePreprocessedFile="0"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|x64"
 						>
 						<Tool
 							Name="VCCLCompilerTool"

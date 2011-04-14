@@ -181,7 +181,8 @@ XnSensorClientAudioStream::XnSensorClientAudioStream(XnSensorClient* pClient, co
 	m_pHeader(NULL),
 	m_pBuffer(NULL),
 	m_nLastReadIndex(0),
-	m_hLock(NULL)
+	m_hLock(NULL),
+	m_nFrameID(0)
 {}
 
 XnSensorClientAudioStream::~XnSensorClientAudioStream()
@@ -283,6 +284,9 @@ XnStatus XnSensorClientAudioStream::ReadImpl(XnStreamData* pStreamOutput)
 
 		m_nLastReadIndex = (m_nLastReadIndex + 1) % m_pHeader->nPacketCount;
 	}
+
+	m_nFrameID++;
+	pStreamOutput->nFrameID = m_nFrameID;
 
 	return (XN_STATUS_OK);
 }

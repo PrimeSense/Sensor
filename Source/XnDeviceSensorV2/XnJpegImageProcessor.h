@@ -19,11 +19,6 @@
 *  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>. *
 *                                                                            *
 *****************************************************************************/
-
-
-
-
-
 #ifndef __XN_JPEG_IMAGE_PROCESSOR_H__
 #define __XN_JPEG_IMAGE_PROCESSOR_H__
 
@@ -43,22 +38,8 @@ public:
 	XnJpegImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper);
 	~XnJpegImageProcessor();
 
-	XnStatus Init();
-
-	//---------------------------------------------------------------------------
-	// Overridden Functions
-	//---------------------------------------------------------------------------
 protected:
 	virtual void ProcessFramePacketChunk(const XnSensorProtocolResponseHeader* pHeader, const XnUChar* pData, XnUInt32 nDataOffset, XnUInt32 nDataSize);
-	virtual void OnStartOfFrame(const XnSensorProtocolResponseHeader* pHeader);
-	virtual void OnEndOfFrame(const XnSensorProtocolResponseHeader* pHeader);
-
-	//---------------------------------------------------------------------------
-	// Class Members
-	//---------------------------------------------------------------------------
-private:
-	XnBuffer m_RawData;
-	XnStreamUncompJPEGContext m_JPEGContext;
 };
 
-#endif
+#endif // __XN_JPEG_IMAGE_PROCESSOR_H__

@@ -49,6 +49,7 @@ public:
 	virtual XnBool IsCapabilitySupported(const XnChar* strCapabilityName);
 	virtual XnUInt32 GetDataSize();
 
+	const void* GetData() { return XnSensorMapGenerator::GetData(); }
 	virtual XnIRPixel* GetIRMap();
 
 private:

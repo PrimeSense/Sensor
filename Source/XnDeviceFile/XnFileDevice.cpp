@@ -241,6 +241,7 @@ XnStatus XnFileDevice::SetInputStream(void *pStreamCookie, XnPlayerInputStreamIn
 	if (nRetVal != XN_STATUS_OK)
 	{
 		XN_DELETE(m_pInputStream);
+		m_pInputStream = NULL;
 		return (nRetVal);
 	}
 

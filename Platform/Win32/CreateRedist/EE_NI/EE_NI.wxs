@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <!-- This is how we include wxi files -->
+  <?include $(sys.CURRENTDIR)Includes\EENIVariables.wxi ?>
+ 
+  <Product Id="*" Name="$(var.ProductFullName)" Language="!(loc.LANG)" Version="$(var.VersionNumber)"
+           Manufacturer="!(loc.ManufacturerName)" UpgradeCode="$(var.UpgradeCode)">
+
+    <!-- Define the minimum supported installer version (3.0) and that the install should be done for the whole machine not just the current user -->
+    <Package InstallerVersion="300" Compressed="yes" InstallScope="perMachine" Platform="$(var.Platform)" InstallPrivileges="elevated"/>
+
+    <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" CompressionLevel="high"/>
+    
+    <MajorUpgrade Schedule="afterInstallInitialize" AllowSameVersionUpgrades="yes" IgnoreRemoveFailure="yes"
+     DowngradeErrorMessage="A later version of [ProductName] is already installed. Setup will now exit." />
+
+
+    <UIRef Id="CostumeInstallUI" />
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLLOCATION" />
+
+    <!-- Set the icon to show next to the program name in Add/Remove programs -->
+    <Icon Id="EE_NIIcon.ico" SourceFile="$(var.ResourcesDir)\mainicon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="EE_NIIcon.ico" />
+    
+
+    <!--WixVariable Id="WixUIDialogBmp" Value="$(var.ResourcesDir)\Header.bmp"/-->
+    <WixVariable Id="WixUIBannerBmp" Value="$(var.ResourcesDir)\Header.bmp" />
+
+    
+    <Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="$(var.PlatformProgramFilesFolder)">
+        <Directory Id="PrimeSenseFolder" Name="PrimeSense">
+				  <Directory Id="INSTALLLOCATION" Name="Sensor">
+            <Directory Id="INSTALLLOCATIONBin" Name="Bin$(var.PlatformSuffix)">
+              <Directory Id="INSTALLLOCATIONBinLog" Name="Log"/>
+            </Directory>
+            <Directory Id="INSTALLLOCATIONData" Name="Data"/>
+            <Directory Id="INSTALLLOCATIONSAMPLES" Name="Samples">
+              <Directory Id="INSTALLLOCATIONSAMPLESBIN" Name="Bin$(var.PlatformSuffix)">
+                <Directory Id="INSTALLLOCATIONSAMPLESBINRELEASE" Name="Release">
+                  <Directory Id="INSTALLLOCATIONSAMPLESBINRELEASELOG" Name="Log"/>                   
+                </Directory>
+                <Directory Id="INSTALLLOCATIONSAMPLESBINDEBUG" Name="Debug">
+                  <Directory Id="INSTALLLOCATIONSAMPLESBINDEBUGLOG" Name="Log"/>
+                </Directory>
+              </Directory>              
+            </Directory>            
+				  </Directory>
+        </Directory>
+			</Directory>
+
+      <?if $(var.BinaryOnlyRedist)="False"?>      
+        <Directory Id="ProgramMenuFolder">
+          <Directory Id="PrimeSenseShortcutFolder" Name="!(loc.ManufacturerName)">
+            <Directory Id="ApplicationProgramsFolder" Name="$(var.ProductShortName)" >
+              <Directory Id="DocumentationShortcutFolder" Name="Documentation"/>
+              <Directory Id="SamplesShortcutFolder" Name="Samples"/>
+            </Directory>          
+          </Directory>
+        </Directory>      
+      <?endif?>
+      
+    </Directory>
+    
+    <DirectoryRef Id="INSTALLLOCATIONBinLog">
+      <Component Id="RemoveLogDir" Guid="6DA284AC-1CA4-49e1-869B-79B8D073A652" KeyPath="yes">
+        <RemoveFile Id="RemoveLogFiles" On="uninstall" Name="*.*" />
+        <RemoveFolder Id="RemoveLogDir" On="uninstall"/>
+      </Component>
+    </DirectoryRef>
+    
+   
+    
+    <?if $(var.BinaryOnlyRedist)="False"?>
+    <DirectoryRef Id="INSTALLLOCATIONSAMPLESBINRELEASELOG">
+      <Component Id="RemoveReleaseLogDir" Guid="7934C4DA-4CE1-41bb-8EE8-B974706B1C22" KeyPath="yes">
+        <RemoveFile Id="RemoveReleaseLogFiles" On="uninstall" Name="*.*" />
+        <RemoveFolder Id="RemoveReleaseLogDir" On="uninstall"/>
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="INSTALLLOCATIONSAMPLESBINDEBUGLOG">
+      <Component Id="RemoveDebugLogDir" Guid="0AC4A0E8-CDE7-43c4-BDFA-FE0176AFFE21" KeyPath="yes">
+        <RemoveFile Id="RemoveDebugLogFiles" On="uninstall" Name="*.*" />
+        <RemoveFolder Id="RemoveDebugLogDir" On="uninstall"/>
+      </Component>
+    </DirectoryRef>
+    
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcut" Guid="0EE39B02-8075-4357-8ECB-996C4072D506" >
+        <Shortcut Id="UninstallProduct"
+                Name="Uninstall !(loc.ProductName)"
+                Target="[SystemFolder]msiexec.exe"
+                Arguments="/x [ProductCode]"/>
+        <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\PrimeSense\EE" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+    
+      <DirectoryRef Id="PrimeSenseShortcutFolder">
+        <Component Id="RemovePrimeSenseShortcutFolder"  Guid="691128F3-BC80-4f16-BF70-5E2922348B3F">        
+          <RemoveFolder Id="PrimeSenseShortcutFolder" On="uninstall"/>
+          <RegistryValue Root="HKCU" Key="Software\PrimeSense\EE" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        </Component>
+      </DirectoryRef>
+      
+      <DirectoryRef Id="SamplesShortcutFolder">        
+        <Component Id="SamplesShortcut" Guid="B56B0D70-4885-4859-BB92-0536704F1A54" >
+          <Shortcut Id="DViewerMenuShortcut"
+              Name="3D Viewer$(var.PlatformSuffix)"
+              Description="3D Viewer$(var.PlatformSuffix)"
+              Target="[INSTALLLOCATIONSAMPLESBINRELEASE]Sample-3DViewer$(var.PlatformSuffix).exe"
+              WorkingDirectory="INSTALLLOCATIONSAMPLESBINRELEASE"/>
+
+          <Shortcut Id="SimpleViewerMenuShortcut"
+            Name="Simple Viewer$(var.PlatformSuffix)"
+            Description="Simple Viewer$(var.PlatformSuffix)"
+            Target="[INSTALLLOCATIONSAMPLESBINRELEASE]\Sample-XnVSimpleViewer$(var.PlatformSuffix).exe"
+            WorkingDirectory="INSTALLLOCATIONSAMPLESBINRELEASE"/>
+          
+          <Shortcut Id="MeshViewerMenuShortcut"
+           Name="Mesh Viewer$(var.PlatformSuffix)"
+           Description="Mesh Viewer$(var.PlatformSuffix)"
+           Target="[INSTALLLOCATIONSAMPLESBINRELEASE]\Sample-MeshViewer$(var.PlatformSuffix).exe"
+           WorkingDirectory="INSTALLLOCATIONSAMPLESBINRELEASE"/>
+          
+          <Shortcut Id="RGBViewerMenuShortcut"
+           Name="RGB Viewer$(var.PlatformSuffix)"
+           Description="RGB Viewer$(var.PlatformSuffix)"
+           Target="[INSTALLLOCATIONSAMPLESBINRELEASE]\Sample-RGBViewer$(var.PlatformSuffix).exe"
+           WorkingDirectory="INSTALLLOCATIONSAMPLESBINRELEASE"/>
+          
+         
+          <Shortcut Id="SampleDirMenuShortcut"
+             Name="Samples$(var.PlatformSuffix)"
+             Description="Samples Directory"
+             Target="[INSTALLLOCATION]Samples\"
+             WorkingDirectory="INSTALLLOCATION"/>
+
+          <RemoveFolder Id="SamplesShortcutFolder" On="uninstall"/>
+        
+          <RegistryValue Root="HKCU" Key="Software\PrimeSense\EE" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+        </Component>
+      </DirectoryRef>
+      
+      <DirectoryRef Id="DocumentationShortcutFolder">
+      <Component Id="DocumentationShortcut" Guid="8842655F-C47D-4c65-B69D-59DCE36832A2" >
+        <Shortcut Id="APIRefMenuShortcut"
+           Name="API Reference $(var.VersionNumber)"
+           Description="API Reference $(var.VersionNumber)"
+           Target="[INSTALLLOCATION]Documentation\Experience Engine $(var.VersionNumber) for Windows - API Reference.chm"
+           WorkingDirectory="INSTALLLOCATION"/>
+        
+        <Shortcut Id="ProgrammerGuideShortcut"
+           Name="Programmer's Guide $(var.VersionNumber)"
+           Description="Programmer's Guide $(var.VersionNumber)"
+           Target="[INSTALLLOCATION]Documentation\Experience Engine $(var.VersionNumber) for Windows - Programmer's Guide.pdf"
+           WorkingDirectory="INSTALLLOCATION"/>
+      
+        <RemoveFolder Id="DocumentationShortcutFolder" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\PrimeSense\EE" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+      </DirectoryRef>      
+    <?endif?>
+    
+    <Property Id="OPENNIINSTALLDIR" Secure="yes">
+      <RegistrySearch Id="OpenNIInstallDirReg" Root="HKLM" Key="Software\OPENNI" Name="InstallDir" Type="raw"/>
+    </Property>
+
+    <Property Id="OPENNIVERSION">
+      <RegistrySearch Id="OpenNIVersionReg" Root="HKLM" Key="Software\OPENNI" Name="Version" Type="raw"/>
+    </Property>
+    
+    <Condition Message="Please install OpenNI verion $(var.OpenNIVersion) or higher.">OPENNIVERSION>="$(var.OpenNIVersion)" OR Installed</Condition>
+
+
+    <!-- Register XnDeviceFile-->
+    <CustomAction Id="QtExecRegXnDeviceFile" Property="SetRegXnDeviceFileProperty" Execute="immediate" 
+              Value="&quot;[OPENNIINSTALLDIR]bin$(var.PlatformSuffix)\niReg$(var.PlatformSuffix).exe&quot; &quot;[INSTALLLOCATIONBin]XnDeviceFile$(var.PlatformSuffix).dll&quot;"/>
+    <CustomAction Id="SetRegXnDeviceFileProperty" BinaryKey="WixCA" DllEntry="CAQuietExec$(var.PlatformSuffix)"
+                  Execute="deferred" Return="check" Impersonate="no"/>
+
+    <!-- Register XnDeviceSensorV2-->
+    <CustomAction Id="QtExecRegXnDeviceSensorV2" Property="SetRegXnDeviceSensorV2Property" Execute="immediate"
+              Value="&quot;[OPENNIINSTALLDIR]bin$(var.PlatformSuffix)\niReg$(var.PlatformSuffix).exe&quot; &quot;[INSTALLLOCATIONBin]XnDeviceSensorV2$(var.PlatformSuffix).dll&quot; &quot;[INSTALLLOCATION]Data&quot;"/>
+    <CustomAction Id="SetRegXnDeviceSensorV2Property" BinaryKey="WixCA" DllEntry="CAQuietExec$(var.PlatformSuffix)"
+                  Execute="deferred" Return="check" Impersonate="no"/>
+
+    <!-- UnRegister XnDeviceFile
+    <CustomAction Id="QtExecUnRegXnDeviceFile" Property="SetUnRegXnDeviceFileProperty" Execute="immediate"
+              Value="&quot;[OPENNIINSTALLDIR]bin$(var.PlatformSuffix)\niReg$(var.PlatformSuffix).exe&quot; -u &quot;[INSTALLLOCATIONBin]XnDeviceFile$(var.PlatformSuffix).dll&quot;" />
+    <CustomAction Id="SetUnRegXnDeviceFileProperty" BinaryKey="WixCA" DllEntry="CAQuietExec$(var.PlatformSuffix)"
+                  Execute="deferred" Return="ignore" Impersonate="no"/>-->
+
+    <!-- UnRegister XnDeviceSensorV2
+    <CustomAction Id="QtExecUnRegXnDeviceSensorV2" Property="SetUnRegXnDeviceSensorV2Property" Execute="immediate"
+              Value="&quot;[OPENNIINSTALLDIR]bin$(var.PlatformSuffix)\niReg$(var.PlatformSuffix).exe&quot; -u &quot;[INSTALLLOCATIONBin]XnDeviceSensorV2$(var.PlatformSuffix).dll&quot; &quot;[INSTALLLOCATION]Data&quot;" />
+    <CustomAction Id="SetUnRegXnDeviceSensorV2Property" BinaryKey="WixCA" DllEntry="CAQuietExec$(var.PlatformSuffix)"
+                  Execute="deferred" Return="ignore" Impersonate="no"/>-->
+    
+  <!--
+    <CustomAction Id='RegXnDeviceFile' Directory="INSTALLLOCATIONBin"  ExeCommand="&quot;[OPENNIINSTALLDIR]bin\niReg$(var.PlatformSuffix).exe&quot; &quot;[INSTALLLOCATIONBin]XnDeviceFile$(var.PlatformSuffix).dll&quot;" Return="check" />
+    
+
+    <CustomAction Id='RegXnDeviceSensorV2' Directory="INSTALLLOCATIONBin"  ExeCommand="&quot;[OPENNIINSTALLDIR]bin\niReg$(var.PlatformSuffix).exe&quot; &quot;[INSTALLLOCATIONBin]XnDeviceSensorV2$(var.PlatformSuffix).dll&quot; &quot;[INSTALLLOCATION]Data&quot;" Return="check" />
+
+ -->
+    
+    <CustomAction Id='UnRegXnDeviceFile' Directory="INSTALLLOCATIONBin" Return="ignore" Impersonate="no" Execute="deferred" 
+                  ExeCommand="&quot;[OPENNIINSTALLDIR]bin$(var.PlatformSuffix)\niReg$(var.PlatformSuffix).exe&quot; -u &quot;[INSTALLLOCATIONBin]XnDeviceFile$(var.PlatformSuffix).dll&quot;" />
+
+
+    <CustomAction Id='UnRegXnDeviceSensorV2' Directory="INSTALLLOCATIONBin" Return="ignore"  Impersonate="no" Execute="deferred"
+                  ExeCommand="&quot;[OPENNIINSTALLDIR]bin$(var.PlatformSuffix)\niReg$(var.PlatformSuffix).exe&quot; -u &quot;[INSTALLLOCATIONBin]XnDeviceSensorV2$(var.PlatformSuffix).dll&quot; &quot;[INSTALLLOCATION]Data&quot;"/>
+
+    <!-- Register the .xns file type -->
+    <DirectoryRef Id="TARGETDIR">
+      <Component Id="RegistryEntries" Guid="4BE31B4A-456C-4468-B08F-D1F44DAD9698">
+
+        <RegistryKey Root="HKLM" Key="Software\PrimeSense\EE" Action="createAndRemoveOnUninstall">
+          <RegistryValue Type="string" Name="InstallDir" Value="[INSTALLLOCATION]" />
+          <RegistryValue Type="string" Name="Version" Value="$(var.VersionNumber)"/>
+        </RegistryKey>
+        
+        <RegistryKey Root="HKCR" Key=".xns" Action="createAndRemoveOnUninstall" >
+          <RegistryValue Type="string" Value="PrimeSenseRecording"/>
+        </RegistryKey>
+
+        <RegistryKey Root="HKCR" Key="PrimeSenseRecording" Action="createAndRemoveOnUninstall">
+          <RegistryValue Type="string"  Value="PrimeSense Recording File"/>
+        </RegistryKey>
+
+        <RegistryKey Root="HKCR" Key="PrimeSenseRecording\DefaultIcon" Action="createAndRemoveOnUninstall">
+          <RegistryValue Type="string"  Value="[OPENNIINSTALLDIR]Samples\Bin$(var.PlatformSuffix)\Release\NiViewer$(var.PlatformSuffix).exe,0"/>
+        </RegistryKey>
+
+        <RegistryKey Root="HKCR" Key="PrimeSenseRecording\shell\open\command" Action="createAndRemoveOnUninstall">
+          <RegistryValue Type="string" Value="[OPENNIINSTALLDIR]Samples\Bin$(var.PlatformSuffix)\Release\NiViewer$(var.PlatformSuffix).exe %1"/>
+        </RegistryKey>
+
+      </Component>
+    </DirectoryRef>      
+   
+		<Feature Id="EE_NIFeature" Title="!(loc.ProductName)" Level="1">
+      <?if $(var.BinaryOnlyRedist)="False"?>
+        <ComponentGroupRef Id="EE_NIFiles" />
+        <ComponentGroupRef Id="EE_Shortcuts" />
+        <ComponentRef Id="RemoveReleaseLogDir"/>
+        <ComponentRef Id="RemoveDebugLogDir"/>
+      <?else?>
+        <ComponentGroupRef Id="EE_NIBinaryFiles" />
+      <?endif?>
+      
+      <ComponentRef Id="RegistryEntries" />
+      <ComponentRef Id="RemoveLogDir"/>
+     
+		</Feature>
+    
+    <WixVariable Id="WixUICostingPopupOptOut" Value="0" />
+
+    <InstallExecuteSequence>
+
+      <LaunchConditions After='AppSearch'>NOT Installed</LaunchConditions>
+      
+      <!--
+      <Custom Action="QtExecUnRegXnDeviceFile" After="CostFinalize"> REMOVE ~= "ALL" </Custom>
+      <Custom Action="SetUnRegXnDeviceFileProperty" Before="RemoveFiles"> REMOVE ~= "ALL" </Custom>
+      <Custom Action="QtExecUnRegXnDeviceSensorV2" After="CostFinalize"> REMOVE ~= "ALL" </Custom>
+      <Cusom Action="SetUnRegXnDeviceSensorV2Property" Before="RemoveFiles"> REMOVE ~= "ALL" </Custom>-->
+
+      <Custom Action='QtExecRegXnDeviceFile' After='CostFinalize'>NOT Installed </Custom>
+      <Custom Action='SetRegXnDeviceFileProperty' After='PublishProduct'>NOT Installed </Custom>
+      <Custom Action='QtExecRegXnDeviceSensorV2' After='CostFinalize'>NOT Installed </Custom>
+      <Custom Action='SetRegXnDeviceSensorV2Property' After='PublishProduct'>NOT Installed </Custom>
+
+<!--      <Custom Action='RegXnDeviceFile' After='InstallFinalize'>NOT Installed </Custom>
+      <Custom Action='RegXnDeviceSensorV2' After='InstallFinalize'>NOT Installed </Custom>-->
+      
+      <Custom Action='UnRegXnDeviceFile' Before="RemoveFiles"> REMOVE ~= "ALL" </Custom>
+      <Custom Action='UnRegXnDeviceSensorV2' Before="RemoveFiles"> REMOVE ~= "ALL" </Custom>
+     
+    </InstallExecuteSequence>
+	</Product>
+
+  <Fragment>
+    <ComponentGroup Id="EE_Shortcuts">
+      <ComponentRef Id="ApplicationShortcut"/>
+      <ComponentRef Id="RemovePrimeSenseShortcutFolder"/>
+      <ComponentRef Id="SamplesShortcut"/>
+      <ComponentRef Id="DocumentationShortcut"/>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

@@ -58,6 +58,7 @@ public:
 	void UnregisterFromNewDataAvailable(XnCallbackHandle hCallback);
 	XnBool IsNewDataAvailable(XnUInt64& pnTimestamp);
 	XnStatus UpdateData();
+	const void* GetData();
 	XnUInt32 GetDataSize();
 	XnUInt64 GetTimestamp();
 	XnUInt32 GetFrameID();

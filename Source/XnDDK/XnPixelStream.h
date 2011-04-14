@@ -19,11 +19,6 @@
 *  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>. *
 *                                                                            *
 *****************************************************************************/
-
-
-
-
-
 #ifndef __XN_PIXEL_STREAM_H__
 #define __XN_PIXEL_STREAM_H__
 
@@ -32,6 +27,7 @@
 //---------------------------------------------------------------------------
 #include <XnDDK/XnFrameStream.h>
 #include <XnDDK/XnActualGeneralProperty.h>
+#include <XnArray.h>
 
 //---------------------------------------------------------------------------
 // Types
@@ -59,6 +55,8 @@ public:
 	inline const XnCropping* GetCropping() const { return (XnCropping*)m_Cropping.GetValue().pData; }
 
 protected:
+	XnStatus AddSupportedModes(XnCmosPreset* aPresets, XnUInt32 nCount);
+
 	//---------------------------------------------------------------------------
 	// Properties Getters
 	//---------------------------------------------------------------------------
@@ -94,9 +92,17 @@ protected:
 	XnStatus ValidateCropping(const XnCropping* pCropping);
 
 private:
+	class XN_DDK_CPP_API XnResolutionProperty : public XnActualIntProperty
+	{
+	public:
+		XnResolutionProperty(const XnChar* strName, XnUInt64 nInitialValue = 0, const XnChar* strModule = "");
+		XnBool ConvertValueToString(XnChar* csValue, const void* pValue) const;
+	};
+
 	XnStatus OnResolutionChanged();
 	XnStatus OnOutputFormatChanged();
 	XnStatus FixCropping();
+	XnStatus GetSupportedModes(XnCmosPreset* aPresets, XnUInt32& nCount);
 
 	static XnStatus XN_CALLBACK_TYPE SetResolutionCallback(XnActualIntProperty* pSenser, XnUInt64 nValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE SetXResCallback(XnActualIntProperty* pSenser, XnUInt64 nValue, void* pCookie);
@@ -106,12 +112,12 @@ private:
 	static XnStatus XN_CALLBACK_TYPE OutputFormatValueChangedCallback(const XnProperty* pSenser, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE FixCroppingCallback(const XnProperty* pSenser, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE ReadCroppingFromFileCallback(XnGeneralProperty* pSender, const XnChar* csINIFile, const XnChar* csSection);
-
+	static XnStatus XN_CALLBACK_TYPE GetSupportedModesCallback(const XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie);
 	//---------------------------------------------------------------------------
 	// Members
 	//---------------------------------------------------------------------------
 	XnActualIntProperty m_IsPixelStream;
-	XnActualIntProperty m_Resolution;
+	XnResolutionProperty m_Resolution;
 	XnActualIntProperty m_XRes;
 	XnActualIntProperty m_YRes;
 	XnActualIntProperty m_BytesPerPixel;
@@ -119,6 +125,10 @@ private:
 
 	XnCropping m_CroppingData;
 
+	XnActualIntProperty m_SupportedModesCount;
+	XnGeneralProperty m_SupportedModes;
+
+	XnArray<XnCmosPreset> m_supportedModesData;
 	XnBool m_bAllowCustomResolutions;
 };
 

@@ -56,6 +56,9 @@ XnStatus XnServerSensorInvoker::Init(const XnChar* strDevicePath, const XnChar* 
 	nRetVal = m_sensor.SetGlobalConfigFile(strGlobalConfigFile);
 	XN_IS_STATUS_OK(nRetVal);
 
+	nRetVal = xnOSCreateCriticalSection(&m_hSensorLock);
+	XN_IS_STATUS_OK(nRetVal);
+
 	XnDeviceConfig config;
 	config.DeviceMode = XN_DEVICE_MODE_READ;
 	config.cpConnectionString = strDevicePath;
@@ -118,6 +121,12 @@ void XnServerSensorInvoker::Free()
 	{
 		xnOSCloseEvent(&m_hNewDataEvent);
 		m_hNewDataEvent = NULL;
+	}
+
+	if (m_hSensorLock != NULL)
+	{
+		xnOSCloseCriticalSection(&m_hSensorLock);
+		m_hSensorLock = NULL;
 	}
 }
 
@@ -555,14 +564,13 @@ XnStatus XnServerSensorInvoker::OnNewStreamData(const XnChar* StreamName)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	{
-		XnAutoCSLocker locker(m_hSensorLock);
-		SensorInvokerStream* pStream;
-		nRetVal = m_streams.Get(StreamName, pStream);
-		XN_IS_STATUS_OK(nRetVal);
+	// no need to lock the sensor (this might cause a dead lock).
+	// Instead, only lock the streams collection (so it wouldn't change while we search for the stream)
+	SensorInvokerStream* pStream;
+	nRetVal = m_streams.Get(StreamName, pStream);
+	XN_IS_STATUS_OK(nRetVal);
 
-		pStream->bNewData = TRUE;
-	}
+	pStream->bNewData = TRUE;
 
 	nRetVal = xnOSSetEvent(m_hNewDataEvent);
 	XN_IS_STATUS_OK(nRetVal);
@@ -588,8 +596,8 @@ XnStatus XnServerSensorInvoker::ReadStreams()
 
 	// lock sensor (we iterate over streams list. make sure no stream is added/removed from the list)
 	{
-		XnAutoCSLocker locker(m_hSensorLock);
-		for (XnServerStreamsHash::Iterator it = m_streams.begin(); it != m_streams.end(); ++it)
+		XnLockedServerStreamsHash lockedHash = m_streams.GetLockedHashForIterating();
+		for (XnLockedServerStreamsHash::Iterator it = lockedHash.begin(); it != lockedHash.end(); ++it)
 		{
 			SensorInvokerStream& stream = it.Value();
 

@@ -199,6 +199,7 @@ XnStatus XnFileDevice::BCReadInitialState(XnPropertySet* pSet)
 
 	m_pBCData->nFramePos = 1;
 
+	xnOSFreeAligned(m_pBCData->pPackedStreamBuffer);
 	m_pBCData->pPackedStreamBuffer = NULL;
 	m_pBCData->nPackedStreamBufferSize = 0;
 
@@ -308,7 +309,7 @@ XnStatus XnFileDevice::BCReadInitialState(XnPropertySet* pSet)
 	XnUInt32 nBufferSize = BCCalculatePackedBufferSize();
 	if (nBufferSize != m_pBCData->nPackedStreamBufferSize)
 	{
-		xnOSFree(m_pBCData->pPackedStreamBuffer);
+		xnOSFreeAligned(m_pBCData->pPackedStreamBuffer);
 		XN_VALIDATE_ALIGNED_CALLOC(m_pBCData->pPackedStreamBuffer, XnUChar, nBufferSize, XN_DEFAULT_MEM_ALIGN);
 		m_pBCData->nPackedStreamBufferSize = nBufferSize;
 	}
@@ -367,12 +368,6 @@ XnStatus XnFileDevice::BCSeekFrame(XnUInt32 nFrameID)
 
 	nRetVal = m_pInputStream->Seek(nOffset);
 	XN_IS_STATUS_OK(nRetVal);
-
-	// If the wanted position was the first frame, we're already there
-	if (m_pBCData->nFramePos == 1)
-	{
-		return (XN_STATUS_OK);
-	}
 
 	// Keep reading frames until we reach the wanted frame
 	XnUInt32 nCurrFilePos = 1;

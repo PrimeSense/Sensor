@@ -94,6 +94,7 @@ protected:
 	XnStatus ReadImpl(XnStreamData* pStreamOutput);
 
 private:
+	XnUInt32 m_nFrameID;
 	XnAudioSharedBuffer* m_pHeader;
 	XnUChar* m_pBuffer;
 	XnUInt32 m_nLastReadIndex;

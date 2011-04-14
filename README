@@ -1,29 +1,18 @@
-PrimeSensor Modules for OpenNI (Unstable branch)
-------------------------------------------------
+PrimeSense Sensor Module for OpenNI (Version 5.0.1.32 Unstable version - Apr 11th 2010)
+-------------------------------------------------------------------------------------
+
 Website: www.primesense.com
 Forum: http://groups.google.com/group/openni-dev
 Wiki: Coming soon!
 
-Unstable branch new features:
-* Audio streams are now supported.
-* Sensor Server now supports multiple sensors. 
-* Added MacOSX platform support.
-* Improved README! (much more detailed instructions...)
-
-Unstable branch fixes:
-* Server: a potential dead lock was solved.
-* GetStringProperty would always return XN_STATUS_ERROR.
-* Bug fix: infinite loop in server when a client tries to disconnect and streams can't be closed (usb timeout for example).
-
 Binaries are available at:
-http://www.openni.org/downloadfiles/openni-compliant-hardware/31-latest-unstable
+http://www.openni.org/downloadfiles/openni-compliant-hardware-binaries/31-latest-unstable
 
 Please use this with the OpenNI unstable branch located at:
 Source:
 https://github.com/OpenNI/OpenNI/tree/unstable
 Binaries:
 http://www.openni.org/downloadfiles/openni-binaries/20-latest-unstable
-
 
 Release Notes:
 --------------
@@ -52,14 +41,10 @@ Windows:
 		3) PyWin32
 		   From: http://sourceforge.net/projects/pywin32/files/pywin32/
 		   Please make sure you download the version that matches your exact python version.
-		4) NSIS 2.46
-		   From: http://sourceforge.net/projects/nsis/files/NSIS%202/2.46/
-		5) NSIS-2.46-strlen_8192.zip patch
-		   From: http://sourceforge.net/projects/nsis/files/NSIS%202/2.46/
-		   This is a required patch to fix a critical bug in NSIS with long environment variables.
-		   Simply unpack it into the directory where NSIS is installed and overwrite all files.
-		6) OpenNI v1.x
-		   From: http://www.openni.org/?q=node/2	
+		4) WIX 3.5
+		   From: http://wix.codeplex.com/releases/view/60102
+		5) OpenNI v1.1.x.x
+		   From: http://www.openni.org/downloadfiles	
 
 	Optional Requirements (To build the documentation):
 		1) Doxygen
@@ -88,8 +73,8 @@ Linux:
 		   From: http://www.python.org/download/
 		   Or via apt:
 		   sudo apt-get install python
-		3) OpenNI v1.x
-		   From: http://www.openni.org/?q=node/2
+		3) OpenNI v1.1.x.x
+		   From: http://www.openni.org/downloadfiles
 		   
 	Building Sensor:
 		1) Go into the directory: "Platform/Linux-x86/CreateRedist".
@@ -112,13 +97,13 @@ Linux:
 
 MacOSX:
 	Requirements:
-		1) Xcode 3.2.5
+		1) Xcode 3.2.6
 		   From: http://developer.apple.com/devcenter/mac/index.action
-		   https://developer.apple.com/ios/download.action?path=/ios/ios_sdk_4.2__final/xcode_3.2.5_and_ios_sdk_4.2_final.dmg
-		   Please note that you need to register as a mac developer (It's free!).
-		2) OpenNI v1.x
-		   From: http://www.openni.org/?q=node/2	   
-	   
+		   http://developer.apple.com/devcenter/download.action?path=/Developer_Tools/xcode_3.2.6_and_ios_sdk_4.3__final/xcode_3.2.6_and_ios_sdk_4.3.dmg
+		   Please note that you need to register as a mac developer (It's free!).		   
+		2) OpenNI v1.1.x.x
+		   From: http://www.openni.org/downloadfiles	
+		   	   
 	Building Sensor:
 		1) Go into the directory: "Platform/Linux-x86/CreateRedist".
 		   Run the script: "./RedistMaker".

@@ -34,7 +34,9 @@
 // XnSensorMapGenerator class
 //---------------------------------------------------------------------------
 XnSensorMapGenerator::XnSensorMapGenerator(xn::Context& context, xn::Device& sensor, XnDeviceBase* pSensor, const XnChar* strStreamName) :
-	XnSensorGenerator(context, sensor, pSensor, strStreamName)
+	XnSensorGenerator(context, sensor, pSensor, strStreamName),
+	m_nSupportedModesCount(0),
+	m_aSupportedModes(NULL)
 {}
 
 XnStatus XnSensorMapGenerator::Init()
@@ -44,44 +46,29 @@ XnStatus XnSensorMapGenerator::Init()
 	nRetVal = XnSensorGenerator::Init();
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnMapOutputMode mode;
-
-	// QVGA 30
-	mode.nXRes = XN_QVGA_X_RES;
-	mode.nYRes = XN_QVGA_Y_RES;
-	mode.nFPS = 30;
-	nRetVal = m_SupportedModes.AddLast(mode);
+	// get supported modes
+	XnUInt64 nCount;
+	nRetVal = GetIntProperty(XN_STREAM_PROPERTY_SUPPORT_MODES_COUNT, nCount);
 	XN_IS_STATUS_OK(nRetVal);
 
-	// QVGA 60
-	mode.nXRes = XN_QVGA_X_RES;
-	mode.nYRes = XN_QVGA_Y_RES;
-	mode.nFPS = 60;
-	nRetVal = m_SupportedModes.AddLast(mode);
+	m_aSupportedModes = (SupportedMode*)xnOSMalloc(sizeof(SupportedMode) * nCount);
+	XN_VALIDATE_ALLOC_PTR(m_aSupportedModes);
+	m_nSupportedModesCount = nCount;
+
+	const XnUInt32 nAllocCount = 150;
+	XnCmosPreset aPresets[nAllocCount];
+	XN_ASSERT(nAllocCount >= m_nSupportedModesCount);
+	nRetVal = GetGeneralProperty(XN_STREAM_PROPERTY_SUPPORT_MODES, m_nSupportedModesCount*sizeof(XnCmosPreset), aPresets);
 	XN_IS_STATUS_OK(nRetVal);
 
-	// VGA 30
-	mode.nXRes = XN_VGA_X_RES;
-	mode.nYRes = XN_VGA_Y_RES;
-	mode.nFPS = 30;
-	nRetVal = m_SupportedModes.AddLast(mode);
-	XN_IS_STATUS_OK(nRetVal);
-
-	if (m_Version.FWVer >= XN_SENSOR_FW_VER_5_2)
+	// Keep those modes
+	XnBool bOK = TRUE;
+	for (XnUInt32 i = 0; i < m_nSupportedModesCount; ++i)
 	{
-		// QVGA 25
-		mode.nXRes = XN_QVGA_X_RES;
-		mode.nYRes = XN_QVGA_Y_RES;
-		mode.nFPS = 25;
-		nRetVal = m_SupportedModes.AddLast(mode);
-		XN_IS_STATUS_OK(nRetVal);
-
-		// VGA 25
-		mode.nXRes = XN_VGA_X_RES;
-		mode.nYRes = XN_VGA_Y_RES;
-		mode.nFPS = 25;
-		nRetVal = m_SupportedModes.AddLast(mode);
-		XN_IS_STATUS_OK(nRetVal);
+		m_aSupportedModes[i].nInputFormat = aPresets[i].nFormat;
+		bOK = XnDDKGetXYFromResolution((XnResolutions)aPresets[i].nResolution, &m_aSupportedModes[i].OutputMode.nXRes, &m_aSupportedModes[i].OutputMode.nYRes);
+		XN_ASSERT(bOK);
+		m_aSupportedModes[i].OutputMode.nFPS = aPresets[i].nFPS;
 	}
 
 	return (XN_STATUS_OK);
@@ -95,7 +82,7 @@ XnBool XnSensorMapGenerator::IsCapabilitySupported(const XnChar* strCapabilityNa
 
 XnUInt32 XnSensorMapGenerator::GetSupportedMapOutputModesCount()
 {
-	return m_SupportedModes.Size();
+	return m_nSupportedModesCount;
 }
 
 XnStatus XnSensorMapGenerator::GetSupportedMapOutputModes(XnMapOutputMode aModes[], XnUInt32& nCount)
@@ -104,20 +91,28 @@ XnStatus XnSensorMapGenerator::GetSupportedMapOutputModes(XnMapOutputMode aModes
 	
 	XN_VALIDATE_INPUT_PTR(aModes);
 
-	if (nCount < m_SupportedModes.Size())
+	if (nCount < m_nSupportedModesCount)
 	{
 		return XN_STATUS_OUTPUT_BUFFER_OVERFLOW;
 	}
 
 	XnUInt32 i = 0;
-	for (XnMapOutputModeList::Iterator it = m_SupportedModes.begin(); it != m_SupportedModes.end(); ++it, ++i)
+	for (XnUInt32 i = 0; i < m_nSupportedModesCount; ++i)
 	{
-		aModes[i] = *it;
+		aModes[i] = m_aSupportedModes[i].OutputMode;
 	}
 
-	nCount = m_SupportedModes.Size();
+	nCount = m_nSupportedModesCount;
 
 	return (XN_STATUS_OK);
+}
+
+XnBool Equals(const XnMapOutputMode& mode1, const XnMapOutputMode& mode2)
+{
+	return (
+		mode1.nXRes == mode2.nXRes &&
+		mode1.nYRes == mode2.nYRes &&
+		mode1.nFPS == mode2.nFPS);
 }
 
 XnStatus XnSensorMapGenerator::SetMapOutputMode(const XnMapOutputMode& Mode)
@@ -127,11 +122,39 @@ XnStatus XnSensorMapGenerator::SetMapOutputMode(const XnMapOutputMode& Mode)
 	XnMapOutputMode current;
 	GetMapOutputMode(current);
 
-	if (current.nFPS == Mode.nFPS &&
-		current.nXRes == Mode.nXRes &&
-		current.nYRes == Mode.nYRes)
+	if (Equals(current, Mode))
 	{
 		return (XN_STATUS_OK);
+	}
+
+	// check if this mode is supported. If it is, make sure current input format is OK
+	XnUInt64 nCurrInputFormat;
+	nRetVal = GetIntProperty(XN_STREAM_PROPERTY_INPUT_FORMAT, nCurrInputFormat);
+	XN_IS_STATUS_OK(nRetVal);
+
+	XnUInt32 nChosenInputFormat = XN_MAX_UINT32;
+
+	for (XnUInt32 i = 0; i < m_nSupportedModesCount; ++i)
+	{
+		if (Equals(Mode, m_aSupportedModes[i].OutputMode))
+		{
+			// if current input format is supported, it will always be preferred.
+			if (m_aSupportedModes[i].nInputFormat == nCurrInputFormat)
+			{
+				nChosenInputFormat = nCurrInputFormat;
+				break;
+			}
+			else if (nChosenInputFormat == XN_MAX_UINT32)
+			{
+				nChosenInputFormat = m_aSupportedModes[i].nInputFormat;
+				// don't break yet. we might find our input format
+			}
+		}
+	}
+
+	if (nChosenInputFormat == XN_MAX_UINT32) // not found
+	{
+		return XN_STATUS_BAD_PARAM;
 	}
 
 	XN_PROPERTY_SET_CREATE_ON_STACK(props);
@@ -139,6 +162,11 @@ XnStatus XnSensorMapGenerator::SetMapOutputMode(const XnMapOutputMode& Mode)
 	XnPropertySetAddIntProperty(&props, m_strModule, XN_STREAM_PROPERTY_X_RES, Mode.nXRes);
 	XnPropertySetAddIntProperty(&props, m_strModule, XN_STREAM_PROPERTY_Y_RES, Mode.nYRes);
 	XnPropertySetAddIntProperty(&props, m_strModule, XN_STREAM_PROPERTY_FPS, Mode.nFPS);
+
+	if (nChosenInputFormat != nCurrInputFormat)
+	{
+		XnPropertySetAddIntProperty(&props, m_strModule, XN_STREAM_PROPERTY_INPUT_FORMAT, nChosenInputFormat);
+	}
 
 	nRetVal = m_pSensor->BatchConfig(&props);
 	XN_IS_STATUS_OK(nRetVal);

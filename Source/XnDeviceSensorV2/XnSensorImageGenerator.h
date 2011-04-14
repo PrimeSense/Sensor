@@ -39,21 +39,35 @@
 //---------------------------------------------------------------------------
 class XnSensorImageGenerator:
 	public XnSensorMapGenerator,
-	virtual public xn::ModuleImageGenerator
+	virtual public xn::ModuleImageGenerator,
+	virtual public xn::ModuleGeneralIntInterface,
+	virtual public xn::ModuleAntiFlickerInterface
 {
 public:
 	XnSensorImageGenerator(xn::Context& context, xn::Device& sensor, XnDeviceBase* pSensor, const XnChar* strStreamName);
 	
-	XnStatus Init();
-
 	XnBool IsCapabilitySupported(const XnChar* strCapabilityName);
 
+	const void* GetData() { return XnSensorMapGenerator::GetData(); }
 	XnUInt8* GetImageMap();
 	XnBool IsPixelFormatSupported(XnPixelFormat Format);
 	XnStatus SetPixelFormat(XnPixelFormat Format);
 	XnPixelFormat GetPixelFormat();
 	XnStatus RegisterToPixelFormatChange(XnModuleStateChangedHandler handler, void* pCookie, XnCallbackHandle& hCallback);
 	void UnregisterFromPixelFormatChange(XnCallbackHandle hCallback);
+
+	virtual xn::ModuleGeneralIntInterface* GetGeneralIntInterface(const XnChar* strCap);
+	virtual XnStatus GetRange(const XnChar* strCap, XnInt32& nMin, XnInt32& nMax, XnInt32& nStep, XnInt32& nDefault, XnBool& bIsAutoSupported);
+	virtual XnStatus Get(const XnChar* strCap, XnInt32& nValue);
+	virtual XnInt32 Set(const XnChar* strCap, XnInt32 nValue);
+	virtual XnStatus RegisterToValueChange(const XnChar* strCap, XnModuleStateChangedHandler handler, void* pCookie, XnCallbackHandle& hCallback);
+	virtual void UnregisterFromValueChange(const XnChar* strCap, XnCallbackHandle hCallback);
+
+	virtual xn::ModuleAntiFlickerInterface* GetAntiFlickerInterface() { return this; }
+	virtual XnPowerLineFrequency GetPowerLineFrequency();
+	virtual XnStatus SetPowerLineFrequency( XnPowerLineFrequency nFrequency );
+	virtual XnStatus RegisterToPowerLineFrequencyChange( XnModuleStateChangedHandler handler, void* pCookie, XnCallbackHandle& hCallback );
+	virtual void UnregisterFromPowerLineFrequencyChange( XnCallbackHandle hCallback );
 
 protected:
 	virtual void FilterProperties(XnActualPropertiesHash* pHash);
@@ -63,6 +77,7 @@ class XnExportedSensorImageGenerator : public XnExportedSensorGenerator
 {
 public:
 	XnExportedSensorImageGenerator();
+	virtual XnStatus EnumerateProductionTrees(xn::Context& context, xn::NodeInfoList& TreesList, xn::EnumerationErrors* pErrors);
 	virtual XnSensorGenerator* CreateGenerator(xn::Context& context, xn::Device& sensor, XnDeviceBase* pSensor, const XnChar* strStreamName);
 };
 

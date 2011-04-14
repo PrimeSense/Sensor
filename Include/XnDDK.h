@@ -31,6 +31,7 @@
 #include <XnPlatform.h>
 #include <XnStatus.h>
 #include <XnDDKStatus.h>
+#include <XnStreamParams.h>
 
 #ifdef __cplusplus
 	#ifdef XN_DDK_EXPORTS
@@ -79,5 +80,9 @@ XN_DDK_API XnStatus XnDDKInitFromINIFile(const XnChar* cpINIFileName);
 * This function shuts down the DDK library.
 */
 XN_DDK_API XnStatus XnDDKShutdown();
+
+XN_DDK_API XnResolutions XnDDKGetResolutionFromXY(XnUInt32 nXRes, XnUInt32 nYRes);
+XN_DDK_API XnBool XnDDKGetXYFromResolution(XnResolutions res, XnUInt32* pnXRes, XnUInt32* pnYRes);
+XN_DDK_API const XnChar*  XnDDKGetResolutionName(XnResolutions res);
 
 #endif //_XN_DDK_H_

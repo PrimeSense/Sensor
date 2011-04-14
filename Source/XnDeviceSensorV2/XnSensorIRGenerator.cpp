@@ -58,14 +58,6 @@ XnStatus XnSensorIRGenerator::Init()
 	nRetVal = RegisterToCroppingChange(OnResChangedCallback, this, m_hCroppingCallback);
 	XN_IS_STATUS_OK(nRetVal);
 
-	// add SXGA 30
-	XnMapOutputMode mode;
-	mode.nXRes = XN_SXGA_X_RES;
-	mode.nYRes = XN_SXGA_Y_RES;
-	mode.nFPS = 30;
-	nRetVal = m_SupportedModes.AddLast(mode);
-	XN_IS_STATUS_OK(nRetVal);
-
 	OnResChanged();
 	
 	return (XN_STATUS_OK);
@@ -116,7 +108,7 @@ void XN_CALLBACK_TYPE XnSensorIRGenerator::OnResChangedCallback(void* pCookie)
 // XnExportedSensorIRGenerator class
 //---------------------------------------------------------------------------
 XnExportedSensorIRGenerator::XnExportedSensorIRGenerator() :
-	XnExportedSensorGenerator(XN_NODE_TYPE_IR, XN_STREAM_TYPE_IR)
+	XnExportedSensorGenerator(XN_NODE_TYPE_IR, XN_STREAM_TYPE_IR, FALSE)
 {}
 
 XnSensorGenerator* XnExportedSensorIRGenerator::CreateGenerator(xn::Context& context, xn::Device& sensor, XnDeviceBase* pSensor, const XnChar* strStreamName)

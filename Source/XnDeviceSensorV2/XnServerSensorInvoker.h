@@ -92,7 +92,91 @@ private:
 		NewStreamDataEvent* pNewDataEvent;
 	} SensorInvokerStream;
 
-	XN_DECLARE_STRINGS_HASH(SensorInvokerStream, XnServerStreamsHash);
+	XN_DECLARE_STRINGS_HASH(SensorInvokerStream, _XnServerStreamsHash);
+
+	class XnServerStreamsHash;
+
+	class XnLockedServerStreamsHash
+	{
+	public:
+		inline XnLockedServerStreamsHash(const XnLockedServerStreamsHash& other) :
+			m_hash(other.m_hash),
+			m_locker(other.m_locker)
+		{}
+
+		inline XnLockedServerStreamsHash& operator=(const XnLockedServerStreamsHash& other)
+		{
+			this->m_hash = other.m_hash;
+			this->m_locker = other.m_locker;
+			return *this;
+		}
+
+		inline _XnServerStreamsHash::Iterator begin()
+		{
+			return m_hash.begin();
+		}
+
+		inline _XnServerStreamsHash::Iterator end()
+		{
+			return m_hash.end();
+		}
+
+		typedef _XnServerStreamsHash::Iterator Iterator;
+
+	private:
+		inline XnLockedServerStreamsHash(_XnServerStreamsHash& hash, XN_CRITICAL_SECTION_HANDLE hLock) :
+			m_hash(hash),
+			m_locker(hLock)
+		{}
+
+		friend class XnServerSensorInvoker::XnServerStreamsHash;
+
+		_XnServerStreamsHash& m_hash;
+		XnAutoCSLocker m_locker;
+	};
+
+	class XnServerStreamsHash
+	{
+	public:
+		XnServerStreamsHash()
+		{
+			XnStatus nRetVal = xnOSCreateCriticalSection(&m_hLock);
+			XN_ASSERT(nRetVal == XN_STATUS_OK);
+		}
+
+		~XnServerStreamsHash()
+		{
+			XnStatus nRetVal = xnOSCloseCriticalSection(&m_hLock);
+			XN_ASSERT(nRetVal == XN_STATUS_OK);
+		}
+
+		inline XnStatus Set(const XnChar* strName, const SensorInvokerStream& stream)
+		{
+			XnAutoCSLocker locker(m_hLock);
+			return m_hash.Set(strName, stream);
+		}
+
+		inline XnStatus Get(const XnChar* strName, SensorInvokerStream*& pStream)
+		{
+			XnAutoCSLocker locker(m_hLock);
+			return m_hash.Get(strName, pStream);
+		}
+
+		inline XnStatus Remove(const XnChar* strName)
+		{
+			XnAutoCSLocker locker(m_hLock);
+			return m_hash.Remove(strName);
+		}
+
+		inline XnLockedServerStreamsHash GetLockedHashForIterating()
+		{
+			return XnLockedServerStreamsHash(m_hash, m_hLock);
+		}
+
+	private:
+		XN_CRITICAL_SECTION_HANDLE m_hLock;
+		_XnServerStreamsHash m_hash;
+	};
 
 	// Functions
 	XnStatus RegisterToProps(XnPropertySet* pProps);

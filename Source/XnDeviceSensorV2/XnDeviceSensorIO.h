@@ -68,7 +68,6 @@ typedef struct XN_SENSOR_HANDLE
 	XnUsbConnection DepthConnection;
 	XnUsbConnection ImageConnection;
 	XnUsbConnection MiscConnection;
-//	XnSensorRes SensorRes;	
 	XnUInt8 nBoardVer;
 } XN_SENSOR_HANDLE;
 
@@ -81,6 +80,9 @@ public:
 	XnSensorIO(XN_SENSOR_HANDLE* pSensorHandle);
 	~XnSensorIO();
 
+	static XnStatus EnumerateSensors(XnConnectionString* aConnectionStrings, XnUInt32* pnCount);
+	static XnStatus IsSensorLowBandwidth(const XnConnectionString connectionString, XnBool* pbIsLowband);
+
 	XnStatus OpenDevice(const XnChar* strPath);
 
 	XnStatus OpenDataEndPoints(XnSensorUsbInterface nInterface);
@@ -89,9 +91,8 @@ public:
 
 	XnStatus CloseDevice();
 
-	static XnStatus EnumerateSensors(XnConnectionString* aConnectionStrings, XnUInt32* pnCount);
-
 	inline XnBool IsMiscEndpointSupported() const { return m_bMiscSupported; }
+	inline XnBool IsLowBandwidth() const { return m_bIsLowBandwidth; }
 
 	XnStatus SetCallback(XnUSBEventCallbackFunctionPtr pCallbackPtr, void* pCallbackData);
 
@@ -102,6 +103,7 @@ private:
 	XnBool m_bMiscSupported;
 	XnSensorUsbInterface m_interface;
 	XnChar m_strDeviceName[XN_DEVICE_MAX_STRING_LENGTH];
+	XnBool m_bIsLowBandwidth;
 };
 
 #endif //__XN_DEVICE_SENSOR_I_O_H__

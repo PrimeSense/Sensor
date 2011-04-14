@@ -20,11 +20,6 @@
 *                                                                            *
 *****************************************************************************/
 
-
-
-
-
-
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -35,21 +30,12 @@
 #include "XnUncompressedBayerProcessor.h"
 #include "XnPSCompressedImageProcessor.h"
 #include "XnJpegImageProcessor.h"
+#include "XnJpegToRGBImageProcessor.h"
 #include "XnUncompressedYUVImageProcessor.h"
 #include "XnUncompressedYUVtoRGBImageProcessor.h"
 #include "YUV.h"
 #include "Bayer.h"
 #include <XnProfiling.h>
-
-//---------------------------------------------------------------------------
-// Defines
-//---------------------------------------------------------------------------
-#define XN_IMAGE_STREAM_DEFAULT_FPS				30
-#define XN_IMAGE_STREAM_DEFAULT_RESOLUTION		XN_RESOLUTION_QVGA
-#define XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT	XN_IO_IMAGE_FORMAT_YUV422
-#define XN_IMAGE_STREAM_DEFAULT_OUTPUT_FORMAT	XN_OUTPUT_FORMAT_RGB24
-#define XN_IMAGE_STREAM_DEFAULT_FLICKER			0
-#define XN_IMAGE_STREAM_DEFAULT_QUALITY			10
 
 //---------------------------------------------------------------------------
 // XnSensorImageStream class
@@ -62,12 +48,28 @@ XnSensorImageStream::XnSensorImageStream(const XnChar* strDeviceName, const XnCh
 	m_InputFormat(XN_STREAM_PROPERTY_INPUT_FORMAT, XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT),
 	m_AntiFlicker(XN_STREAM_PROPERTY_FLICKER, XN_IMAGE_STREAM_DEFAULT_FLICKER),
 	m_ImageQuality(XN_STREAM_PROPERTY_QUALITY, XN_IMAGE_STREAM_DEFAULT_QUALITY),
+	m_Brightness(XN_STREAM_PROPERTY_BRIGHTNESS, XN_IMAGE_STREAM_DEFAULT_BRIGHTNESS),
+	m_Contrast(XN_STREAM_PROPERTY_CONTRAST, XN_IMAGE_STREAM_DEFAULT_CONTRAST),
+	m_Saturation(XN_STREAM_PROPERTY_SATURATION, XN_IMAGE_STREAM_DEFAULT_SATURATION),
+	m_Sharpness(XN_STREAM_PROPERTY_SHARPNESS, XN_IMAGE_STREAM_DEFAULT_SHARPNESS),
+	m_ColorTemperature(XN_STREAM_PROPERTY_COLOR_TEMPERATURE, XN_IMAGE_STREAM_DEFAULT_COLOR_TEMP),
+	m_BackLightCompensation(XN_STREAM_PROPERTY_BACKLIGHT_COMPENSATION, XN_IMAGE_STREAM_DEFAULT_BACKLIGHT_COMP),
+	m_Gain(XN_STREAM_PROPERTY_GAIN, XN_IMAGE_STREAM_DEFAULT_GAIN),
+	m_Zoom(XN_STREAM_PROPERTY_ZOOM, XN_IMAGE_STREAM_DEFAULT_ZOOM),
+	m_Exposure(XN_STREAM_PROPERTY_EXPOSURE, XN_IMAGE_STREAM_DEFAULT_EXPOSURE_BAR),
+	m_Pan(XN_STREAM_PROPERTY_PAN, XN_IMAGE_STREAM_DEFAULT_PAN),
+	m_Tilt(XN_STREAM_PROPERTY_TILT, XN_IMAGE_STREAM_DEFAULT_TILT),
+	m_LowLightCompensation(XN_STREAM_PROPERTY_LOW_LIGHT_COMPENSATION, XN_IMAGE_STREAM_DEFAULT_LOW_LIGHT_COMP),
 	m_FirmwareMirror("FirmwareMirror", FALSE, StreamName),
 	m_FirmwareCropSizeX("FirmwareCropSizeX", 0, StreamName),
 	m_FirmwareCropSizeY("FirmwareCropSizeY", 0, StreamName),
 	m_FirmwareCropOffsetX("FirmwareCropOffsetX", 0, StreamName),
 	m_FirmwareCropOffsetY("FirmwareCropOffsetY", 0, StreamName),
 	m_FirmwareCropEnabled("FirmwareCropEnabled", FALSE, StreamName),
+	m_FirmwareColorTemperature("FirmwareWhiteBalance", 0, StreamName),
+	m_FirmwareAutoWhiteBalance("FirmwareAutoWhiteBalance", 0, StreamName),
+	m_FirmwareExposure("FirmwareExposure", 0, StreamName),
+	m_FirmwareAutoExposure("FirmwareAutoExposure", FALSE, StreamName),
 	m_ActualRead(XN_STREAM_PROPERTY_ACTUAL_READ_DATA, FALSE)
 {
 	m_ActualRead.UpdateSetCallback(SetActualReadCallback, this);
@@ -87,9 +89,24 @@ XnStatus XnSensorImageStream::Init()
 	m_InputFormat.UpdateSetCallback(SetInputFormatCallback, this);
 	m_AntiFlicker.UpdateSetCallback(SetAntiFlickerCallback, this);
 	m_ImageQuality.UpdateSetCallback(SetImageQualityCallback, this);
+	m_Brightness.UpdateSetCallbackToDefault();
+	m_Contrast.UpdateSetCallbackToDefault();
+	m_Saturation.UpdateSetCallbackToDefault();
+	m_Zoom.UpdateSetCallbackToDefault();
+	m_Pan.UpdateSetCallbackToDefault();
+	m_Tilt.UpdateSetCallbackToDefault();
+	m_Sharpness.UpdateSetCallback(SetSharpnessCallback, this);
+	m_ColorTemperature.UpdateSetCallback(SetColorTemperatureCallback, this);
+	m_BackLightCompensation.UpdateSetCallback(SetBacklightCompensationCallback, this);
+	m_Gain.UpdateSetCallback(SetGainCallback, this);
+	m_Exposure.UpdateSetCallback(SetExposureCallback, this);
+	m_LowLightCompensation.UpdateSetCallback(SetLowLightCompensationCallback, this);
 
 	// add properties
 	XN_VALIDATE_ADD_PROPERTIES(this, &m_InputFormat, &m_AntiFlicker, &m_ImageQuality, 
+		&m_Brightness, &m_Contrast, &m_Saturation, &m_Sharpness,  
+		&m_ColorTemperature, &m_BackLightCompensation, &m_Gain, &m_Zoom, 
+		&m_Exposure, &m_Pan, &m_Tilt, &m_LowLightCompensation,
 		&m_SharedBufferName, &m_ActualRead);
 
 	// set base properties default values
@@ -115,6 +132,61 @@ XnStatus XnSensorImageStream::Init()
 
 	nRetVal = m_Helper.RegisterDataProcessorProperty(ResolutionProperty());
 	XN_IS_STATUS_OK(nRetVal);
+
+	// register supported modes
+	if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_4)
+	{
+		// ask the firmware
+		const XnUInt32 nAllocSize = 100;
+		XnUInt32 nCount = nAllocSize;
+		XnCmosPreset aSupportedModes[nAllocSize];
+		nRetVal = XnHostProtocolGetCmosPresets(m_Helper.GetPrivateData(), XN_CMOS_TYPE_IMAGE, aSupportedModes, nCount);
+		XN_IS_STATUS_OK(nRetVal);
+
+		nRetVal = AddSupportedModes(aSupportedModes, nCount);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+	else
+	{
+		// register known types
+		XnCmosPreset aSupportedModes[] = 
+		{
+			{ XN_IO_IMAGE_FORMAT_YUV422, XN_RESOLUTION_QVGA, 30 },
+			{ XN_IO_IMAGE_FORMAT_YUV422, XN_RESOLUTION_QVGA, 60 },
+			{ XN_IO_IMAGE_FORMAT_YUV422, XN_RESOLUTION_VGA, 30 },
+			{ XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_QVGA, 30 },
+			{ XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_QVGA, 60 },
+			{ XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_VGA, 30 },
+		};
+		nRetVal = AddSupportedModes(aSupportedModes, sizeof(aSupportedModes)/sizeof(aSupportedModes[0]));
+		XN_IS_STATUS_OK(nRetVal);
+
+		if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_2)
+		{
+			XnCmosPreset aSupportedModes25[] = 
+			{
+				{ XN_IO_IMAGE_FORMAT_YUV422, XN_RESOLUTION_QVGA, 25 },
+				{ XN_IO_IMAGE_FORMAT_YUV422, XN_RESOLUTION_VGA, 25 },
+				{ XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_QVGA, 25 },
+				{ XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_VGA, 25 },
+			};
+			nRetVal = AddSupportedModes(aSupportedModes25, sizeof(aSupportedModes25)/sizeof(aSupportedModes25[0]));
+			XN_IS_STATUS_OK(nRetVal);
+		}
+
+		if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_3)
+		{
+			XnCmosPreset highRes = { XN_IO_IMAGE_FORMAT_BAYER, XN_RESOLUTION_SXGA, 30 };
+			nRetVal = AddSupportedModes(&highRes, 1);
+			XN_IS_STATUS_OK(nRetVal);
+		}
+		else if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_2)
+		{
+			XnCmosPreset highRes = { XN_IO_IMAGE_FORMAT_BAYER, XN_RESOLUTION_UXGA, 30 };
+			nRetVal = AddSupportedModes(&highRes, 1);
+			XN_IS_STATUS_OK(nRetVal);
+		}
+	}
 
 	return (XN_STATUS_OK);
 }
@@ -144,17 +216,44 @@ XnStatus XnSensorImageStream::MapPropertiesToFirmware()
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(m_InputFormat, GetFirmwareParams()->m_ImageFormat, FALSE));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(ResolutionProperty(), GetFirmwareParams()->m_ImageResolution, FALSE));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(FPSProperty(), GetFirmwareParams()->m_ImageFPS, FALSE));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(m_AntiFlicker, GetFirmwareParams()->m_ImageFlickerDetection, TRUE));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(m_ImageQuality, GetFirmwareParams()->m_ImageQuality, TRUE));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(m_FirmwareMirror, GetFirmwareParams()->m_ImageMirror, TRUE));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(m_FirmwareCropSizeX, GetFirmwareParams()->m_ImageCropSizeX, TRUE));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(m_FirmwareCropSizeY, GetFirmwareParams()->m_ImageCropSizeY, TRUE));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(m_FirmwareCropOffsetX, GetFirmwareParams()->m_ImageCropOffsetX, TRUE));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(m_FirmwareCropOffsetY, GetFirmwareParams()->m_ImageCropOffsetY, TRUE));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(m_FirmwareCropEnabled, GetFirmwareParams()->m_ImageCropEnabled, TRUE));
+	nRetVal = m_Helper.MapFirmwareProperty(m_InputFormat, GetFirmwareParams()->m_ImageFormat, FALSE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(ResolutionProperty(), GetFirmwareParams()->m_ImageResolution, FALSE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(FPSProperty(), GetFirmwareParams()->m_ImageFPS, FALSE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_AntiFlicker, GetFirmwareParams()->m_ImageFlickerDetection, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_ImageQuality, GetFirmwareParams()->m_ImageQuality, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareMirror, GetFirmwareParams()->m_ImageMirror, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropSizeX, GetFirmwareParams()->m_ImageCropSizeX, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropSizeY, GetFirmwareParams()->m_ImageCropSizeY, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropOffsetX, GetFirmwareParams()->m_ImageCropOffsetX, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropOffsetY, GetFirmwareParams()->m_ImageCropOffsetY, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropEnabled, GetFirmwareParams()->m_ImageCropEnabled, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_Sharpness, GetFirmwareParams()->m_ImageSharpness, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareAutoWhiteBalance, GetFirmwareParams()->m_ImageAutoWhiteBalance, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareColorTemperature, GetFirmwareParams()->m_ImageColorTemperature, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_BackLightCompensation, GetFirmwareParams()->m_ImageBacklightCompensation, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_Gain, GetFirmwareParams()->m_ImageGain, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareExposure, GetFirmwareParams()->m_ImageExposureBar, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareAutoExposure, GetFirmwareParams()->m_ImageAutoExposure, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_LowLightCompensation, GetFirmwareParams()->m_ImageLowLightCompensation, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
 
 	return (XN_STATUS_OK);
 }
@@ -189,9 +288,9 @@ XnStatus XnSensorImageStream::ValidateMode()
 	{
 		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "BAYER input requires SXGA/UXGA resolution!");
 	}
-	else if (nInputFormat == XN_IO_IMAGE_FORMAT_JPEG && nOutputFormat != XN_OUTPUT_FORMAT_RGB24)
+	else if (nInputFormat == XN_IO_IMAGE_FORMAT_JPEG && nOutputFormat != XN_OUTPUT_FORMAT_RGB24 && nOutputFormat != XN_OUTPUT_FORMAT_JPEG)
 	{
-		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Jpeg input is only supported for RGB24 output!");
+		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Jpeg input is only supported for RGB24 or JPEG output!");
 	}
 
 	return (XN_STATUS_OK);
@@ -209,22 +308,48 @@ XnStatus XnSensorImageStream::ConfigureStreamImpl()
 	nRetVal = ValidateMode();
 	XN_IS_STATUS_OK(nRetVal);
 
-	XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(m_InputFormat));
-	XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(ResolutionProperty()));
-	XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(FPSProperty()));
-	XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(m_AntiFlicker));
+	nRetVal = m_Helper.ConfigureFirmware(m_InputFormat);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.ConfigureFirmware(ResolutionProperty());
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.ConfigureFirmware(FPSProperty());
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.ConfigureFirmware(m_AntiFlicker);
+	XN_IS_STATUS_OK(nRetVal);;
 
 	// image quality is only relevant for JPEG
 	if (m_InputFormat.GetValue() == XN_IO_IMAGE_FORMAT_JPEG)
 	{
-		XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(m_ImageQuality));
+		nRetVal = m_Helper.ConfigureFirmware(m_ImageQuality);
+		XN_IS_STATUS_OK(nRetVal);;
 	}
 
-	XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(m_FirmwareMirror));
+	nRetVal = m_Helper.ConfigureFirmware(m_FirmwareMirror);
+	XN_IS_STATUS_OK(nRetVal);;
 
 	if (GetResolution() != XN_RESOLUTION_UXGA && GetResolution() != XN_RESOLUTION_SXGA)
 	{
 		nRetVal = m_Helper.GetCmosInfo()->SetCmosConfig(XN_CMOS_TYPE_IMAGE, GetResolution(), GetFPS());
+		XN_IS_STATUS_OK(nRetVal);
+	}
+
+	if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_4)
+	{
+		nRetVal = m_Helper.ConfigureFirmware(m_Sharpness);
+		XN_IS_STATUS_OK(nRetVal);
+		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareColorTemperature);
+		XN_IS_STATUS_OK(nRetVal);
+		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareAutoWhiteBalance);
+		XN_IS_STATUS_OK(nRetVal);
+		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareExposure);
+		XN_IS_STATUS_OK(nRetVal);
+		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareAutoExposure);
+		XN_IS_STATUS_OK(nRetVal);
+		nRetVal = m_Helper.ConfigureFirmware(m_BackLightCompensation);
+		XN_IS_STATUS_OK(nRetVal);
+		nRetVal = m_Helper.ConfigureFirmware(m_Gain);
+		XN_IS_STATUS_OK(nRetVal);
+		nRetVal = m_Helper.ConfigureFirmware(m_LowLightCompensation);
 		XN_IS_STATUS_OK(nRetVal);
 	}
 
@@ -240,7 +365,8 @@ XnStatus XnSensorImageStream::SetActualRead(XnBool bRead)
 		if (bRead)
 		{
 			xnLogVerbose(XN_MASK_DEVICE_SENSOR, "Creating USB image read thread...");
-			nRetVal = xnUSBInitReadThread(GetHelper()->GetPrivateData()->pSpecificImageUsb->pUsbConnection->UsbEp, GetHelper()->GetPrivateData()->pSpecificImageUsb->nChunkReadBytes, XN_SENSOR_USB_IMAGE_BUFFERS, XN_SENSOR_READ_THREAD_TIMEOUT, XnDeviceSensorProtocolUsbEpCb, GetHelper()->GetPrivateData()->pSpecificImageUsb);
+			XnSpecificUsbDevice* pUSB = GetHelper()->GetPrivateData()->pSpecificImageUsb;
+			nRetVal = xnUSBInitReadThread(pUSB->pUsbConnection->UsbEp, pUSB->nChunkReadBytes, XN_SENSOR_USB_IMAGE_BUFFERS, pUSB->nTimeout, XnDeviceSensorProtocolUsbEpCb, pUSB);
 			XN_IS_STATUS_OK(nRetVal);
 		}
 		else
@@ -266,12 +392,17 @@ XnStatus XnSensorImageStream::OpenStreamImpl()
 	// Cropping
 	if (m_FirmwareCropEnabled.GetValue() == TRUE)
 	{
-		XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(m_FirmwareCropSizeX));
-		XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(m_FirmwareCropSizeY));
-		XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(m_FirmwareCropOffsetX));
-		XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(m_FirmwareCropOffsetY));
+		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropSizeX);
+		XN_IS_STATUS_OK(nRetVal);;
+		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropSizeY);
+		XN_IS_STATUS_OK(nRetVal);;
+		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropOffsetX);
+		XN_IS_STATUS_OK(nRetVal);;
+		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropOffsetY);
+		XN_IS_STATUS_OK(nRetVal);;
 	}
-	XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(m_FirmwareCropEnabled));
+	nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropEnabled);
+	XN_IS_STATUS_OK(nRetVal);;
 
 	nRetVal = XnImageStream::Open();
 	XN_IS_STATUS_OK(nRetVal);
@@ -304,6 +435,7 @@ XnStatus XnSensorImageStream::SetOutputFormat(XnOutputFormats nOutputFormat)
 	case XN_OUTPUT_FORMAT_GRAYSCALE8:
 	case XN_OUTPUT_FORMAT_YUV422:
 	case XN_OUTPUT_FORMAT_RGB24:
+	case XN_OUTPUT_FORMAT_JPEG:
 		break;
 	default:
 		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Unsupported image output format: %d", nOutputFormat);
@@ -364,17 +496,6 @@ XnStatus XnSensorImageStream::SetFPS(XnUInt32 nFPS)
 XnStatus XnSensorImageStream::SetResolution(XnResolutions nResolution)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-
-	switch (nResolution)
-	{
-	case XN_RESOLUTION_QVGA:
-	case XN_RESOLUTION_VGA:
-	case XN_RESOLUTION_SXGA:
-	case XN_RESOLUTION_UXGA:
-		break;
-	default:
-		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Unknown resolution: %u", nResolution);
-	}
 
 	nRetVal = m_Helper.BeforeSettingFirmwareParam(ResolutionProperty(), nResolution);
 	XN_IS_STATUS_OK(nRetVal);
@@ -501,6 +622,86 @@ XnStatus XnSensorImageStream::SetCropping(const XnCropping* pCropping)
 	return (XN_STATUS_OK);
 }
 
+XnStatus XnSensorImageStream::SetSharpness( XnInt32 nValue )
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	nRetVal = m_Helper.SimpleSetFirmwareParam(m_Sharpness, (XnUInt16)nValue);
+	XN_IS_STATUS_OK(nRetVal);
+
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensorImageStream::SetColorTemperature( XnInt32 nValue )
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	XnBool bIsAuto = (nValue == XN_AUTO_CONTROL);
+	nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareAutoWhiteBalance, bIsAuto);
+	XN_IS_STATUS_OK(nRetVal);
+
+	if (!bIsAuto)
+	{
+		nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareColorTemperature, (XnUInt16)nValue);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+
+	nRetVal = m_ColorTemperature.UnsafeUpdateValue(nValue);
+	XN_IS_STATUS_OK(nRetVal);
+
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensorImageStream::SetBacklightCompensation( XnInt32 nValue )
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	nRetVal = m_Helper.SimpleSetFirmwareParam(m_BackLightCompensation, (XnUInt16)nValue);
+	XN_IS_STATUS_OK(nRetVal);
+
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensorImageStream::SetGain( XnInt32 nValue )
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	nRetVal = m_Helper.SimpleSetFirmwareParam(m_Gain, (XnUInt16)nValue);
+	XN_IS_STATUS_OK(nRetVal);
+
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensorImageStream::SetExposure( XnInt32 nValue )
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	XnBool bIsAuto = (nValue == XN_AUTO_CONTROL);
+	nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareAutoExposure, bIsAuto);
+	XN_IS_STATUS_OK(nRetVal);
+
+	if (!bIsAuto)
+	{
+		nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareExposure, (XnUInt16)nValue);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+
+	nRetVal = m_Exposure.UnsafeUpdateValue(nValue);
+	XN_IS_STATUS_OK(nRetVal);
+
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensorImageStream::SetLowLightCompensation( XnInt32 nValue )
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	nRetVal = m_Helper.SimpleSetFirmwareParam(m_LowLightCompensation, (XnUInt16)nValue);
+	XN_IS_STATUS_OK(nRetVal);
+
+	return (XN_STATUS_OK);
+}
+
 XnStatus XnSensorImageStream::PostProcessFrame(XnStreamData* pFrameData)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
@@ -613,7 +814,18 @@ XnStatus XnSensorImageStream::CreateDataProcessor(XnDataProcessor** ppProcessor)
 		XN_VALIDATE_NEW_AND_INIT(pNew, XnPSCompressedImageProcessor, this, &m_Helper);
 		break;
 	case XN_IO_IMAGE_FORMAT_JPEG:
-		XN_VALIDATE_NEW_AND_INIT(pNew, XnJpegImageProcessor, this, &m_Helper);
+		if (GetOutputFormat() == XN_OUTPUT_FORMAT_JPEG)
+		{
+			XN_VALIDATE_NEW_AND_INIT(pNew, XnJpegImageProcessor, this, &m_Helper);
+		}
+		else if (GetOutputFormat() == XN_OUTPUT_FORMAT_RGB24)
+		{
+			XN_VALIDATE_NEW_AND_INIT(pNew, XnJpegToRGBImageProcessor, this, &m_Helper);
+		}
+		else
+		{
+			XN_LOG_WARNING_RETURN(XN_STATUS_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "invalid output format %d!", GetOutputFormat());
+		}
 		break;
 	case XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422:
 		if (GetOutputFormat() == XN_OUTPUT_FORMAT_YUV422)
@@ -626,7 +838,7 @@ XnStatus XnSensorImageStream::CreateDataProcessor(XnDataProcessor** ppProcessor)
 		}
 		else
 		{
-			XN_LOG_WARNING_RETURN(XN_STATUS_ERROR, XN_MASK_DEVICE_SENSOR, "invalid ouput format %d!", GetOutputFormat());
+			XN_LOG_WARNING_RETURN(XN_STATUS_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "invalid output format %d!", GetOutputFormat());
 		}
 		break;
 	case XN_IO_IMAGE_FORMAT_UNCOMPRESSED_BAYER:
@@ -665,3 +877,38 @@ XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetActualReadCallback(XnActualInt
 	return pThis->SetActualRead(nValue == TRUE);
 }
 
+XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetSharpnessCallback( XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie )
+{
+	XnSensorImageStream* pThis = (XnSensorImageStream*)pCookie;
+	return pThis->SetSharpness((XnInt32)nValue);
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetColorTemperatureCallback( XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie )
+{
+	XnSensorImageStream* pThis = (XnSensorImageStream*)pCookie;
+	return pThis->SetColorTemperature((XnInt32)nValue);
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetBacklightCompensationCallback( XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie )
+{
+	XnSensorImageStream* pThis = (XnSensorImageStream*)pCookie;
+	return pThis->SetBacklightCompensation((XnInt32)nValue);
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetGainCallback( XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie )
+{
+	XnSensorImageStream* pThis = (XnSensorImageStream*)pCookie;
+	return pThis->SetGain((XnInt32)nValue);
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetLowLightCompensationCallback( XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie )
+{
+	XnSensorImageStream* pThis = (XnSensorImageStream*)pCookie;
+	return pThis->SetLowLightCompensation((XnInt32)nValue);
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetExposureCallback( XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie )
+{
+	XnSensorImageStream* pThis = (XnSensorImageStream*)pCookie;
+	return pThis->SetExposure((XnInt32)nValue);
+}

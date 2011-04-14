@@ -38,6 +38,21 @@
 
 
 //---------------------------------------------------------------------------
+// Defines
+//---------------------------------------------------------------------------
+#define XN_DEPTH_STREAM_DEFAULT_INPUT_FORMAT				XN_IO_DEPTH_FORMAT_UNCOMPRESSED_11_BIT
+#define XN_DEPTH_STREAM_DEFAULT_RESOLUTION					XN_RESOLUTION_QVGA
+#define XN_DEPTH_STREAM_DEFAULT_FPS							30
+#define XN_DEPTH_STREAM_DEFAULT_OUTPUT_FORMAT				XN_OUTPUT_FORMAT_DEPTH_VALUES
+#define XN_DEPTH_STREAM_DEFAULT_REGISTRATION				FALSE
+#define XN_DEPTH_STREAM_DEFAULT_REGISTRATION_TYPE			XN_PROCESSING_DONT_CARE
+#define XN_DEPTH_STREAM_DEFAULT_HOLE_FILLER					TRUE
+#define XN_DEPTH_STREAM_DEFAULT_WHITE_BALANCE				TRUE
+#define XN_DEPTH_STREAM_DEFAULT_GAIN_OLD					50
+#define XN_DEPTH_STREAM_DEFAULT_GMC_MODE					TRUE
+
+
+//---------------------------------------------------------------------------
 // XnSensorDepthStream class
 //---------------------------------------------------------------------------
 class XnSensorDepthStream : public XnDepthStream, public IXnSensorStream

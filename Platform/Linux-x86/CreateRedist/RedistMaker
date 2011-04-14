@@ -1,5 +1,11 @@
 #!/bin/bash -e
 
+use_4100=0
+if [ "$1" == "4100" ]
+then
+use_4100=1
+fi
+
 SCRIPT_DIR=`pwd`
 
 # Take version
@@ -15,7 +21,14 @@ rm -rf Final
 rm -rf ../Redist
 
 # Build Engine
+if [ "$use_4100" == "1" ]
+then
+cd ../Build
+./Make.4100
+cd -
+else
 make -C ../Build
+fi
 
 # create redist folder structure
 mkdir -p ../Redist
@@ -43,6 +56,8 @@ cd ../Redist
 
 if [ "`uname -s`" == "Darwin" ]; then
 	TAR_TARGET="MacOSX"
+elif [ "$use_4100" == "1" ]; then
+	TAR_TARGET="CE4100"
 elif [ "`uname -m`" == "i686" ]; then
 	TAR_TARGET="Linux32"
 elif [ "`uname -m`" == "x86_64" ]; then

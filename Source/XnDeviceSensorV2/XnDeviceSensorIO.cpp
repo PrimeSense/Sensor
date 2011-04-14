@@ -55,7 +55,8 @@ typedef enum
 
 XnSensorIO::XnSensorIO(XN_SENSOR_HANDLE* pSensorHandle) :
 	m_pSensorHandle(pSensorHandle),
-	m_bMiscSupported(FALSE)
+	m_bMiscSupported(FALSE),
+	m_bIsLowBandwidth(FALSE)
 {
 }
 
@@ -122,7 +123,10 @@ XnStatus XnSensorIO::OpenDevice(const XnChar* strPath)
 		m_pSensorHandle->ControlConnection.bIsBulk = TRUE;
 	}
 
-	xnLogInfo(XN_MASK_DEVICE_IO, "Connected to USB device");
+	nRetVal = IsSensorLowBandwidth(strPath, &m_bIsLowBandwidth);
+	XN_IS_STATUS_OK(nRetVal);
+
+	xnLogInfo(XN_MASK_DEVICE_IO, "Connected to USB device%s", m_bIsLowBandwidth ? " (LowBand)" : "");
 
 	strcpy(m_strDeviceName, strPath);
 
@@ -420,6 +424,35 @@ XnStatus XnSensorIO::EnumerateSensors(XnConnectionString* aConnectionStrings, Xn
 
 	// All is good...
 	*pnCount = nCount;
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensorIO::IsSensorLowBandwidth(const XnConnectionString connectionString, XnBool* pbIsLowBandwidth)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+	XnConnectionString cpMatchString;
+
+	*pbIsLowBandwidth = FALSE;
+
+#if (XN_PLATFORM == XN_PLATFORM_WIN32)
+	// WAVI Detection:
+	//   Normal USB string: \\?\usb#vid_1d27&pid_0600#6&XXXXXXXX&0&2
+	//   WAVI USB String:   \\?\usb#vid_1d27&pid_0600#1&1d270600&2&3
+	//                                                  ^^^^^^^^ - VID/PID is always repeated here with the WAVI.
+	//                                                             Regular USB devices will have the port/hub chain instead.
+	if ((xnOSStrCaseCmp(connectionString, "\\\\?\\usb#vid_") >= 0) && (xnOSStrLen(connectionString) > 25))
+	{
+		strncpy(&cpMatchString[0], &connectionString[12], 4); //VID
+		strncpy(&cpMatchString[4], &connectionString[21], 4); //PID
+		cpMatchString[8] = 0;
+
+		if (strstr ((char*)connectionString,cpMatchString) != 0)
+		{
+			*pbIsLowBandwidth = TRUE;
+		}
+	}
+#endif
+
 	return (XN_STATUS_OK);
 }
 

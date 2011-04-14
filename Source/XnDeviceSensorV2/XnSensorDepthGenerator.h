@@ -52,6 +52,7 @@ public:
 
 	XnBool IsCapabilitySupported(const XnChar* strCapabilityName);
 
+	const void* GetData() { return XnSensorMapGenerator::GetData(); }
 	XnDepthPixel* GetDepthMap();
 	XnDepthPixel GetDeviceMaxDepth();
 	void GetFieldOfView(XnFieldOfView& FOV);

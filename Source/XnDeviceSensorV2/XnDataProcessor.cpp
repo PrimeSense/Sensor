@@ -64,18 +64,18 @@ void XnDataProcessor::ProcessData(const XnSensorProtocolResponseHeader* pHeader,
 	if (nDataOffset == 0)
 	{
 		// make sure no packet was lost
-		if (pHeader->nReserve != m_nLastPacketID+1 && pHeader->nReserve != 0)
+		if (pHeader->nPacketID != m_nLastPacketID+1 && pHeader->nPacketID != 0)
 		{
-			xnLogWarning(XN_MASK_SENSOR_PROTOCOL, "%s: Expected %x, got %x", m_csName, m_nLastPacketID+1, pHeader->nReserve);
+			xnLogWarning(XN_MASK_SENSOR_PROTOCOL, "%s: Expected %x, got %x", m_csName, m_nLastPacketID+1, pHeader->nPacketID);
 			OnPacketLost();
 		}
 
-		m_nLastPacketID = pHeader->nReserve;
+		m_nLastPacketID = pHeader->nPacketID;
 
 		// log packet arrival
 		XnUInt64 nNow;
 		xnOSGetHighResTimeStamp(&nNow);
-		xnDumpWriteString(m_pDevicePrivateData->MiniPacketsDump, "%llu,0x%hx,0x%hx,0x%hx,%u\n", nNow, pHeader->nType, pHeader->nReserve, pHeader->nBufSize, pHeader->nTimeStamp);
+		xnDumpWriteString(m_pDevicePrivateData->MiniPacketsDump, "%llu,0x%hx,0x%hx,0x%hx,%u\n", nNow, pHeader->nType, pHeader->nPacketID, pHeader->nBufSize, pHeader->nTimeStamp);
 	}
 
 	ProcessPacketChunk(pHeader, pData, nDataOffset, nDataSize);
@@ -113,20 +113,51 @@ XnUInt64 XnDataProcessor::GetTimeStamp(XnUInt32 nDeviceTimeStamp)
 
 	if (m_TimeStampData.bFirst)
 	{
-		// check how much OS time passed since global reference was taken
+		/* 
+		This is a bit tricky, as we need to synchronize the first timestamp of different streams. 
+		We somehow need to translate 32-bit tick counts to 64-bit timestamps. The device timestamps
+		wrap-around every ~71.5 seconds (for PS1080 @ 60 MHz).
+		Lets assume the first packet of the first stream got timestamp X. Now we get the first packet of another
+		stream with a timestamp Y.
+		We need to figure out what is the relation between X and Y.
+		We do that by analyzing the following scenarios:
+		1. Y is after X, in the same period (no wraparound yet).
+		2. Y is after X, in a different period (one or more wraparounds occurred).
+		3. Y is before X, in the same period (might happen due to race condition).
+		4. Y is before X, in a different period (this can happen if X is really small, and Y is almost at wraparound).
+
+		The following code tried to handle all those cases. It uses an OS timer to try and figure out how 
+		many wraparounds occurred.
+		*/
+
+		// estimate the number of wraparound that occurred using OS time
 		XnUInt64 nOSTime = nNow - m_pDevicePrivateData->nGlobalReferenceOSTime;
 
-		// check how many full wrap-arounds occurred (according to OS time)
+		// calculate wraparound length
 		XnFloat fWrapAroundInMicroseconds = nWrapPoint / (XnDouble)m_pDevicePrivateData->fDeviceFrequency;
-		XnUInt32 nWraps = nOSTime / fWrapAroundInMicroseconds; // floor
 
-		// now check, if current timestamp is less than global, then we have one more wrap-around
-		// (make sure it's significant - we allow up to 10 ms before - otherwise it could just be a
-		// matter of race-condition)
-		if (m_pDevicePrivateData->nGlobalReferenceTS > nDeviceTimeStamp && 
-			nOSTime > XN_SENSOR_TIMESTAMP_SANITY_DIFF*1000)
+		// perform a rough estimation
+		XnInt32 nWraps = nOSTime / fWrapAroundInMicroseconds;
+
+		// now fix the estimation by clipping TS to the correct wraparounds
+		XnInt64 nEstimatedTicks = 
+			nWraps * nWrapPoint + // wraps time
+			nDeviceTimeStamp - m_pDevicePrivateData->nGlobalReferenceTS;
+
+		XnInt64 nEstimatedTime = nEstimatedTicks / (XnDouble)m_pDevicePrivateData->fDeviceFrequency;
+
+		if (nEstimatedTime < nOSTime - 0.5 * fWrapAroundInMicroseconds)
+			nWraps++;
+		else if (nEstimatedTime > nOSTime + 0.5 * fWrapAroundInMicroseconds)
+			nWraps--;
+
+		// handle the two special cases - 3 & 4 in which we get a timestamp which is
+		// *before* global TS (meaning before time 0)
+		if (nWraps < 0 || // case 4
+			(nWraps == 0 && nDeviceTimeStamp < m_pDevicePrivateData->nGlobalReferenceTS)) // case 3
 		{
-			++nWraps;
+			nDeviceTimeStamp = m_pDevicePrivateData->nGlobalReferenceTS;
+			nWraps = 0;
 		}
 
 		m_TimeStampData.nReferenceTS = m_pDevicePrivateData->nGlobalReferenceTS;

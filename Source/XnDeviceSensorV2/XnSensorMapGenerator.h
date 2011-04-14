@@ -66,9 +66,14 @@ public:
 protected:
 	virtual void FilterProperties(XnActualPropertiesHash* pHash);
 
-	XN_DECLARE_LIST(XnMapOutputMode, XnMapOutputModeList);
+	struct SupportedMode
+	{
+		XnMapOutputMode OutputMode;
+		XnUInt32 nInputFormat;
+	};
 
-	XnMapOutputModeList m_SupportedModes;
+	SupportedMode* m_aSupportedModes;
+	XnUInt32 m_nSupportedModesCount;
 };
 
 #endif // __XN_SENSOR_MAP_GENERATOR_H__

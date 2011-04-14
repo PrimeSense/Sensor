@@ -44,7 +44,9 @@ XnSensorDevice::~XnSensorDevice()
 
 XnBool XnSensorDevice::IsCapabilitySupported(const XnChar* strCapabilityName)
 {
-	return (strcmp(strCapabilityName, XN_CAPABILITY_ERROR_STATE) == 0 ||
+	return (
+		strcmp(strCapabilityName, XN_CAPABILITY_ERROR_STATE) == 0 ||
+		strcmp(strCapabilityName, XN_CAPABILITY_DEVICE_IDENTIFICATION) == 0 ||
 		XnSensorProductionNode::IsCapabilitySupported(strCapabilityName));
 }
 
@@ -72,4 +74,19 @@ XnStatus XnSensorDevice::RegisterToErrorStateChange(XnModuleStateChangedHandler 
 void XnSensorDevice::UnregisterFromErrorStateChange(XnCallbackHandle hCallback)
 {
 	UnregisterFromProps(hCallback);
+}
+
+XnStatus XnSensorDevice::GetDeviceName(XnChar* strBuffer, XnUInt32& nBufferSize)
+{
+	return GetStringProperty(XN_MODULE_PROPERTY_PHYSICAL_DEVICE_NAME, strBuffer, nBufferSize);
+}
+
+XnStatus XnSensorDevice::GetVendorSpecificData(XnChar* strBuffer, XnUInt32& nBufferSize)
+{
+	return GetStringProperty(XN_MODULE_PROPERTY_VENDOR_SPECIFIC_DATA, strBuffer, nBufferSize);
+}
+
+XnStatus XnSensorDevice::GetSerialNumber(XnChar* strBuffer, XnUInt32& nBufferSize)
+{
+	return GetStringProperty(XN_MODULE_PROPERTY_ID, strBuffer, nBufferSize);
 }

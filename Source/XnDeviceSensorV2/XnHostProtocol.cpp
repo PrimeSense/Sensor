@@ -57,6 +57,14 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnF
 
 	switch (nFWVer)
 	{
+	case XN_SENSOR_FW_VER_5_4:
+		nRetVal = XnHostProtocolInitFWParams(pDevicePrivateData, XN_SENSOR_FW_VER_5_3);
+		XN_IS_STATUS_OK(nRetVal);
+
+		pDevicePrivateData->FWInfo.nOpcodeGetCmosPresets = OPCODE_GET_CMOS_PRESETS;
+		pDevicePrivateData->FWInfo.nFWVer = nFWVer;
+		break;
+
 	case XN_SENSOR_FW_VER_5_3:
 		nRetVal = XnHostProtocolInitFWParams(pDevicePrivateData, XN_SENSOR_FW_VER_5_2);
 		XN_IS_STATUS_OK(nRetVal);
@@ -100,6 +108,7 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnF
 		pDevicePrivateData->FWInfo.nOpcodeReset = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeSetCmosBlanking = OPCODE_SET_CMOS_BLANKING;
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosBlanking = OPCODE_INVALID;
+		pDevicePrivateData->FWInfo.nOpcodeGetCmosPresets = OPCODE_INVALID;
 
 
 		break;
@@ -124,6 +133,7 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnF
 		pDevicePrivateData->FWInfo.nOpcodeReset = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeSetCmosBlanking = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosBlanking = OPCODE_INVALID;
+		pDevicePrivateData->FWInfo.nOpcodeGetCmosPresets = OPCODE_INVALID;
 
 		break;
 	case XN_SENSOR_FW_VER_3_0:
@@ -146,6 +156,7 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnF
 		pDevicePrivateData->FWInfo.nOpcodeReset = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeSetCmosBlanking = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosBlanking = OPCODE_INVALID;
+		pDevicePrivateData->FWInfo.nOpcodeGetCmosPresets = OPCODE_INVALID;
 
 		break;
 	case XN_SENSOR_FW_VER_1_2:
@@ -168,6 +179,7 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnF
 		pDevicePrivateData->FWInfo.nOpcodeReset = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeSetCmosBlanking = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosBlanking = OPCODE_INVALID;
+		pDevicePrivateData->FWInfo.nOpcodeGetCmosPresets = OPCODE_INVALID;
 
 		break;
 	case XN_SENSOR_FW_VER_1_1:
@@ -190,6 +202,7 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnF
 		pDevicePrivateData->FWInfo.nOpcodeReset = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeSetCmosBlanking = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosBlanking = OPCODE_INVALID;
+		pDevicePrivateData->FWInfo.nOpcodeGetCmosPresets = OPCODE_INVALID;
 
 		break;
 	case XN_SENSOR_FW_VER_0_17:
@@ -212,6 +225,7 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnF
 		pDevicePrivateData->FWInfo.nOpcodeReset = OPCODE_V017_RESET;
 		pDevicePrivateData->FWInfo.nOpcodeSetCmosBlanking = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosBlanking = OPCODE_INVALID;
+		pDevicePrivateData->FWInfo.nOpcodeGetCmosPresets = OPCODE_INVALID;
 
 		break;
 	default:
@@ -665,6 +679,23 @@ XnStatus XnHostProtocolExecute(XnDevicePrivateData* pDevicePrivateData,
 }
 
 
+XnInt32 compareVersion(const XnVersions& version, XnInt32 nMajor, XnInt32 nMinor, XnInt32 nBuild)
+{
+	XnInt32 nResult = version.nMajor - nMajor;
+
+	if (nResult == 0)
+	{
+		nResult = version.nMinor - nMinor;
+	}
+
+	if (nResult == 0)
+	{
+		nResult = version.nBuild - nBuild;
+	}
+
+	return nResult;
+}
+
 XnStatus XnHostProtocolGetVersion(XnDevicePrivateData* pDevicePrivateData, XnVersions& Version)
 {
 	XnUChar buffer[MAX_PACKET_SIZE] = {0};
@@ -704,11 +735,13 @@ XnStatus XnHostProtocolGetVersion(XnDevicePrivateData* pDevicePrivateData, XnVer
 
 	*((XnUInt16*)&Version) = xnOSEndianSwapUINT16(*((XnUInt16*)pVersion));
 
-	if (Version.nMajor > 5 || (Version.nMajor == 5 && Version.nMinor > 3))
+	if (compareVersion(Version, 5, 5, 0) >= 0)
 	{
-		xnLogWarning(XN_MASK_SENSOR_PROTOCOL, "Sensor version %d.%d is newer than latest known. Trying to use 5.3 protocol...", Version.nMajor, Version.nMinor);
-		XnHostProtocolInitFWParams(pDevicePrivateData, XN_SENSOR_FW_VER_5_3);
+		xnLogWarning(XN_MASK_SENSOR_PROTOCOL, "Sensor version %d.%d is newer than latest known. Trying to use 5.4 protocol...", Version.nMajor, Version.nMinor);
+		XnHostProtocolInitFWParams(pDevicePrivateData, XN_SENSOR_FW_VER_5_4);
 	}
+	else if (Version.nMajor == 5 && Version.nMinor == 4)
+		XnHostProtocolInitFWParams(pDevicePrivateData, XN_SENSOR_FW_VER_5_4);
 	else if (Version.nMajor == 5 && Version.nMinor == 3)
 		XnHostProtocolInitFWParams(pDevicePrivateData, XN_SENSOR_FW_VER_5_3);
 	else if (Version.nMajor == 5 && Version.nMinor == 2)
@@ -794,7 +827,8 @@ XnStatus XnHostProtocolGetVersion(XnDevicePrivateData* pDevicePrivateData, XnVer
 		Version.nBuild = atoi(cpBuffer);
 	}
 
-	if ((Version.nMajor >= 5) && (Version.nMinor >= 3) && (Version.nBuild >= 16))
+	if (!pDevicePrivateData->pSensor->IsLowBandwidth() &&
+		compareVersion(Version, 5, 3, 16) >= 0)
 	{
 		pDevicePrivateData->FWInfo.nUSBDelayReceive = 1;
 		pDevicePrivateData->FWInfo.nUSBDelayExecutePreSend = 0;
@@ -816,7 +850,7 @@ XnStatus XnHostProtocolGetVersion(XnDevicePrivateData* pDevicePrivateData, XnVer
 		pDevicePrivateData->FWInfo.nUSBDelaySetParamStream1Mode = 300;
 		pDevicePrivateData->FWInfo.nUSBDelaySetParamStream2Mode = 1;
 
-		if ((Version.nMajor == 5) && (Version.nMinor == 3) && (Version.nBuild == 15))
+		if (compareVersion(Version, 5, 3, 15) == 0)
 		{
 			pDevicePrivateData->FWInfo.nUSBDelaySetParamFlicker = 300;
 		}	
@@ -1529,4 +1563,45 @@ XnStatus XnHostProtocolGetCmosBlanking(XnDevicePrivateData* pDevicePrivateData, 
 	*pnLines = pReply->nUnits;
 
 	return (XN_STATUS_OK);
+}
+
+XnStatus XnHostProtocolGetCmosPresets(XnDevicePrivateData* pDevicePrivateData, XnCMOSType nCMOSID, XnCmosPreset* aPresets, XnUInt32& nCount)
+{
+	XnUChar buffer[MAX_PACKET_SIZE] = {0};
+	XnUChar* pDataBuf = buffer + pDevicePrivateData->FWInfo.nProtocolHeaderSize;
+
+	xnLogInfo(XN_MASK_SENSOR_PROTOCOL, "Reading CMOS %d supported presets...", nCMOSID);
+
+	*(XnUInt16*)pDataBuf = XN_PREPARE_VAR16_IN_BUFFER(nCMOSID);
+
+	XnHostProtocolInitHeader(pDevicePrivateData, buffer, pDataBuf, sizeof(XnUInt16), pDevicePrivateData->FWInfo.nOpcodeGetCmosPresets);
+
+	XnUInt16 nDataSize;
+	XnCmosPreset* pValue = NULL;
+
+	XnStatus rc = XnHostProtocolExecute(pDevicePrivateData, 
+		buffer, pDevicePrivateData->FWInfo.nProtocolHeaderSize+sizeof(XnUInt16), pDevicePrivateData->FWInfo.nOpcodeGetCmosPresets,
+		(XnUChar**)(&pValue), nDataSize);
+	if (rc != XN_STATUS_OK)
+	{
+		xnLogError(XN_MASK_SENSOR_PROTOCOL, "Failed getting CMOS %d presets: %s", nCMOSID, xnGetStatusString(rc));
+		return rc;
+	}
+
+	XnUInt32 nReturnedCount = nDataSize * 2 / sizeof(XnCmosPreset);
+	if (nReturnedCount > nCount)
+	{
+		return XN_STATUS_OUTPUT_BUFFER_OVERFLOW;
+	}
+
+	nCount = nReturnedCount;
+
+	for (XnUInt32 i = 0; i < nCount; ++i)
+	{
+		aPresets[i].nFormat = XN_PREPARE_VAR16_IN_BUFFER(pValue[i].nFormat);
+		aPresets[i].nResolution = XN_PREPARE_VAR16_IN_BUFFER(pValue[i].nResolution);
+		aPresets[i].nFPS = XN_PREPARE_VAR16_IN_BUFFER(pValue[i].nFPS);
+	}
+
+	return XN_STATUS_OK;
 }

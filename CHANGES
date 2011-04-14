@@ -1,0 +1,62 @@
+Detailed Change log:
+--------------------
+
+Version 5.0.1.32 (Unstable version - Apr 11th 2010)
+---------------------------------------------------
+  * Fixing log prints of resolutions (-1 appeared as MAX_UINT64...) to the resolution name.
+  * Linux Bug Fix: Server creates two log files, one in the client folder and one in /var/log/primesense/XnSensorServer
+  * Fixed a memory leak when rewinding old XNS files.
+  * Win32: WIX installer (replacing NSIS)
+  * Fixed wrong version in XnDeviceFile
+
+Version 5.0.1.31 (Stable version - Apr 11th 2010)
+-------------------------------------------------
+  * Fix BULK timeout - it was too small...
+  * Bug Fix: IR only works in QVGA...
+  * Added 64bit support for the installers.
+  * Fix wrong uses of the XN_IS_STATUS_OK macro (value is evaluated twice).
+  * Adding support for MJPEG pass-through.
+  * Adding initial support for new CMOS interfaces
+  * Adding initial JPEG support
+  * Fix for UAC installer problems.
+  * Fixed uninstall without OpenNI.
+  * Set minimum OpenNI version check in the installer.
+  * Fix seeking to first frame in old XNS files.
+  * Bug Fix: Client would fail to connect if trying to connect while server is shutting down.
+  * Improving the timestamps algorithm.
+  * performance improvement when enumerating for image nodes - a sensor should only be checked once.
+  * improving error message for setting grayscale8 in low resolutions.
+  * Improve thread-safety when starting server
+  * Bug Fix: a crash when trying to open a non-existing XNS file.
+  * Bug Fix: a potential crash if Init of depth generator fails.
+  * Sensor now supports the Device Identification capability.
+  * Server: fixing a deadlock problem between closing a stream and getting new data from it. This was done by splitting the sensor lock into two locks: one for changes on the sensor and one for changing the stream collection.
+  * MultiProcess Bug Fix: the lock on a sensor didn't exist, so nothing was synchronized.
+  * ImageGenerator now also changes InputFormat when changing resolution if needed (when switching from hi-res to normal & vice versa).
+  * Adding frame IDs to Audio (just counting)
+  * restoring defaults to QVGA.
+  * Add support for sensors with no image CMOS.
+  * Updated low-bandwidth USB devices buffer information.
+  * Added the Asus WAVI auto-detection for Win32.
+  * Low bandwidth devices now use bigger USB delays.
+  * New defaults are now VGA, uncompressed.
+  * Initial support for low-band devices:
+    1. Image, IR and audio does not enumerate.
+    2. Defaults changed to QVGA, compressed.
+
+Version 5.0.0.25 (Unstable version - Jan 6th 2011)
+--------------------------------------------------
+  * Bug fix: infinite loop in server when a client tries to disconnect and streams can't be closed (usb timeout for example).
+  * Added MacOSX platform support.
+  * Added the unstable README file.
+  * Removed useless win32 prerequisites...
+  * Fixing audio to work properly in the client-server model.
+  * Server Bug Fix: a potential dead lock was solved.
+  * Sensor Server now supports multiple sensors. 
+  * Refactored server to a better design, which should decrease deadlocks and make code more readable.
+  * Adding support for enumerating and opening different sensors.
+  * Bug Fix: GetStringProperty would always return XN_STATUS_ERROR.
+
+Version 5.0.0.24 (Stable version - Dec 8th 2010)
+------------------------------------------------
+  * Initial release... 

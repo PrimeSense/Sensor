@@ -81,6 +81,14 @@ XnSensorFirmwareParams::XnSensorFirmwareParams(XnFirmwareInfo* pInfo, XnFirmware
 	m_IRMirror("IRMirror"),
 	m_ReferenceResolution("ReferenceResolution", 0, "Firmware"),
 	m_GMCMode("GMCMode"),
+	m_ImageSharpness("ImageSharpness"),
+	m_ImageAutoWhiteBalance("ImageAutoWhiteBalance"),
+	m_ImageColorTemperature("ImageColorTemperature"),
+	m_ImageBacklightCompensation("ImageBacklightCompensation"),
+	m_ImageAutoExposure("ImageAutoExposure"),
+	m_ImageExposureBar("ImageExposureBar"),
+	m_ImageLowLightCompensation("ImageLowLightCompensation"),
+	m_ImageGain("ImageGain"),
 	m_pInfo(pInfo),
 	m_pCommands(pCommands),
 	m_bInTransaction(FALSE)
@@ -96,51 +104,110 @@ XnStatus XnSensorFirmwareParams::Init()
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	/*									Property					Param										MinVersion				MaxVersion					ValueIfNotSupported */
-	/*									======================		=======================================		====================	====================		=================== */
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_FrameSyncEnabled,			PARAM_GENERAL_FRAME_SYNC));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_RegistrationEnabled,		PARAM_GENERAL_REGISTRATION_ENABLE));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_Stream0Mode,				PARAM_GENERAL_STREAM0_MODE));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_Stream1Mode,				PARAM_GENERAL_STREAM1_MODE));
-	XN_IS_STATUS_OK(AddFirmwareAudioParam(m_Stream2Mode,			PARAM_GENERAL_STREAM2_MODE));
-	XN_IS_STATUS_OK(AddFirmwareAudioParam(m_AudioStereo,			PARAM_AUDIO_STEREO_MODE));
-	XN_IS_STATUS_OK(AddFirmwareAudioParam(m_AudioSampleRate,		PARAM_AUDIO_SAMPLE_RATE));
-	XN_IS_STATUS_OK(AddFirmwareAudioParam(m_AudioLeftChannelGain,	PARAM_AUDIO_LEFT_CHANNEL_VOLUME_LEVEL));
-	XN_IS_STATUS_OK(AddFirmwareAudioParam(m_AudioRightChannelGain,	PARAM_AUDIO_RIGHT_CHANNEL_VOLUME_LEVEL));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_ImageFormat,				PARAM_IMAGE_FORMAT));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_ImageResolution,			PARAM_IMAGE_RESOLUTION));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_ImageFPS,					PARAM_IMAGE_FPS));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_ImageQuality,				PARAM_IMAGE_QUALITY));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_ImageFlickerDetection,	PARAM_IMAGE_FLICKER_DETECTION));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_ImageCropSizeX,			PARAM_IMAGE_CROP_SIZE_X,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_ImageCropSizeY,			PARAM_IMAGE_CROP_SIZE_Y,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_ImageCropOffsetX,			PARAM_IMAGE_CROP_OFFSET_X,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_ImageCropOffsetY,			PARAM_IMAGE_CROP_OFFSET_Y,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_ImageCropEnabled,			PARAM_IMAGE_CROP_ENABLE,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_DepthFormat,				PARAM_DEPTH_FORMAT));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_DepthResolution,			PARAM_DEPTH_RESOLUTION));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_DepthFPS,					PARAM_DEPTH_FPS));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_DepthGain,				PARAM_DEPTH_AGC));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_DepthHoleFilter,			PARAM_DEPTH_HOLE_FILTER));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_DepthMirror,				PARAM_DEPTH_MIRROR,							XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_DepthDecimation,			PARAM_DEPTH_DECIMATION));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_DepthCropSizeX,			PARAM_DEPTH_CROP_SIZE_X,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_DepthCropSizeY,			PARAM_DEPTH_CROP_SIZE_Y,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_DepthCropOffsetX,			PARAM_DEPTH_CROP_OFFSET_X,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_DepthCropOffsetY,			PARAM_DEPTH_CROP_OFFSET_Y,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_DepthCropEnabled,			PARAM_DEPTH_CROP_ENABLE,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_IRFormat,					PARAM_IR_FORMAT));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_IRResolution,				PARAM_IR_RESOLUTION));								
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_IRFPS,					PARAM_IR_FPS));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_IRCropSizeX,				PARAM_IR_CROP_SIZE_X,						XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_IRCropSizeY,				PARAM_IR_CROP_SIZE_Y,						XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_IRCropOffsetX,			PARAM_IR_CROP_OFFSET_X,						XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_IRCropOffsetY,			PARAM_IR_CROP_OFFSET_Y,						XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_IRCropEnabled,			PARAM_IR_CROP_ENABLE,						XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_DepthWhiteBalance,		PARAM_DEPTH_WHITE_BALANCE_ENABLE,			XN_SENSOR_FW_VER_4_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_ImageMirror,				PARAM_IMAGE_MIRROR,							XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_IRMirror,					PARAM_IR_MIRROR,							XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE));
-	XN_IS_STATUS_OK(AddFirmwareParam(	m_GMCMode,					PARAM_DEPTH_GMC_MODE,						XN_SENSOR_FW_VER_3_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE));
+	/*								Property					Param										MinVersion				MaxVersion					ValueIfNotSupported */
+	/*								======================		=======================================		====================	====================		=================== */
+	nRetVal = AddFirmwareParam(		m_FrameSyncEnabled,			PARAM_GENERAL_FRAME_SYNC);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_RegistrationEnabled,		PARAM_GENERAL_REGISTRATION_ENABLE);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_Stream0Mode,				PARAM_GENERAL_STREAM0_MODE);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_Stream1Mode,				PARAM_GENERAL_STREAM1_MODE);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareAudioParam(m_Stream2Mode,				PARAM_GENERAL_STREAM2_MODE);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareAudioParam(m_AudioStereo,				PARAM_AUDIO_STEREO_MODE);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareAudioParam(m_AudioSampleRate,			PARAM_AUDIO_SAMPLE_RATE);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareAudioParam(m_AudioLeftChannelGain,		PARAM_AUDIO_LEFT_CHANNEL_VOLUME_LEVEL);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareAudioParam(m_AudioRightChannelGain,	PARAM_AUDIO_RIGHT_CHANNEL_VOLUME_LEVEL);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageFormat,				PARAM_IMAGE_FORMAT);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageResolution,			PARAM_IMAGE_RESOLUTION);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageFPS,					PARAM_IMAGE_FPS);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageQuality,				PARAM_IMAGE_QUALITY);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageFlickerDetection,	PARAM_IMAGE_FLICKER_DETECTION);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageCropSizeX,			PARAM_IMAGE_CROP_SIZE_X,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageCropSizeY,			PARAM_IMAGE_CROP_SIZE_Y,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageCropOffsetX,			PARAM_IMAGE_CROP_OFFSET_X,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageCropOffsetY,			PARAM_IMAGE_CROP_OFFSET_Y,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageCropEnabled,			PARAM_IMAGE_CROP_ENABLE,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_DepthFormat,				PARAM_DEPTH_FORMAT);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_DepthResolution,			PARAM_DEPTH_RESOLUTION);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_DepthFPS,					PARAM_DEPTH_FPS);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_DepthGain,				PARAM_DEPTH_AGC);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_DepthHoleFilter,			PARAM_DEPTH_HOLE_FILTER);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_DepthMirror,				PARAM_DEPTH_MIRROR,							XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_DepthDecimation,			PARAM_DEPTH_DECIMATION);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_DepthCropSizeX,			PARAM_DEPTH_CROP_SIZE_X,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_DepthCropSizeY,			PARAM_DEPTH_CROP_SIZE_Y,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_DepthCropOffsetX,			PARAM_DEPTH_CROP_OFFSET_X,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_DepthCropOffsetY,			PARAM_DEPTH_CROP_OFFSET_Y,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_DepthCropEnabled,			PARAM_DEPTH_CROP_ENABLE,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_IRFormat,					PARAM_IR_FORMAT);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_IRResolution,				PARAM_IR_RESOLUTION);
+	XN_IS_STATUS_OK(nRetVal);								
+	nRetVal = AddFirmwareParam(		m_IRFPS,					PARAM_IR_FPS);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_IRCropSizeX,				PARAM_IR_CROP_SIZE_X,						XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_IRCropSizeY,				PARAM_IR_CROP_SIZE_Y,						XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_IRCropOffsetX,			PARAM_IR_CROP_OFFSET_X,						XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_IRCropOffsetY,			PARAM_IR_CROP_OFFSET_Y,						XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_IRCropEnabled,			PARAM_IR_CROP_ENABLE,						XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_DepthWhiteBalance,		PARAM_DEPTH_WHITE_BALANCE_ENABLE,			XN_SENSOR_FW_VER_4_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageMirror,				PARAM_IMAGE_MIRROR,							XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_IRMirror,					PARAM_IR_MIRROR,							XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_GMCMode,					PARAM_DEPTH_GMC_MODE,						XN_SENSOR_FW_VER_3_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageSharpness,			PARAM_IMAGE_SHARPNESS,						XN_SENSOR_FW_VER_5_4,	XN_SENSOR_FW_VER_UNKNOWN,	50);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageAutoWhiteBalance,	PARAM_IMAGE_AUTO_WHITE_BALANCE_MODE,		XN_SENSOR_FW_VER_5_4,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageColorTemperature,	PARAM_IMAGE_COLOR_TEMPERATURE,				XN_SENSOR_FW_VER_5_4,	XN_SENSOR_FW_VER_UNKNOWN,	0);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageBacklightCompensation,PARAM_IMAGE_BACK_LIGHT_COMPENSATION,		XN_SENSOR_FW_VER_5_4,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageAutoExposure,		PARAM_IMAGE_AUTO_EXPOSURE_MODE,				XN_SENSOR_FW_VER_5_4,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageExposureBar,			PARAM_IMAGE_EXPOSURE_BAR,				XN_SENSOR_FW_VER_5_4,	XN_SENSOR_FW_VER_UNKNOWN,	0);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageLowLightCompensation,PARAM_IMAGE_LOW_LIGHT_COMPENSATION_MODE,	XN_SENSOR_FW_VER_5_4,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_ImageGain,				PARAM_IMAGE_AGC,							XN_SENSOR_FW_VER_5_4,	XN_SENSOR_FW_VER_UNKNOWN,	0);
+	XN_IS_STATUS_OK(nRetVal);
 
 	// override some props
 	m_ImageResolution.UpdateSetCallback(SetImageResolutionCallback, this);

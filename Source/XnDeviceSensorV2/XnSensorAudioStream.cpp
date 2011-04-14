@@ -34,18 +34,18 @@
 #include "XnAudioProcessor.h"
 #include <XnFormatsStatus.h>
 
+//---------------------------------------------------------------------------
+// Defines
+//---------------------------------------------------------------------------
 #define XN_AUDIO_MAX_SAMPLE_RATE				48000
 #define XN_AUDIO_MAX_NUMBER_OF_CHANNELS			2
-
-#define XN_AUDIO_STREAM_DEFAULT_VOLUME					12
-#define XN_AUDIO_STREAM_DEFAULT_SAMPLE_RATE				48000
-#define XN_AUDIO_STREAM_DEFAULT_NUMBER_OF_CHANNELS		2
-#define XN_AUDIO_STREAM_DEFAULT_OUTPUT_FORMAT			XN_OUTPUT_FORMAT_PCM
-#define XN_AUDIO_STREAM_DEFAULT_CHUNK_SIZE				2120
 
 #define XN_SENSOR_PROTOCOL_AUDIO_PACKET_SIZE_BULK		424
 #define XN_SENSOR_PROTOCOL_AUDIO_PACKET_SIZE_ISO		180
 
+//---------------------------------------------------------------------------
+// Code
+//---------------------------------------------------------------------------
 XnSensorAudioStream::XnSensorAudioStream(const XnChar* strDeviceName, const XnChar* StreamName, XnSensorObjects* pObjects) :
 	XnAudioStream(StreamName, XN_AUDIO_MAX_NUMBER_OF_CHANNELS),
 	m_strDeviceName(strDeviceName),
@@ -55,7 +55,8 @@ XnSensorAudioStream::XnSensorAudioStream(const XnChar* strDeviceName, const XnCh
 	m_SharedBufferName(XN_STREAM_PROPERTY_SHARED_BUFFER_NAME),
 	m_ActualRead(XN_STREAM_PROPERTY_ACTUAL_READ_DATA, FALSE),
 	m_hSharedMemory(NULL),
-	m_pSharedHeader(NULL)
+	m_pSharedHeader(NULL),
+	m_nFrameID(0)
 {
 	m_LeftChannelVolume.UpdateSetCallback(SetLeftChannelVolumeCallback, this);
 	m_RightChannelVolume.UpdateSetCallback(SetRightChannelVolumeCallback, this);
@@ -116,10 +117,14 @@ XnStatus XnSensorAudioStream::MapPropertiesToFirmware()
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(SampleRateProperty(), GetFirmwareParams()->m_AudioSampleRate, FALSE, ConvertSampleRateToFirmwareRate));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(NumberOfChannelsProperty(), GetFirmwareParams()->m_AudioStereo, FALSE, ConvertNumberOfChannelsToStereo));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(m_LeftChannelVolume, GetFirmwareParams()->m_AudioLeftChannelGain, TRUE));
-	XN_IS_STATUS_OK(m_Helper.MapFirmwareProperty(m_RightChannelVolume, GetFirmwareParams()->m_AudioRightChannelGain, TRUE));
+	nRetVal = m_Helper.MapFirmwareProperty(SampleRateProperty(), GetFirmwareParams()->m_AudioSampleRate, FALSE, ConvertSampleRateToFirmwareRate);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(NumberOfChannelsProperty(), GetFirmwareParams()->m_AudioStereo, FALSE, ConvertNumberOfChannelsToStereo);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_LeftChannelVolume, GetFirmwareParams()->m_AudioLeftChannelGain, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.MapFirmwareProperty(m_RightChannelVolume, GetFirmwareParams()->m_AudioRightChannelGain, TRUE);
+	XN_IS_STATUS_OK(nRetVal);;
 
 	return (XN_STATUS_OK);
 }
@@ -133,10 +138,14 @@ XnStatus XnSensorAudioStream::ConfigureStreamImpl()
 	nRetVal = SetActualRead(TRUE);
 	XN_IS_STATUS_OK(nRetVal);
 
-	XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(SampleRateProperty()));
-	XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(NumberOfChannelsProperty()));
-	XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(m_LeftChannelVolume));
-	XN_IS_STATUS_OK(m_Helper.ConfigureFirmware(m_RightChannelVolume));
+	nRetVal = m_Helper.ConfigureFirmware(SampleRateProperty());
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.ConfigureFirmware(NumberOfChannelsProperty());
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.ConfigureFirmware(m_LeftChannelVolume);
+	XN_IS_STATUS_OK(nRetVal);;
+	nRetVal = m_Helper.ConfigureFirmware(m_RightChannelVolume);
+	XN_IS_STATUS_OK(nRetVal);;
 
 	return (XN_STATUS_OK);
 }
@@ -150,7 +159,8 @@ XnStatus XnSensorAudioStream::SetActualRead(XnBool bRead)
 		if (bRead)
 		{
 			xnLogVerbose(XN_MASK_DEVICE_SENSOR, "Creating USB audio read thread...");
-			nRetVal = xnUSBInitReadThread(GetHelper()->GetPrivateData()->pSpecificMiscUsb->pUsbConnection->UsbEp, GetHelper()->GetPrivateData()->pSpecificMiscUsb->nChunkReadBytes, XN_SENSOR_USB_MISC_BUFFERS, XN_SENSOR_READ_THREAD_TIMEOUT, XnDeviceSensorProtocolUsbEpCb, GetHelper()->GetPrivateData()->pSpecificMiscUsb);
+			XnSpecificUsbDevice* pUSB = GetHelper()->GetPrivateData()->pSpecificMiscUsb;
+			nRetVal = xnUSBInitReadThread(pUSB->pUsbConnection->UsbEp, pUSB->nChunkReadBytes, XN_SENSOR_USB_MISC_BUFFERS, pUSB->nTimeout, XnDeviceSensorProtocolUsbEpCb, pUSB);
 			XN_IS_STATUS_OK(nRetVal);
 		}
 		else
@@ -327,6 +337,9 @@ XnStatus XnSensorAudioStream::ReadImpl(XnStreamData *pStreamOutput)
 	}
 
 	xnOSLeaveCriticalSection(&pDevicePrivateData->hAudioBufferCriticalSection);
+
+	++m_nFrameID;
+	pStreamOutput->nFrameID = m_nFrameID;
 	
 	return (XN_STATUS_OK);
 }
