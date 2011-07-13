@@ -100,6 +100,7 @@ private:
 	XnStatus UpdateRWData(const xn::DepthGenerator& depth);
 	XnStatus CreateCodec(xn::ProductionNode& node);
 	XnStatus CheckIRCompatibility(xn::ProductionNode& node);
+	XnNodeHandle GetSelfNodeHandle();
 
 	// Some BC functions
 	XnStatus BCSeek(XnUInt64 nTimestamp);
@@ -150,6 +151,8 @@ private:
 	XnShiftToDepthTables m_ShiftToDepth;
 
 	XnFileBCData* m_pBCData;
+	const XnChar* m_strName;
+	XnNodeHandle m_hSelf;
 };
 
 #endif // __XN_SENSOR_DEVICE_H__

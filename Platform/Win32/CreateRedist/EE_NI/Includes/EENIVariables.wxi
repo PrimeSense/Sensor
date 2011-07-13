@@ -6,20 +6,15 @@
   -->
   <?define MajorVersion=5?>
   <?define MinorVersion=0?>
-  <?define MaintenanceVersion=1?>
+  <?define MaintenanceVersion=3?>
   <!-- BuildVersion is NOT used by WiX in the upgrade procedure -->
-  <?define BuildVersion=32?>
+  <?define BuildVersion=3?>
   
   <!-- Full version number to display -->
   <?define VersionNumber="$(var.MajorVersion).$(var.MinorVersion).$(var.MaintenanceVersion).$(var.BuildVersion)" ?>
 
-  <?define OpenNIVersion="1.1.0.39"?>
-  
-  <!--
-  Upgrade code HAS to be the same for all updates.
-  Once you've chosen it don't change it.
-  -->
-  
+  <?define OpenNIVersion="1.2.0.4"?>
+
   <!--
   Path to the resources directory. resources don't really need to be included
   in the project structure but I like to include them for for clarity 
@@ -28,7 +23,11 @@
 
   <?define BinaryOnlyRedist=True?>
 
-
+  <!--
+  Upgrade code HAS to be the same for all updates.
+  Once you've chosen it don't change it.
+  -->
+  
   <?if $(var.Platform)="x86"?>
     <?define PlatformSuffix=""?>
     <?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>

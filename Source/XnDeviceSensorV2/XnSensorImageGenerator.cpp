@@ -394,10 +394,7 @@ XnStatus XnExportedSensorImageGenerator::EnumerateProductionTrees(xn::Context& c
 
 			if (bShouldCreated)
 			{
-				nRetVal = context.CreateProductionTree(sensorNode);
-				XN_IS_STATUS_OK(nRetVal);
-
-				nRetVal = sensorNode.GetInstance(sensor);
+				nRetVal = context.CreateProductionTree(sensorNode, sensor);
 				XN_IS_STATUS_OK(nRetVal);
 			}
 

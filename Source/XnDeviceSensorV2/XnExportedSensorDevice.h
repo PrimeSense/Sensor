@@ -46,6 +46,20 @@ public:
 	XnStatus EnumerateProductionTrees(xn::Context& context, xn::NodeInfoList& TreesList, xn::EnumerationErrors* pErrors);
 	XnStatus Create(xn::Context& context, const XnChar* strInstanceName, const XnChar* strCreationInfo, xn::NodeInfoList* pNeededTrees, const XnChar* strConfigurationDir, xn::ModuleProductionNode** ppInstance);
 	void Destroy(xn::ModuleProductionNode* pInstance);
+
+private:
+	struct DeviceKey
+	{
+		DeviceKey(XnContext* pContext, const XnChar* strConnStr);
+		XnContext* m_pContext;
+		XnChar m_strConnStr[XN_MAX_CREATION_INFO_LENGTH]; 
+	};
+
+
+	XN_DECLARE_LIST(DeviceKey, CreatedDevices);
+	CreatedDevices m_createdDevices;
+
+	CreatedDevices::Iterator FindCreatedDevice(XnContext* pContext, const XnChar* strConnStr);
 };
 
 #endif // __XN_EXPORTED_SENSOR_DEVICE_H__

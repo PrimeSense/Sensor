@@ -511,26 +511,29 @@ XnStatus XnSensorFirmwareParams::SetFirmwareAudioParam(XnActualIntProperty* pPro
 XnStatus XnSensorFirmwareParams::SetImageResolution(XnUInt64 nValue)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-	
-	switch (nValue)
+
+	if (m_pInfo->nFWVer < XN_SENSOR_FW_VER_5_4)
 	{
-	case XN_RESOLUTION_QVGA:
-	case XN_RESOLUTION_VGA:
-		break;
-	case XN_RESOLUTION_SXGA:
-		if (m_pInfo->nFWVer < XN_SENSOR_FW_VER_5_3)
+		switch (nValue)
 		{
-			XN_LOG_WARNING_RETURN(XN_STATUS_IO_INVALID_STREAM_IMAGE_RESOLUTION, XN_MASK_DEVICE_SENSOR, "Image resolution is not supported by this firmware!");
+		case XN_RESOLUTION_QVGA:
+		case XN_RESOLUTION_VGA:
+			break;
+		case XN_RESOLUTION_SXGA:
+			if (m_pInfo->nFWVer < XN_SENSOR_FW_VER_5_3)
+			{
+				XN_LOG_WARNING_RETURN(XN_STATUS_IO_INVALID_STREAM_IMAGE_RESOLUTION, XN_MASK_DEVICE_SENSOR, "Image resolution is not supported by this firmware!");
+			}
+			break;
+		case XN_RESOLUTION_UXGA:
+			if (m_pInfo->nFWVer < XN_SENSOR_FW_VER_5_1)
+			{
+				XN_LOG_WARNING_RETURN(XN_STATUS_IO_INVALID_STREAM_IMAGE_RESOLUTION, XN_MASK_DEVICE_SENSOR, "Image resolution is not supported by this firmware!");
+			}
+			break;
+		default:
+			XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Unsupported image resolution: %d", nValue);
 		}
-		break;
-	case XN_RESOLUTION_UXGA:
-		if (m_pInfo->nFWVer < XN_SENSOR_FW_VER_5_1)
-		{
-			XN_LOG_WARNING_RETURN(XN_STATUS_IO_INVALID_STREAM_IMAGE_RESOLUTION, XN_MASK_DEVICE_SENSOR, "Image resolution is not supported by this firmware!");
-		}
-		break;
-	default:
-		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Unsupported image resolution: %d", nValue);
 	}
 
 	nRetVal = SetFirmwareParam(&m_ImageResolution, nValue);

@@ -51,6 +51,7 @@ protected:
 	//---------------------------------------------------------------------------
 	virtual void ProcessFramePacketChunk(const XnSensorProtocolResponseHeader* pHeader, const XnUChar* pData, XnUInt32 nDataOffset, XnUInt32 nDataSize);
 	virtual void OnEndOfFrame(const XnSensorProtocolResponseHeader* pHeader);
+	virtual XnUInt64 GetTimeStamp(XnUInt32 nDeviceTimeStamp);
 
 	//---------------------------------------------------------------------------
 	// Internal Functions
@@ -70,6 +71,7 @@ private:
 	/* A buffer to store bytes till we have enough to unpack. */
 	XnBuffer m_ContinuousBuffer;
 	XnBuffer m_UnpackedBuffer;
+	XnUInt64 m_nRefTimestamp; // needed for firmware bug workaround 
 };
 
 #endif //__XN_IR_PROCESSOR_H__
