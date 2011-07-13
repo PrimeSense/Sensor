@@ -57,7 +57,7 @@ XnStatus XnSensorFixedParams::Init()
 	m_nZeroPlaneDistance = (XnDepthPixel)FixedParams.fReferenceDistance;
 	m_dZeroPlanePixelSize = FixedParams.fReferencePixelSize;
 	m_dEmitterDCmosDistance = FixedParams.fDCmosEmitterDistance;
-	sprintf(m_strSensorSerial, "%x", FixedParams.nSerialNumber);
+	sprintf(m_strSensorSerial, "%d", FixedParams.nSerialNumber);
 
 
 	return (XN_STATUS_OK);

@@ -311,6 +311,12 @@ XnStatus XnSensor::Destroy()
 		pDevicePrivateData->hExecuteMutex = NULL;
 	}
 
+	// Register USB event callback
+#if WIN32
+	nRetVal = m_SensorIO.SetCallback(NULL, this);
+	XN_IS_STATUS_OK(nRetVal);
+#endif
+
 	XnDeviceBase::Destroy();
 
 	// close dumps

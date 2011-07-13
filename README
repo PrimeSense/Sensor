@@ -1,18 +1,18 @@
-PrimeSense Sensor Module for OpenNI (Version 5.0.1.32 Unstable version - Apr 11th 2010)
--------------------------------------------------------------------------------------
+PrimeSense Sensor Module for OpenNI (Version 5.0.3.3 Untable version - Jul 5th 2011)
+------------------------------------------------------------------------------------
 
 Website: www.primesense.com
 Forum: http://groups.google.com/group/openni-dev
 Wiki: Coming soon!
 
 Binaries are available at:
-http://www.openni.org/downloadfiles/openni-compliant-hardware-binaries/31-latest-unstable
+http://www.openni.org/downloadfiles/opennimodules/openni-compliant-hardware-binaries/31-latest-unstable
 
 Please use this with the OpenNI unstable branch located at:
 Source:
 https://github.com/OpenNI/OpenNI/tree/unstable
 Binaries:
-http://www.openni.org/downloadfiles/openni-binaries/20-latest-unstable
+http://www.openni.org/downloadfiles/opennimodules/openni-binaries/20-latest-unstable
 
 Release Notes:
 --------------

@@ -1,48 +1,90 @@
-#!/bin/bash -e
+#!/bin/sh -e
 
-SCRIPT_DIR=`pwd`/`dirname $0`
+usage="
+Usage: $0 [OPTIONS]
+Installs PrimeSense Sensor Driver to current machine.
 
-INSTALL_LIB=/usr/lib
-INSTALL_BIN=/usr/bin
-INSTALL_ETC=/usr/etc/primesense
-INSTALL_RULES=/etc/udev/rules.d
+-i,--install
+	Installs PrimeSense Sensor Driver (default mode)
+-u,--uninstall
+	Uninstalls PrimeSense Sensor Driver.
+-c,--cross-compile-rootfs <path>
+	Used for cross-compiling. Installs PrimeSense Sensor Driver to <path> instead of '/'.
+-h,--help
+	Shows this help screen.
+"
 
-if [ "`uname -s`" == "Darwin" ]; then
+OS_NAME=`uname -s`
+
+case $OS_NAME in
+Darwin)
     MODULES="libXnDeviceSensorV2.dylib libXnDeviceFile.dylib"
-else
+    ;;
+*)
     MODULES="libXnDeviceSensorV2.so libXnDeviceFile.so"
-fi
+    ;;
+esac
 
 RULES_FILE="55-primesense-usb.rules"
 
-# read arguments
-INSTALL="1"
+# create file list
+SCRIPT_DIR=`pwd`/`dirname $0`
 
-while (( "$#" )); do
-	case "$1" in
-	"-i")
-		INSTALL="1"
+LIB_FILES=`ls $SCRIPT_DIR/Lib/*`
+BIN_FILES=`ls $SCRIPT_DIR/Bin/*`
+
+rootfs=
+
+# parse command line
+while [ "$1" ]; do
+	case $1 in
+	-i|--install)
+		install=yes
 		;;
-	"-u")
-		INSTALL="0"
+	-u|--uninstall)
+		uninstall=yes
+		;;
+	-c|--cross-staging-dir)
+		shift
+		rootfs=$1
+		;;
+	-h|--help) 
+		echo "$usage"
+		exit 0
 		;;
 	*)
-		echo "Usage: $0 [options]"
-		echo "Available options:"
-		printf "\t-i\tInstall (default)\n"
-		printf "\t-u\tUninstall\n"
+		echo "Unrecognized option $1"
 		exit 1
-		;;		
 	esac
 	shift
 done
 
-# create file list
-LIB_FILES=`ls $SCRIPT_DIR/Lib/*`
-BIN_FILES=`ls $SCRIPT_DIR/Bin/*`
+# default mode is install
+if [ ! "$install" = yes ] && [ ! "$uninstall" = yes ]; then
+	install=yes
+fi
 
-if [ "$INSTALL" == "1" ]; then
+# validity check
+if [ "$install" = yes ] && [ "$uninstall" = yes ]; then
+	echo "-i and -u flags cannot be used together!"
+	exit 1
+fi
 
+INSTALL_LIB=$rootfs/usr/lib
+INSTALL_BIN=$rootfs/usr/bin
+INSTALL_ETC=$rootfs/usr/etc/primesense
+INSTALL_RULES=$rootfs/etc/udev/rules.d
+SERVER_LOGS_DIR=$rootfs/var/log/primesense/XnSensorServer
+
+# make all calls into OpenNI run in this filesystem
+export OPEN_NI_INSTALL_PATH=$rootfs
+# make sure the staging dir OpenNI is the one being run
+export LD_LIBRARY_PATH=$INSTALL_LIB
+
+if [ "$install" = yes ]; then
+	printf "Installing PrimeSense Sensor\n"
+	printf "****************************\n\n"
+	
     # create config dir
     printf "creating config dir $INSTALL_ETC..."
     mkdir -p $INSTALL_ETC
@@ -61,7 +103,7 @@ if [ "$INSTALL" == "1" ]; then
     # register modules
     for module in $MODULES; do
         printf "registering module '$module' with OpenNI..."
-	niReg -r $INSTALL_LIB/$module $INSTALL_ETC
+		$INSTALL_BIN/niReg -r $INSTALL_LIB/$module $INSTALL_ETC
         printf "OK\n"
     done
 
@@ -78,9 +120,9 @@ if [ "$INSTALL" == "1" ]; then
 
     # create server log dir
     printf "creating server logs dir..."
-    mkdir -p /var/log/primesense/XnSensorServer
+    mkdir -p $SERVER_LOGS_DIR
     # make this dir readable and writable by all (we allow anyone to delete logs)
-    chmod a+w /var/log/primesense/XnSensorServer
+    chmod a+w $SERVER_LOGS_DIR
     printf "OK\n"
 
     if [ "`uname -s`" != "Darwin" ]; then
@@ -90,12 +132,17 @@ if [ "$INSTALL" == "1" ]; then
         printf "OK\n"
     fi
 
-else #uninstall
+	printf "\n*** DONE ***\n\n"
+
+elif [ "$uninstall" = yes ]; then
+
+	printf "Uninstalling PrimeSense Sensor\n"
+	printf "******************************\n\n"
 
     # unregister modules
     for module in $MODULES; do
     	printf "unregistering module '$module' from OpenNI..."
-        if niReg -u $INSTALL_LIB/$module; then
+        if $INSTALL_BIN/niReg -u $INSTALL_LIB/$module; then
             printf "OK\n"
         fi
     done
@@ -126,6 +173,6 @@ else #uninstall
         printf "OK\n"
     fi
 
-fi
+	printf "\n*** DONE ***\n\n"
 
-printf "\n*** DONE ***\n\n"
+fi

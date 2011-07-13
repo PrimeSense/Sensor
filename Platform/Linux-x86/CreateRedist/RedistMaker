@@ -1,10 +1,17 @@
 #!/bin/bash -e
 
-use_4100=0
-if [ "$1" == "4100" ]
-then
-use_4100=1
-fi
+case $1 in
+x86 | "")
+	PLATFORM="x86" ;;
+CE4100)
+	PLATFORM="CE4100" ;;
+Arm)
+        PLATFORM="Arm" ;;
+*)
+	echo "Unknown platform"
+	exit 1
+	;;
+esac
 
 SCRIPT_DIR=`pwd`
 
@@ -21,14 +28,8 @@ rm -rf Final
 rm -rf ../Redist
 
 # Build Engine
-if [ "$use_4100" == "1" ]
-then
-cd ../Build
-./Make.4100
-cd -
-else
-make -C ../Build
-fi
+make PLATFORM=$PLATFORM -C ../Build clean
+make PLATFORM=$PLATFORM -C ../Build
 
 # create redist folder structure
 mkdir -p ../Redist
@@ -47,8 +48,15 @@ cp ../Bin/Release/libXnFormats.* ../Redist/Lib
 cp ../Bin/Release/libXnCore.* ../Redist/Lib
 cp ../Bin/Release/XnSensorServer ../Redist/Bin
 cp ../Install/* ../Redist/Install
-cp ../../../Data/GlobalDefaults.ini ../Redist/Config
 cp install.sh ../Redist
+
+# fix GlobalDefaults according to platform
+if [ "$PLATFORM" == "CE4100" ]; then
+	# change default UsbInterface to BULK and default image+depth format to compressed
+	cat ../../../Data/GlobalDefaults.ini | sed 's/[;]*UsbInterface=.*/UsbInterface=2/' | sed 's/[;]*InputFormat=.*/InputFormat=1/' > ../Redist/Config/GlobalDefaults.ini
+else
+	cp ../../../Data/GlobalDefaults.ini ../Redist/Config
+fi
 
 # create tar
 mkdir -p Final
@@ -56,8 +64,10 @@ cd ../Redist
 
 if [ "`uname -s`" == "Darwin" ]; then
 	TAR_TARGET="MacOSX"
-elif [ "$use_4100" == "1" ]; then
+elif [ "$PLATFORM" == "CE4100" ]; then
 	TAR_TARGET="CE4100"
+elif [ "$PLATFORM" == "Arm" ]; then
+	TAR_TARGET="Arm"
 elif [ "`uname -m`" == "i686" ]; then
 	TAR_TARGET="Linux32"
 elif [ "`uname -m`" == "x86_64" ]; then

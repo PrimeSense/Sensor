@@ -87,23 +87,30 @@ XnStatus XnExportedSensorDevice::EnumerateProductionTrees(xn::Context& context, 
 	XnProductionNodeDescription Description;
 	GetDescription(&Description);
 
-	// each connection string is a sensor. return it
 	for (XnUInt32 i = 0; i < nCount; ++i)
 	{
-		nRetVal = TreesList.Add(Description, pConnStrings[i], NULL);
-		if (nRetVal != XN_STATUS_OK)
+		// Each connection string is a sensor. Return it if it wasn't created already.
+		if (FindCreatedDevice(context.GetUnderlyingObject(), pConnStrings[i]) == m_createdDevices.end())
 		{
-			xnOSFree(pConnStrings);
-			return (nRetVal);
+			nRetVal = TreesList.Add(Description, pConnStrings[i], NULL);
+			if (nRetVal != XN_STATUS_OK)
+			{
+				xnOSFree(pConnStrings);
+				return (nRetVal);
+			}
 		}
 	}
 
 	xnOSFree(pConnStrings);
-
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnExportedSensorDevice::Create(xn::Context& context, const XnChar* strInstanceName, const XnChar* strCreationInfo, xn::NodeInfoList* pNeededTrees, const XnChar* strConfigurationDir, xn::ModuleProductionNode** ppInstance)
+XnStatus XnExportedSensorDevice::Create(xn::Context& context, 
+										const XnChar* strInstanceName, 
+										const XnChar* strCreationInfo, 
+										xn::NodeInfoList* pNeededTrees, 
+										const XnChar* strConfigurationDir, 
+										xn::ModuleProductionNode** ppInstance)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
@@ -174,6 +181,13 @@ XnStatus XnExportedSensorDevice::Create(xn::Context& context, const XnChar* strI
 		return (nRetVal);
 	}
 
+	nRetVal = m_createdDevices.AddLast(DeviceKey(context.GetUnderlyingObject(), strCreationInfo));
+	if (nRetVal != XN_STATUS_OK)
+	{
+		XN_DELETE(pSensor);
+		return (nRetVal);
+	}
+
 	*ppInstance = pDevice;
 
 	return (XN_STATUS_OK);
@@ -181,9 +195,52 @@ XnStatus XnExportedSensorDevice::Create(xn::Context& context, const XnChar* strI
 
 void XnExportedSensorDevice::Destroy(xn::ModuleProductionNode* pInstance)
 {
+	XnStatus nRetVal = XN_STATUS_OK;
 	XnSensorDevice* pDevice = dynamic_cast<XnSensorDevice*>(pInstance);
+	XnChar strConnStr[XN_MAX_CREATION_INFO_LENGTH];
+	nRetVal = pDevice->GetStringProperty(XN_MODULE_PROPERTY_USB_PATH, strConnStr, sizeof(strConnStr));
+	if (nRetVal != XN_STATUS_OK)
+	{
+		xnLogWarning(XN_MASK_DEVICE_SENSOR, "Couldn't get usb path property ?! :(");
+		XN_ASSERT(FALSE);
+	}
+	XnContext* pContext = pDevice->GetContext().GetUnderlyingObject();
+	CreatedDevices::Iterator it = FindCreatedDevice(pContext, strConnStr);
+	if (it == m_createdDevices.end())
+	{
+		xnLogWarning(XN_MASK_DEVICE_SENSOR, "Couldn't find device in created devices ?! :(");
+		XN_ASSERT(FALSE);
+	}
+	else
+	{
+		m_createdDevices.Remove(it);
+	}
+
 	XnDeviceBase* pSensor = pDevice->GetSensor();
 	pSensor->Destroy();
 	XN_DELETE(pSensor);
 	XN_DELETE(pDevice);
+
+}
+
+XnExportedSensorDevice::DeviceKey::DeviceKey(XnContext* pContext, const XnChar* strConnStr)
+{
+	m_pContext = pContext;
+	xnOSStrCopy(m_strConnStr, strConnStr, sizeof(m_strConnStr));
+}
+
+XnExportedSensorDevice::CreatedDevices::Iterator XnExportedSensorDevice::FindCreatedDevice(XnContext* pContext, 
+																                           const XnChar* strConnStr)
+{
+	CreatedDevices::Iterator it = m_createdDevices.begin();
+	for (; it != m_createdDevices.end(); it++)
+	{
+		if ((it->m_pContext == pContext) && 
+			 (xnOSStrCmp(it->m_strConnStr, strConnStr) == 0))
+		{
+			break;
+		}
+	}
+
+	return it;
 }

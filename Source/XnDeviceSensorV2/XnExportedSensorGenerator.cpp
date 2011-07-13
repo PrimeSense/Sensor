@@ -57,8 +57,12 @@ XnStatus XnExportedSensorGenerator::EnumerateProductionTrees(xn::Context& contex
 	XnProductionNodeDescription Description;
 	GetDescription(&Description);
 
+	// perform a query to be sure the device we'll find is the same one exported from this DLL.
 	xn::Query query;
 	query.SetVendor(XN_VENDOR_PRIMESENSE);
+	query.SetName(XN_DEVICE_NAME);
+	query.SetMinVersion(Description.Version);
+	query.SetMaxVersion(Description.Version);
 
 	nRetVal = context.AutoEnumerateOverSingleInput(TreesList, Description, NULL, XN_NODE_TYPE_DEVICE, pErrors, &query);
 	XN_IS_STATUS_OK(nRetVal);

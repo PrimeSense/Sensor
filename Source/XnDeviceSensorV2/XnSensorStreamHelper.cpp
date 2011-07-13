@@ -175,10 +175,13 @@ XnStatus XnSensorStreamHelper::Close()
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	nRetVal = m_pSensorStream->CloseStreamImpl();
-	XN_IS_STATUS_OK(nRetVal);
+	if (GetFirmware()->GetStreams()->IsClaimed(m_pStream->GetType(), m_pStream))
+	{
+		nRetVal = m_pSensorStream->CloseStreamImpl();
+		XN_IS_STATUS_OK(nRetVal);
 
-	GetFirmware()->GetStreams()->ReleaseStream(m_pStream->GetType(), m_pStream);
+		GetFirmware()->GetStreams()->ReleaseStream(m_pStream->GetType(), m_pStream);
+	}
 	
 	return (XN_STATUS_OK);
 }

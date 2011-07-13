@@ -81,7 +81,7 @@ protected:
 	*
 	* @param	nDeviceTimeStamp	[in]	The device TS to translate.
 	*/ 
-	XnUInt64 GetTimeStamp(XnUInt32 nDeviceTimeStamp);
+	virtual XnUInt64 GetTimeStamp(XnUInt32 nDeviceTimeStamp);
 
 //---------------------------------------------------------------------------
 // Class Members

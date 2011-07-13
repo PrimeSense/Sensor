@@ -1,7 +1,26 @@
 Detailed Change log:
 --------------------
 
-Version 5.0.1.32 (Unstable version - Apr 11th 2010)
+Version 5.0.3.3 (Stable version - Jul 5th 2011)
+-----------------------------------------------
+  * Linux: Allow installation to a different directory (for cross-compilation mainly).
+  * Workaround firmware bug: if no depth, IR timestamps are corrupt. Use host clock for timestamps instead.
+  * Bug Fix: unregistering USB event callback when destroying sensor to prevent crash when unplugging device.
+  * XnExportedSensorDevice now only enumerates devices that weren't created in the context yet.
+
+Version 5.0.2.3 (Stable version - May 3rd 2011)
+-----------------------------------------------
+  * Fixed use of deprecated CreateProductionTree().
+  * Bug Fix: playing XNS files in applications using deprecated API might cause memory leaks.
+  * Bug Fix: serial number was in hex format instead of decimal one.
+  * Make sure SensorV2 nodes will only use SensorV2 device (up to now they only checked it's a PrimeSense device).
+
+Version 5.0.1.33 (Unstable version - Apr 18th 2011)
+---------------------------------------------------
+  * CE4100: adding support in makefiles, redist and install.
+  * CE4100: default is now BULK with compressed formats.
+  
+Version 5.0.1.32 (Unstable version - Apr 11th 2011)
 ---------------------------------------------------
   * Fixing log prints of resolutions (-1 appeared as MAX_UINT64...) to the resolution name.
   * Linux Bug Fix: Server creates two log files, one in the client folder and one in /var/log/primesense/XnSensorServer
@@ -9,7 +28,7 @@ Version 5.0.1.32 (Unstable version - Apr 11th 2010)
   * Win32: WIX installer (replacing NSIS)
   * Fixed wrong version in XnDeviceFile
 
-Version 5.0.1.31 (Stable version - Apr 11th 2010)
+Version 5.0.1.31 (Stable version - Apr 11th 2011)
 -------------------------------------------------
   * Fix BULK timeout - it was too small...
   * Bug Fix: IR only works in QVGA...

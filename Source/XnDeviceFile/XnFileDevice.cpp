@@ -69,7 +69,9 @@ XnFileDevice::XnFileDevice(xn::Context& context, const XnChar* strInstanceName) 
 	m_nCurrTimestamp(0),
 	m_pBCData(NULL),
 	m_bRepeat(TRUE),
-	m_bEOF(FALSE)
+	m_bEOF(FALSE),
+	m_strName(strInstanceName),
+	m_hSelf(NULL)
 {
 	xnOSMemSet(&m_ShiftToDepth, 0, sizeof(m_ShiftToDepth));
 }
@@ -95,6 +97,12 @@ void XnFileDevice::Free()
 	{
 		XnNodeInfo& nodeInfo = it.Value();
 		XN_DELETE(nodeInfo.pXnCodec);
+		if (nodeInfo.codec.IsValid())
+		{
+			xnRemoveNeededNode(GetSelfNodeHandle(), nodeInfo.codec);
+			nodeInfo.codec.Release();
+		}
+
 	}
 	m_nodeInfoMap.Clear();
 
@@ -805,7 +813,11 @@ XnStatus XnFileDevice::CreateCodec(xn::ProductionNode& node)
 		{
 			// release old codec
 			XN_DELETE(pNodeInfo->pXnCodec);
-			pNodeInfo->codec.Release();
+			if (pNodeInfo->codec.IsValid())
+			{
+				xnRemoveNeededNode(GetSelfNodeHandle(), pNodeInfo->codec);
+				pNodeInfo->codec.Release();
+			}
 
 			// special case: IR recorded with JPEG. This mode is no longer allowed by OpenNI (JPEG
 			// can now only be used for image). We'll have to handle it ourselves.
@@ -823,6 +835,11 @@ XnStatus XnFileDevice::CreateCodec(xn::ProductionNode& node)
 			{
 				// normal case
 				nRetVal = m_context.CreateCodec(codecID, node, pNodeInfo->codec);
+				XN_IS_STATUS_OK(nRetVal);
+
+				// we need to make the codec a needed node, so that if xnForceShutdown() is called, we will be
+				// destroyed *before* it does (as we hold a reference to it).
+				nRetVal = xnAddNeededNode(GetSelfNodeHandle(), pNodeInfo->codec);
 				XN_IS_STATUS_OK(nRetVal);
 
 				XN_VALIDATE_NEW(pNodeInfo->pXnCodec, XnNiCodec, pNodeInfo->codec);
@@ -1572,4 +1589,19 @@ XnStatus XnFileDevice::UpdateRWData(const xn::DepthGenerator& depth)
 	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);
+}
+
+XnNodeHandle XnFileDevice::GetSelfNodeHandle()
+{
+	if (m_hSelf == NULL)
+	{
+		xn::Player player;
+		XnStatus nRetVal = m_context.GetProductionNodeByName(m_strName, player);
+		XN_ASSERT(nRetVal == XN_STATUS_OK);
+
+		// keep only the handle (we don't want to keep a reference to ourself. This will prevent destruction)
+		m_hSelf = player;
+	}
+
+	return m_hSelf;
 }
