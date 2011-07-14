@@ -21,4 +21,4 @@ INC_DIRS += \
 
 BIN_DIR = ../../../Bin
 
-include ../../CommonCppMakefile
+include ../../Common/CommonCppMakefile
