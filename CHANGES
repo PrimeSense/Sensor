@@ -1,6 +1,11 @@
 Detailed Change log:
 --------------------
 
+Version 5.0.3.4 (Unstable version - Jul 5th 2011)
+-------------------------------------------------
+  * Windows Redist: Support for 64-bit systems.
+  * Control mutex is now per sensor and not global to all sensors.
+
 Version 5.0.3.3 (Stable version - Jul 5th 2011)
 -----------------------------------------------
   * Linux: Allow installation to a different directory (for cross-compilation mainly).

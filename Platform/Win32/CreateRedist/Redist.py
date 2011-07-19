@@ -29,6 +29,17 @@ import win32con, pywintypes, win32api
 import re
 import subprocess
 from xml.dom.minidom import parse, parseString
+import platform
+
+def is_64_bit_platform():
+    result = False
+    import platform
+    (bits,linkage) = platform.architecture()
+    matchObject = re.search('64',bits)
+    result = matchObject is not None
+    return result
+
+is_64_bit_platform = is_64_bit_platform()	
 
 #------------Check args---------------------------------------------#
 
@@ -115,7 +126,11 @@ os.mkdir(OUTPUT_DIR)
 
 try:
     VS_NEED_UPGRADE = 0
-    MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\VisualStudio\9.0")
+    if not is_64_bit_platform:
+	MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\VisualStudio\9.0")
+    else:
+	MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Wow6432Node\Microsoft\VisualStudio\9.0")    
+    #MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Wow6432Node\Microsoft\VisualStudio\9.0")
     MSVC_VALUES = [("InstallDir", win32con.REG_SZ)]
     VS_INST_DIR = get_reg_values(MSVC_KEY, MSVC_VALUES)[0]
 except Exception as e:
@@ -123,7 +138,10 @@ except Exception as e:
 
 if VC_version == 10:    
     VS_NEED_UPGRADE = 1
-    MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\VisualStudio\10.0")
+    if not is_64_bit_platform:
+	MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\VisualStudio\10.0")
+    else:
+	MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Wow6432Node\Microsoft\VisualStudio\10.0")
     MSVC_VALUES = [("InstallDir", win32con.REG_SZ)]
     VS_INST_DIR = get_reg_values(MSVC_KEY, MSVC_VALUES)[0]
 
@@ -135,10 +153,19 @@ print("Building...")
 os.chdir(os.path.join(ROOT_DIR, "..", "Build"))
 
 if VS_NEED_UPGRADE == 1:
+	#os.system("attrib -r * /s")
 	res = os.system("\"" + VS_INST_DIR + "devenv\" " + "Engine.sln" + " /upgrade > ..\\CreateRedist\\Output\\build.log")
 	if res != 0:
 	    raise Exception("build failed!")
-res = os.system("\"" + VS_INST_DIR + "devenv\" " + "Engine.sln" + " /build Release > ..\\CreateRedist\\Output\\build.log")
+build_cmd = "\"%s\" %s /Rebuild \"release|%s\" /out ..\\CreateRedist\\Output\\build.log"%(os.path.join(VS_INST_DIR,'devenv'),'Engine.sln',
+    'win32' if vc_build_bits == '32' else 'x64')
+#build_cmd = "\"%s\" %s /Rebuild \"Release|x%s\""%(os.path.join(VS_INST_DIR,'devenv.exe'),'Engine.sln',
+#    '86' if vc_build_bits == '32' else '64')
+print 'building .. %s'%build_cmd
+#res = os.system("\"" + VS_INST_DIR + "devenv\" " + "Engine.sln" + " /build Release > ..\\CreateRedist\\Output\\build.log")
+#res = os.system(build_cmd)
+res = subprocess.call(build_cmd)
+res = 0
 if res != 0:
     raise Exception("build failed!")
 os.chdir(SCRIPT_DIR)
@@ -146,7 +173,7 @@ os.chdir(SCRIPT_DIR)
 print("Copying into redist folder...")
 
 # create folder structure
-os.mkdir(os.path.join(REDIST_DIR, "Bin"))
+os.mkdir(os.path.join(REDIST_DIR, "Bin" if vc_build_bits == "32" else "Bin64"))
 os.mkdir(os.path.join(REDIST_DIR, "Data"))
 
 # copy EPL
@@ -156,16 +183,19 @@ shutil.copy(os.path.join(ROOT_DIR, "..", "..", "..", "LGPL.txt"), REDIST_DIR)
 shutil.copy(os.path.join(ROOT_DIR, "..", "..", "..", "LGPL.txt"), OUTPUT_DIR)
 
 # copy binaries
-RELEASE_DIR = os.path.join(ROOT_DIR, "..", "Bin", "Release")
+RELEASE_DIR = os.path.join(ROOT_DIR, "..", "Bin" if vc_build_bits == "32" else "Bin64", "Release")
 for file in os.listdir(RELEASE_DIR):
     if os.path.splitext(file)[1] in [".dll", ".exe"]:
-        shutil.copy(os.path.join(RELEASE_DIR, file), os.path.join(REDIST_DIR, "Bin"))
+        shutil.copy(os.path.join(RELEASE_DIR, file), os.path.join(REDIST_DIR, "Bin" if vc_build_bits == "32" else "Bin64"))
 
 # copy data
 DATA_DIR = os.path.join(ROOT_DIR, "..", "..", "..", "Data")
 for file in os.listdir(DATA_DIR):
     shutil.copy(os.path.join(DATA_DIR, file), os.path.join(REDIST_DIR, "Data"))
-    
+ 
+#if vc_build_bits == '64':
+#    print 'Finishing without creating the installer' 
+#    exit(0)   
 # create installer
 print("Creating installer...")
 os.chdir(SCRIPT_DIR + "\\EE_NI")
@@ -187,8 +217,13 @@ if VS_NEED_UPGRADE == 1:
     if res != 0:
         raise Exception("Failed upgrade installer!")
 
-res = subprocess.call("\""+VS_INST_DIR + "devenv\" EE_NI.wixproj /build \"release|x86"\
-		+"\" /out "+SCRIPT_DIR+"\\Output\\" + logFilename + ".txt",close_fds=True)
+
+wix_build_cmd = '"%s" %s /Build "release|%s" /out %s'%(os.path.join(VS_INST_DIR,'devenv'), 'EE_NI.wixproj' ,'x86' if vc_build_bits == '32' else 'x64',
+						       os.path.join(SCRIPT_DIR,'Output',logFilename + ".txt"))
+print "wix_build_cmd=%s"%wix_build_cmd
+res = subprocess.call(wix_build_cmd)
+#res = subprocess.call("\""+VS_INST_DIR + "devenv\" EE_NI.wixproj /build \"release|x86"\
+#		+"\" /out "+SCRIPT_DIR+"\\Output\\" + logFilename + ".txt",close_fds=True)
 if res != 0:
     raise Exception("Failed creating installer!")
 
