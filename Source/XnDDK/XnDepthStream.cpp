@@ -1,30 +1,24 @@
-/*****************************************************************************
-*                                                                            *
-*  PrimeSense Sensor 5.0 Alpha                                               *
-*  Copyright (C) 2010 PrimeSense Ltd.                                        *
-*                                                                            *
-*  This file is part of PrimeSense Common.                                   *
-*                                                                            *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify *
-*  it under the terms of the GNU Lesser General Public License as published  *
-*  by the Free Software Foundation, either version 3 of the License, or      *
-*  (at your option) any later version.                                       *
-*                                                                            *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,      *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of            *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
-*  GNU Lesser General Public License for more details.                       *
-*                                                                            *
-*  You should have received a copy of the GNU Lesser General Public License  *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>. *
-*                                                                            *
-*****************************************************************************/
-
-
-
-
-
-
+/****************************************************************************
+*                                                                           *
+*  PrimeSense Sensor 5.x Alpha                                              *
+*  Copyright (C) 2011 PrimeSense Ltd.                                       *
+*                                                                           *
+*  This file is part of PrimeSense Sensor.                                  *
+*                                                                           *
+*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
+*  it under the terms of the GNU Lesser General Public License as published *
+*  by the Free Software Foundation, either version 3 of the License, or     *
+*  (at your option) any later version.                                      *
+*                                                                           *
+*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
+*  GNU Lesser General Public License for more details.                      *
+*                                                                           *
+*  You should have received a copy of the GNU Lesser General Public License *
+*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
+*                                                                           *
+****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -53,6 +47,7 @@ XnDepthStream::XnDepthStream(const XnChar* csName, XnBool bAllowCustomResolution
 	m_ZeroPlaneDistance(XN_STREAM_PROPERTY_ZERO_PLANE_DISTANCE),
 	m_ZeroPlanePixelSize(XN_STREAM_PROPERTY_ZERO_PLANE_PIXEL_SIZE),
 	m_EmitterDCmosDistance(XN_STREAM_PROPERTY_EMITTER_DCMOS_DISTANCE),
+	m_GetDCmosRCmosDistance(XN_STREAM_PROPERTY_DCMOS_RCMOS_DISTANCE),
 	m_NoDepthValue(XN_STREAM_PROPERTY_NO_SAMPLE),
 	m_ShadowValue(XN_STREAM_PROPERTY_SHADOW),
 	m_S2DHelper(this)
@@ -72,7 +67,7 @@ XnStatus XnDepthStream::Init()
 	// add properties
 	XN_VALIDATE_ADD_PROPERTIES(this, &m_MinDepth, &m_MaxDepth, &m_ConstShift, &m_PixelSizeFactor,
 		&m_MaxShift, &m_ParamCoefficient, &m_ShiftScale, &m_ZeroPlaneDistance, &m_ZeroPlanePixelSize,
-		&m_EmitterDCmosDistance, &m_NoDepthValue, &m_ShadowValue, &m_DeviceMaxDepth);
+		&m_EmitterDCmosDistance, &m_GetDCmosRCmosDistance, &m_NoDepthValue, &m_ShadowValue, &m_DeviceMaxDepth);
 
 	nRetVal = m_S2DHelper.Init();
 	XN_IS_STATUS_OK(nRetVal);

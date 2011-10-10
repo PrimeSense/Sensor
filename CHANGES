@@ -1,6 +1,23 @@
 Detailed Change log:
 --------------------
 
+Version 5.0.4.3 (Stable version - Sep 18th 2011)
+------------------------------------------------
+  * Some minor windows installer UI fix (title position).
+  * Fixed buffer overflow bugs in the software registration.
+  * Support for firmware 5.4.x: New TEC and extended serial number commands.
+  * On newer FWs (5.4+) high-res image output does not always have to be bayer so this rule will only be enforced on older versions.
+  * Preliminary Android Support.
+  * Preliminary ARM Support.
+  * Win32: Added the /MP (MultiProcess Compiling) flag to all projects to save build time.
+  * Bug Fix: Image Generator always said it supports JPEG (without checking the sensor itself).
+  * Fix a memory leak (about 180 bytes per generator).
+
+Version 5.0.3.4 (Stable version - Jul 5th 2011)
+-----------------------------------------------
+  * Windows Redist: Support for 64-bit systems.
+  * Control mutex is now per sensor and not global to all sensors.
+
 Version 5.0.3.3 (Stable version - Jul 5th 2011)
 -----------------------------------------------
   * Linux: Allow installation to a different directory (for cross-compilation mainly).

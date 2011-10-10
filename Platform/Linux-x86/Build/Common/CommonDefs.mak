@@ -1,6 +1,21 @@
 # some defaults
 ifndef CFG
-	CFG = Release
+    CFG = Release
+endif
+
+ifndef PLATFORM
+    MACHINE = $(shell uname -m)
+    ifneq (,$(findstring x86,$(MACHINE)))
+        PLATFORM = x86
+    else ifneq (,$(findstring i686,$(MACHINE)))
+        PLATFORM = x86
+    else ifneq (,$(findstring i386,$(MACHINE)))
+        PLATFORM = x86
+    else ifneq (,$(findstring arm,$(MACHINE)))
+        PLATFORM = Arm
+    else
+        $(error Unknown Platform)
+    endif
 endif
 
 # expand file list
@@ -22,4 +37,4 @@ COMMON_MAK_DIR = $(dir $(lastword $(MAKEFILE_LIST)))
 OSTYPE := $(shell uname -s)
 
 # platform specific args
--include $(COMMON_MAK_DIR)Platform.$(PLATFORM)
+include $(COMMON_MAK_DIR)Platform.$(PLATFORM)

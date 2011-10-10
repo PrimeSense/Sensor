@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeLite_Workspace Name="EngineLinux86" Database="./EngineLinux86.tags">
+  <Project Name="XnCore" Path="XnCore/XnCore.project"/>
+  <Project Name="XnDDK" Path="XnDDK/XnDDK.project"/>
+  <Project Name="XnFormats" Path="XnFormats/XnFormats.project"/>
+  <Project Name="XnDeviceSensorV2" Path="XnDeviceSensorV2/XnDeviceSensorV2.project"/>
+  <Project Name="XnDeviceFile" Path="XnDeviceFile/XnDeviceFile.project"/>
+  <Project Name="XnIO" Path="XnIO/XnIO.project"/>
+  <Project Name="XnEECore" Path="XnEECore/XnEECore.project"/>
+  <Project Name="DeviceSimpleRead" Path="Samples/DeviceSimpleRead/DeviceSimpleRead.project" Active="Yes"/>
+  <Project Name="XnCommandConsole" Path="Samples/XnCommandConsole/XnCommandConsole.project"/>
+  <Project Name="XnVSimpleViewer" Path="Samples/XnVSimpleViewer/XnVSimpleViewer.project"/>
+  <Project Name="RGBViewer" Path="Samples/RGBViewer/RGBViewer.project" Active="No"/>
+  <Project Name="XnVSimpleRead" Path="Samples/XnVSimpleRead/XnVSimpleRead.project" Active="No"/>
+  <Project Name="XnEEFramework" Path="XnEEFramework/XnEEFramework.project" Active="No"/>
+  <Project Name="XnEEFramework" Path="XnEEFramework/XnEEFramework.project" Active="No"/>
+  <BuildMatrix>
+    <WorkspaceConfiguration Name="Debug" Selected="yes">
+      <Project Name="XnCore" ConfigName="Debug"/>
+      <Project Name="XnDDK" ConfigName="Debug"/>
+      <Project Name="XnFormats" ConfigName="Debug"/>
+      <Project Name="XnDeviceSensorV2" ConfigName="Debug"/>
+      <Project Name="XnDeviceFile" ConfigName="Debug"/>
+      <Project Name="XnIO" ConfigName="Debug"/>
+      <Project Name="XnEECore" ConfigName="Debug"/>
+      <Project Name="DeviceSimpleRead" ConfigName="Debug"/>
+      <Project Name="XnCommandConsole" ConfigName="Debug"/>
+      <Project Name="XnVSimpleViewer" ConfigName="Debug"/>
+      <Project Name="XnVSimpleRead" ConfigName="Debug"/>
+      <Project Name="XnEEFramework" ConfigName="Debug"/>
+    </WorkspaceConfiguration>
+    <WorkspaceConfiguration Name="Release" Selected="yes">
+      <Project Name="XnCore" ConfigName="Release"/>
+      <Project Name="XnDDK" ConfigName="Release"/>
+      <Project Name="XnFormats" ConfigName="Release"/>
+      <Project Name="XnDeviceSensorV2" ConfigName="Release"/>
+      <Project Name="XnDeviceFile" ConfigName="Release"/>
+      <Project Name="XnIO" ConfigName="Release"/>
+      <Project Name="XnEECore" ConfigName="Release"/>
+      <Project Name="DeviceSimpleRead" ConfigName="Release"/>
+      <Project Name="XnCommandConsole" ConfigName="Release"/>
+      <Project Name="XnVSimpleViewer" ConfigName="Release"/>
+      <Project Name="XnVSimpleRead" ConfigName="Release"/>
+      <Project Name="XnEEFramework" ConfigName="Release"/>
+    </WorkspaceConfiguration>
+  </BuildMatrix>
+</CodeLite_Workspace>

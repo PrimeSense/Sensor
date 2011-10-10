@@ -1,30 +1,24 @@
-/*****************************************************************************
-*                                                                            *
-*  PrimeSense Sensor 5.0 Alpha                                               *
-*  Copyright (C) 2010 PrimeSense Ltd.                                        *
-*                                                                            *
-*  This file is part of PrimeSense Common.                                   *
-*                                                                            *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify *
-*  it under the terms of the GNU Lesser General Public License as published  *
-*  by the Free Software Foundation, either version 3 of the License, or      *
-*  (at your option) any later version.                                       *
-*                                                                            *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,      *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of            *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
-*  GNU Lesser General Public License for more details.                       *
-*                                                                            *
-*  You should have received a copy of the GNU Lesser General Public License  *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>. *
-*                                                                            *
-*****************************************************************************/
-
-
-
-
-
-
+/****************************************************************************
+*                                                                           *
+*  PrimeSense Sensor 5.x Alpha                                              *
+*  Copyright (C) 2011 PrimeSense Ltd.                                       *
+*                                                                           *
+*  This file is part of PrimeSense Sensor.                                  *
+*                                                                           *
+*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
+*  it under the terms of the GNU Lesser General Public License as published *
+*  by the Free Software Foundation, either version 3 of the License, or     *
+*  (at your option) any later version.                                      *
+*                                                                           *
+*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
+*  GNU Lesser General Public License for more details.                      *
+*                                                                           *
+*  You should have received a copy of the GNU Lesser General Public License *
+*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
+*                                                                           *
+****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -54,16 +48,37 @@ XnUInt8* XnSensorImageGenerator::GetImageMap()
 
 XnBool XnSensorImageGenerator::IsPixelFormatSupported(XnPixelFormat Format)
 {
-	switch (Format)
+	for (XnUInt32 i = 0; i < m_nSupportedModesCount; ++i)
 	{
-	case XN_PIXEL_FORMAT_RGB24:
-	case XN_PIXEL_FORMAT_YUV422:
-	case XN_PIXEL_FORMAT_GRAYSCALE_8_BIT:
-	case XN_PIXEL_FORMAT_MJPEG:
-		return TRUE;
-	default:
-		return FALSE;
+		switch (Format)
+		{
+		case XN_PIXEL_FORMAT_RGB24:
+		case XN_PIXEL_FORMAT_YUV422:
+			if (m_aSupportedModes[i].nInputFormat == XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422 ||
+				m_aSupportedModes[i].nInputFormat == XN_IO_IMAGE_FORMAT_YUV422)
+			{
+				return TRUE;
+			}
+			break;
+		case XN_PIXEL_FORMAT_GRAYSCALE_8_BIT:
+			if (m_aSupportedModes[i].nInputFormat == XN_IO_IMAGE_FORMAT_BAYER)
+			{
+				return TRUE;
+			}
+			break;
+		case XN_PIXEL_FORMAT_MJPEG:
+			if (m_aSupportedModes[i].nInputFormat == XN_IO_IMAGE_FORMAT_JPEG)
+			{
+				return TRUE;
+			}
+			break;
+		default:
+			return FALSE;
+		}
 	}
+
+	// not found
+	return FALSE;
 }
 
 XnStatus XnSensorImageGenerator::SetPixelFormat(XnPixelFormat Format)

@@ -34,7 +34,7 @@
         </Control>
 
         <Control Id="Description" Type="Text" X="10" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes" Text="!(loc.ChoseFolder)" />
-        <Control Id="Title" Type="Text" X="20" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="!(loc.InstallDirDlgTitle)" />
+        <Control Id="Title" Type="Text" X="10" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="!(loc.InstallDirDlgTitle)" />
         <Control Id="FolderLabel" Type="Text" X="10" Y="80" Width="290" Height="15" NoPrefix="yes" Text="!(loc.InstallDirDlgFolderLabel)" />
         <Control Id="Folder" Type="PathEdit" X="10" Y="100" Width="320" Height="18" Property="WIXUI_INSTALLDIR" Indirect="yes" />
         <Control Id="ChangeFolder" Type="PushButton" X="10" Y="120" Width="56" Height="17" Text="!(loc.InstallDirDlgChange)" />

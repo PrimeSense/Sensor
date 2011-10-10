@@ -1,5 +1,5 @@
-d:\Projects\SDK\Engine\Platform\Win32\Install\EE_NI\bin\Release\en-us\EE_NI.msi
-d:\Projects\SDK\Engine\Platform\Win32\Install\EE_NI\bin\Release\en-us\EE_NI.wixpdb
+d:\2\ENGINE_V5.0.4.3\Platform\Win32\Install\EE_NI\bin\Release\en-us\EE_NI.msi
+d:\2\ENGINE_V5.0.4.3\Platform\Win32\Install\EE_NI\bin\Release\en-us\EE_NI.wixpdb
 obj\Release\Fragments\BinariesFragment.wixobj
 obj\Release\EE_NI.wixobj
 obj\Release\Fragments\FilesFragment.wixobj

@@ -1,29 +1,24 @@
-/*****************************************************************************
-*                                                                            *
-*  PrimeSense Sensor 5.0 Alpha                                               *
-*  Copyright (C) 2010 PrimeSense Ltd.                                        *
-*                                                                            *
-*  This file is part of PrimeSense Common.                                   *
-*                                                                            *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify *
-*  it under the terms of the GNU Lesser General Public License as published  *
-*  by the Free Software Foundation, either version 3 of the License, or      *
-*  (at your option) any later version.                                       *
-*                                                                            *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,      *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of            *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
-*  GNU Lesser General Public License for more details.                       *
-*                                                                            *
-*  You should have received a copy of the GNU Lesser General Public License  *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>. *
-*                                                                            *
-*****************************************************************************/
-
-
-
-
-
+/****************************************************************************
+*                                                                           *
+*  PrimeSense Sensor 5.x Alpha                                              *
+*  Copyright (C) 2011 PrimeSense Ltd.                                       *
+*                                                                           *
+*  This file is part of PrimeSense Sensor.                                  *
+*                                                                           *
+*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
+*  it under the terms of the GNU Lesser General Public License as published *
+*  by the Free Software Foundation, either version 3 of the License, or     *
+*  (at your option) any later version.                                      *
+*                                                                           *
+*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
+*  GNU Lesser General Public License for more details.                      *
+*                                                                           *
+*  You should have received a copy of the GNU Lesser General Public License *
+*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
+*                                                                           *
+****************************************************************************/
 #ifndef __XN_DEPTH_STREAM_H__
 #define __XN_DEPTH_STREAM_H__
 
@@ -64,6 +59,7 @@ public:
 	inline XnDepthPixel GetZeroPlaneDistance() const { return (XnDepthPixel)m_ZeroPlaneDistance.GetValue(); }
 	inline XnDouble GetZeroPlanePixelSize() const { return m_ZeroPlanePixelSize.GetValue(); }
 	inline XnDouble GetEmitterDCmosDistance() const { return m_EmitterDCmosDistance.GetValue(); }
+	inline XnDouble GetDCmosRCmosDistance() const { return m_GetDCmosRCmosDistance.GetValue(); }
 	inline XnDepthPixel GetNoDepthValue() const { return (XnDepthPixel)m_NoDepthValue.GetValue(); }
 	inline XnDepthPixel GetShadowValue() const { return (XnDepthPixel)m_ShadowValue.GetValue(); }
 
@@ -85,6 +81,7 @@ protected:
 	inline XnActualIntProperty& ZeroPlaneDistanceProperty() { return m_ZeroPlaneDistance; }
 	inline XnActualRealProperty& ZeroPlanePixelSizeProperty() { return m_ZeroPlanePixelSize; }
 	inline XnActualRealProperty& EmitterDCmosDistanceProperty() { return m_EmitterDCmosDistance; }
+	inline XnActualRealProperty& GetDCmosRCmosDistanceProperty() { return m_GetDCmosRCmosDistance; }
 	inline XnActualIntProperty& NoDepthValueProperty() { return m_NoDepthValue; }
 	inline XnActualIntProperty& ShadowValueProperty() { return m_ShadowValue; }
 
@@ -122,6 +119,7 @@ private:
 	XnActualIntProperty m_ZeroPlaneDistance;
 	XnActualRealProperty m_ZeroPlanePixelSize;
 	XnActualRealProperty m_EmitterDCmosDistance;
+	XnActualRealProperty m_GetDCmosRCmosDistance;
 	XnActualIntProperty m_NoDepthValue;
 	XnActualIntProperty m_ShadowValue;
 

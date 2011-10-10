@@ -221,7 +221,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/fp:fast /Qprec-div- /Qprec-sqrt-"
+				AdditionalOptions="/fp:fast /Qprec-div- /Qprec-sqrt- /MP"
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
@@ -312,7 +312,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/fp:fast /Qprec-div- /Qprec-sqrt-"
+				AdditionalOptions="/fp:fast /Qprec-div- /Qprec-sqrt- /MP"
 				Optimization="2"
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"

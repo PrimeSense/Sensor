@@ -144,12 +144,6 @@
 
     <DirectoryRef Id="DocumentationShortcutFolder">
       <Component Id="DocumentationShortcut" Guid="8842655F-C47D-4c65-B69D-59DCE36832A2" >
-        <Shortcut Id="APIRefMenuShortcut"
-           Name="API Reference $(var.VersionNumber)"
-           Description="API Reference $(var.VersionNumber)"
-           Target="[INSTALLLOCATION]Documentation\Experience Engine $(var.VersionNumber) for Windows - API Reference.chm"
-           WorkingDirectory="INSTALLLOCATION"/>
-
         <Shortcut Id="ProgrammerGuideShortcut"
            Name="Programmer's Guide $(var.VersionNumber)"
            Description="Programmer's Guide $(var.VersionNumber)"
