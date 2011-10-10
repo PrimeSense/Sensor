@@ -144,12 +144,6 @@
 
     <DirectoryRef Id="DocumentationShortcutFolder">
       <Component Id="DocumentationShortcut" Guid="8842655F-C47D-4c65-B69D-59DCE36832A2" >
-        <Shortcut Id="APIRefMenuShortcut"
-           Name="API Reference $(var.VersionNumber)"
-           Description="API Reference $(var.VersionNumber)"
-           Target="[INSTALLLOCATION]Documentation\Experience Engine $(var.VersionNumber) for Windows - API Reference.chm"
-           WorkingDirectory="INSTALLLOCATION"/>
-
         <Shortcut Id="ProgrammerGuideShortcut"
            Name="Programmer's Guide $(var.VersionNumber)"
            Description="Programmer's Guide $(var.VersionNumber)"
@@ -239,13 +233,31 @@
 
       </Component>
     </DirectoryRef>
+    
+    <?if $(var.BinaryOnlyRedist)="False"?>
+    <DirectoryRef Id="TARGETDIR" >
+      <Component Id="EnviromentVars" Guid="9270882A-E2CA-4F91-BB6B-87F183A0D3D0" DiskId="1">
 
+        <Environment Id="OPENNIINSTALLPATH"
+                            Action="set"
+                            Part="all"
+                            Name="XN_SENSOR_INSTALL_PATH$(var.PlatformSuffix)"
+                            Permanent="no"
+                            System="yes"
+                            Value="[INSTALLLOCATION]"/>
+
+      </Component>
+
+    </DirectoryRef>
+    <?endif?>
+    
     <Feature Id="EE_NIFeature" Title="!(loc.ProductName)" Level="1">
       <?if $(var.BinaryOnlyRedist)="False"?>
       <ComponentGroupRef Id="EE_NIFiles" />
       <ComponentGroupRef Id="EE_Shortcuts" />
       <ComponentRef Id="RemoveReleaseLogDir"/>
       <ComponentRef Id="RemoveDebugLogDir"/>
+      <ComponentRef Id="EnviromentVars"/>
       <?else?>
       <ComponentGroupRef Id="EE_NIBinaryFiles" />
       <?endif?>

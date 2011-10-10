@@ -1,30 +1,24 @@
-/*****************************************************************************
-*                                                                            *
-*  PrimeSense Sensor 5.0 Alpha                                               *
-*  Copyright (C) 2010 PrimeSense Ltd.                                        *
-*                                                                            *
-*  This file is part of PrimeSense Common.                                   *
-*                                                                            *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify *
-*  it under the terms of the GNU Lesser General Public License as published  *
-*  by the Free Software Foundation, either version 3 of the License, or      *
-*  (at your option) any later version.                                       *
-*                                                                            *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,      *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of            *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the              *
-*  GNU Lesser General Public License for more details.                       *
-*                                                                            *
-*  You should have received a copy of the GNU Lesser General Public License  *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>. *
-*                                                                            *
-*****************************************************************************/
-
-
-
-
-
-
+/****************************************************************************
+*                                                                           *
+*  PrimeSense Sensor 5.x Alpha                                              *
+*  Copyright (C) 2011 PrimeSense Ltd.                                       *
+*                                                                           *
+*  This file is part of PrimeSense Sensor.                                  *
+*                                                                           *
+*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
+*  it under the terms of the GNU Lesser General Public License as published *
+*  by the Free Software Foundation, either version 3 of the License, or     *
+*  (at your option) any later version.                                      *
+*                                                                           *
+*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
+*  GNU Lesser General Public License for more details.                      *
+*                                                                           *
+*  You should have received a copy of the GNU Lesser General Public License *
+*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
+*                                                                           *
+****************************************************************************/
 #include "XnDeviceSensorProtocol.h"
 #include "XnHostProtocol.h"
 #include <math.h>
@@ -62,6 +56,8 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnF
 		XN_IS_STATUS_OK(nRetVal);
 
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosPresets = OPCODE_GET_CMOS_PRESETS;
+		pDevicePrivateData->FWInfo.nOpcodeGetSerialNumber = OPCODE_GET_SERIAL_NUMBER;
+		pDevicePrivateData->FWInfo.nOpcodeGetFastConvergenceTEC= OPCODE_GET_FAST_CONVERGENCE_TEC;
 		pDevicePrivateData->FWInfo.nFWVer = nFWVer;
 		break;
 
@@ -109,6 +105,8 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnF
 		pDevicePrivateData->FWInfo.nOpcodeSetCmosBlanking = OPCODE_SET_CMOS_BLANKING;
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosBlanking = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosPresets = OPCODE_INVALID;
+		pDevicePrivateData->FWInfo.nOpcodeGetSerialNumber = OPCODE_INVALID;
+		pDevicePrivateData->FWInfo.nOpcodeGetFastConvergenceTEC = OPCODE_INVALID;
 
 
 		break;
@@ -134,6 +132,8 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnF
 		pDevicePrivateData->FWInfo.nOpcodeSetCmosBlanking = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosBlanking = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosPresets = OPCODE_INVALID;
+		pDevicePrivateData->FWInfo.nOpcodeGetSerialNumber = OPCODE_INVALID;
+		pDevicePrivateData->FWInfo.nOpcodeGetFastConvergenceTEC = OPCODE_INVALID;
 
 		break;
 	case XN_SENSOR_FW_VER_3_0:
@@ -157,6 +157,8 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnF
 		pDevicePrivateData->FWInfo.nOpcodeSetCmosBlanking = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosBlanking = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosPresets = OPCODE_INVALID;
+		pDevicePrivateData->FWInfo.nOpcodeGetSerialNumber = OPCODE_INVALID;
+		pDevicePrivateData->FWInfo.nOpcodeGetFastConvergenceTEC = OPCODE_INVALID;
 
 		break;
 	case XN_SENSOR_FW_VER_1_2:
@@ -180,6 +182,8 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnF
 		pDevicePrivateData->FWInfo.nOpcodeSetCmosBlanking = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosBlanking = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosPresets = OPCODE_INVALID;
+		pDevicePrivateData->FWInfo.nOpcodeGetSerialNumber = OPCODE_INVALID;
+		pDevicePrivateData->FWInfo.nOpcodeGetFastConvergenceTEC = OPCODE_INVALID;
 
 		break;
 	case XN_SENSOR_FW_VER_1_1:
@@ -203,6 +207,8 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnF
 		pDevicePrivateData->FWInfo.nOpcodeSetCmosBlanking = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosBlanking = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosPresets = OPCODE_INVALID;
+		pDevicePrivateData->FWInfo.nOpcodeGetSerialNumber = OPCODE_INVALID;
+		pDevicePrivateData->FWInfo.nOpcodeGetFastConvergenceTEC = OPCODE_INVALID;
 
 		break;
 	case XN_SENSOR_FW_VER_0_17:
@@ -226,6 +232,8 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnF
 		pDevicePrivateData->FWInfo.nOpcodeSetCmosBlanking = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosBlanking = OPCODE_INVALID;
 		pDevicePrivateData->FWInfo.nOpcodeGetCmosPresets = OPCODE_INVALID;
+		pDevicePrivateData->FWInfo.nOpcodeGetSerialNumber = OPCODE_INVALID;
+		pDevicePrivateData->FWInfo.nOpcodeGetFastConvergenceTEC = OPCODE_INVALID;
 
 		break;
 	default:
@@ -1602,6 +1610,34 @@ XnStatus XnHostProtocolGetCmosPresets(XnDevicePrivateData* pDevicePrivateData, X
 		aPresets[i].nResolution = XN_PREPARE_VAR16_IN_BUFFER(pValue[i].nResolution);
 		aPresets[i].nFPS = XN_PREPARE_VAR16_IN_BUFFER(pValue[i].nFPS);
 	}
+
+	return XN_STATUS_OK;
+}
+
+XnStatus XnHostProtocolGetSerialNumber (XnDevicePrivateData* pDevicePrivateData, XnChar* cpSerialNumber)
+{
+	XnUChar buffer[MAX_PACKET_SIZE] = {0};
+	XnUChar* pDataBuf = buffer + pDevicePrivateData->FWInfo.nProtocolHeaderSize;
+
+	xnLogInfo(XN_MASK_SENSOR_PROTOCOL, "Reading sensor serial number...");
+
+	XnHostProtocolInitHeader(pDevicePrivateData, buffer, pDataBuf, 0, pDevicePrivateData->FWInfo.nOpcodeGetSerialNumber);
+
+	XnUInt16 nDataSize;
+	XnUChar *serialNumberBuffer = NULL;
+
+	XnStatus rc = XnHostProtocolExecute(pDevicePrivateData, 
+		buffer, pDevicePrivateData->FWInfo.nProtocolHeaderSize, pDevicePrivateData->FWInfo.nOpcodeGetSerialNumber,
+		(XnUChar**)(&serialNumberBuffer), nDataSize);
+	if (rc != XN_STATUS_OK)
+	{
+		xnLogError(XN_MASK_SENSOR_PROTOCOL, "Failed getting the sensor serial number: %s", xnGetStatusString(rc));
+		return rc;
+	}
+
+	serialNumberBuffer[nDataSize*2]=0;
+
+	strcpy(cpSerialNumber, (XnChar*)serialNumberBuffer);
 
 	return XN_STATUS_OK;
 }

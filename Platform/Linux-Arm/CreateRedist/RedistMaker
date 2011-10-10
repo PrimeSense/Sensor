@@ -1,0 +1,52 @@
+#!/bin/bash -e
+
+
+SCRIPT_DIR=`pwd`
+
+# Take version
+MAJOR=`grep "#define XN_PS_MAJOR_VERSION" ../../../Include/XnPsVersion.h | awk '{ print $3 }' | strings -n 1`
+MINOR=`grep "#define XN_PS_MINOR_VERSION" ../../../Include/XnPsVersion.h | awk '{ print $3 }' | strings -n 1`
+MAINTENANCE=`grep "#define XN_PS_MAINTENANCE_VERSION" ../../../Include/XnPsVersion.h | awk '{ print $3 }' | strings -n 1`
+BUILD=`grep "#define XN_PS_BUILD_VERSION" ../../../Include/XnPsVersion.h | awk '{ print $3 }' | strings -n 1`
+
+PS_VERSION="$MAJOR.$MINOR.$MAINTENANCE.$BUILD"
+
+# clean
+rm -rf Final
+rm -rf ../Redist
+
+# Build Engine
+make PLATFORM=$PLATFORM -C ../Build clean
+make PLATFORM=$PLATFORM -C ../Build
+
+# create redist folder structure
+mkdir -p ../Redist
+mkdir -p ../Redist/Lib
+mkdir -p ../Redist/Bin
+mkdir -p ../Redist/Install
+mkdir -p ../Redist/Config
+
+# copy files to redist
+cp ../../../GPL.txt ../Redist
+cp ../../../LGPL.txt ../Redist
+cp ../Bin/Release/libXnDeviceSensorV2.* ../Redist/Lib
+cp ../Bin/Release/libXnDeviceFile.* ../Redist/Lib
+cp ../Bin/Release/libXnDDK.* ../Redist/Lib
+cp ../Bin/Release/libXnFormats.* ../Redist/Lib
+cp ../Bin/Release/libXnCore.* ../Redist/Lib
+cp ../Bin/Release/XnSensorServer ../Redist/Bin
+cp ../Install/* ../Redist/Install
+cp install.sh ../Redist
+
+# fix GlobalDefaults
+cp ../../../Data/GlobalDefaults.ini ../Redist/Config
+
+# create tar
+mkdir -p Final
+cd ../Redist
+
+TAR_TARGET="LinuxARM"
+
+tar -cjf $SCRIPT_DIR/Final/Sensor-Bin-$TAR_TARGET-v$PS_VERSION.tar.bz2 *
+
+cd -

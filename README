@@ -1,18 +1,16 @@
-PrimeSense Sensor Module for OpenNI (Version 5.0.3.4 Untable version - Jul 19th 2011)
--------------------------------------------------------------------------------------
+PrimeSense Sensor Module for OpenNI (Version 5.0.4.3 Unstable version - Sep 18th 2011)
+--------------------------------------------------------------------------------------
 
-Website: www.primesense.com
+Website: http://www.primesense.com
 Forum: http://groups.google.com/group/openni-dev
-Wiki: Coming soon!
+Wiki: http://wiki.openni.org
 
 Binaries are available at:
-http://www.openni.org/downloadfiles/opennimodules/openni-compliant-hardware-binaries/31-latest-unstable
+http://www.openni.org/Downloads/OpenNIModules.aspx
+(The "OpenNI Compliant Hardware Binaries / Unstable" section)
 
-Please use this with the OpenNI unstable branch located at:
-Source:
-https://github.com/OpenNI/OpenNI/tree/unstable
-Binaries:
-http://www.openni.org/downloadfiles/opennimodules/openni-binaries/20-latest-unstable
+Sources are available at:
+https://github.com/PrimeSense/Sensor/tree/unstable
 
 Release Notes:
 --------------
@@ -25,8 +23,8 @@ Release Notes:
   - run 'make install-usb-rules'
   - if the device was connected, unplug and reconnect it.
   This part is done automatically by the install script, but you will need to do it manually if you choose not to use the automated install.
-* The device driver contains a thread for reading from the USB device. This thread should have high priority in order to function correctly. Each process using the device driver should have the CAP_SYS_NICE capability in order to raise thread priority. Failing to have that capability, will cause a failure in setting priority, consequently causing loss of data.
-* MacOSX: Only OSX 10.6 (Snow Leopard) with a 64-bit Intel based CPU is currently supported.
+* Linux: The device driver contains a thread for reading from the USB device. This thread should have high priority in order to function correctly. Each process using the device driver should have the CAP_SYS_NICE capability in order to raise thread priority. Failing to have that capability, will cause a failure in setting priority, consequently causing loss of data.
+* MacOSX: Only OSX 10.6 (Snow Leopard) and above with a 64-bit Intel based CPU is currently supported.
   Client/Server is not supported yet so do not attempt to access the sensor with more then one application.
   
   
@@ -43,8 +41,8 @@ Windows:
 		   Please make sure you download the version that matches your exact python version.
 		4) WIX 3.5
 		   From: http://wix.codeplex.com/releases/view/60102
-		5) OpenNI v1.1.x.x
-		   From: http://www.openni.org/downloadfiles	
+		5) OpenNI 1.3.x.x
+		   From: http://www.openni.org/Downloads/OpenNIModules.aspx	
 
 	Optional Requirements (To build the documentation):
 		1) Doxygen
@@ -56,7 +54,8 @@ Windows:
 		1) Go to the directory: "Platform\Win32\CreateRedist".
 		   Run the script: "Redist.py".
 		   This will compile and prepare the redist exe files that includes everything.
-		2) Install the exe you've just made which is located in Platform\Win32\CreateRedist\Final\Output\Sensor-Win32-5.x.x.x.exe
+		2) Install the exe you've just made which is located in Platform\Win32\CreateRedist\FinalXX\Sensor-Win32-5.x.x.x.exe
+		   (XX being the number of bits: 32 or 64)
 		   The installer will also automatically register all the modules into OpenNI via the NiReg utility.
 		   
 		The visual studio solution is located in: Platform\Win32\Build\EngineWin32.sln.
@@ -73,8 +72,8 @@ Linux:
 		   From: http://www.python.org/download/
 		   Or via apt:
 		   sudo apt-get install python
-		3) OpenNI v1.1.x.x
-		   From: http://www.openni.org/downloadfiles
+		3) OpenNI 1.3.x.x
+		   From: http://www.openni.org/Downloads/OpenNIModules.aspx
 		   
 	Building Sensor:
 		1) Go into the directory: "Platform/Linux-x86/CreateRedist".
@@ -101,8 +100,8 @@ MacOSX:
 		   From: http://developer.apple.com/devcenter/mac/index.action
 		   http://developer.apple.com/devcenter/download.action?path=/Developer_Tools/xcode_3.2.6_and_ios_sdk_4.3__final/xcode_3.2.6_and_ios_sdk_4.3.dmg
 		   Please note that you need to register as a mac developer (It's free!).		   
-		2) OpenNI v1.1.x.x
-		   From: http://www.openni.org/downloadfiles	
+		2) OpenNI 1.3.x.x
+		   From: http://www.openni.org/Downloads/OpenNIModules.aspx
 		   	   
 	Building Sensor:
 		1) Go into the directory: "Platform/Linux-x86/CreateRedist".

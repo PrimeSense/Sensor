@@ -1,24 +1,24 @@
-#/****************************************************************************
-#*                                                                           *
-#*  PrimeSense Sensor 5.0 Alpha                                              *
-#*  Copyright (C) 2010 PrimeSense Ltd.                                       *
-#*                                                                           *
-#*  This file is part of PrimeSense Common.                                  *
-#*                                                                           *
-#*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-#*  it under the terms of the GNU Lesser General Public License as published *
-#*  by the Free Software Foundation, either version 3 of the License, or     *
-#*  (at your option) any later version.                                      *
-#*                                                                           *
-#*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-#*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-#*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-#*  GNU Lesser General Public License for more details.                      *
-#*                                                                           *
-#*  You should have received a copy of the GNU Lesser General Public License *
-#*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-#*                                                                           *
-#****************************************************************************/
+#/***************************************************************************
+#*                                                                          *
+#*  PrimeSense Sensor 5.x Alpha                                             *
+#*  Copyright (C) 2011 PrimeSense Ltd.                                      *
+#*                                                                          *
+#*  This file is part of PrimeSense Sensor.                                 *
+#*                                                                          *
+#*  PrimeSense Sensor is free software: you can redistribute it and/or modif*
+#*  it under the terms of the GNU Lesser General Public License as published*
+#*  by the Free Software Foundation, either version 3 of the License, or    *
+#*  (at your option) any later version.                                     *
+#*                                                                          *
+#*  PrimeSense Sensor is distributed in the hope that it will be useful,    *
+#*  but WITHOUT ANY WARRANTY; without even the implied warranty of          *
+#*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the            *
+#*  GNU Lesser General Public License for more details.                     *
+#*                                                                          *
+#*  You should have received a copy of the GNU Lesser General Public License*
+#*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>*
+#*                                                                          *
+#***************************************************************************/
 #
 
 #
@@ -39,7 +39,9 @@ def is_64_bit_platform():
     result = matchObject is not None
     return result
 
-is_64_bit_platform = is_64_bit_platform()	
+is_64_bit_platform = is_64_bit_platform()
+
+
 
 #------------Check args---------------------------------------------#
 
@@ -62,9 +64,13 @@ if len(sys.argv) in [4,5]:
 CONFIG_XML = parse("Engine_Config.xml")
 SDK_VER = str(CONFIG_XML.getElementsByTagName("VERSION_NUMBER")[0].firstChild.data)
 
+output_dir__ = 'Output'+vc_build_bits
+final_dir__ = 'Final'+vc_build_bits
+
 ROOT_DIR = os.path.abspath(os.path.dirname(sys.argv[0]))
 REDIST_DIR = os.path.join(ROOT_DIR, "..", "Redist")
-OUTPUT_DIR = os.path.join(ROOT_DIR, "Output")
+OUTPUT_DIR = os.path.join(ROOT_DIR, output_dir__)
+path2final = os.path.join(ROOT_DIR,final_dir__)
 SCRIPT_DIR = os.getcwd()
 
 print 'work dir of redist.py:'
@@ -123,6 +129,8 @@ if os.path.exists(OUTPUT_DIR):
     os.system("rmdir /S /Q \"" + OUTPUT_DIR + "\"")
 os.mkdir(REDIST_DIR)
 os.mkdir(OUTPUT_DIR)
+if not os.path.exists(path2final):
+    os.makedirs(path2final)
 
 try:
     VS_NEED_UPGRADE = 0
@@ -145,20 +153,19 @@ if VC_version == 10:
     MSVC_VALUES = [("InstallDir", win32con.REG_SZ)]
     VS_INST_DIR = get_reg_values(MSVC_KEY, MSVC_VALUES)[0]
 
-
-
 # build
 print("Building...")
 
 os.chdir(os.path.join(ROOT_DIR, "..", "Build"))
 
+out_file = os.path.join('..\\CreateRedist',output_dir__,'build.log')
 if VS_NEED_UPGRADE == 1:
-	#os.system("attrib -r * /s")
-	res = os.system("\"" + VS_INST_DIR + "devenv\" " + "Engine.sln" + " /upgrade > ..\\CreateRedist\\Output\\build.log")
+	#os.system("attrib -r * /s")	
+	res = os.system("\"" + VS_INST_DIR + "devenv\" " + "Engine.sln" + " /upgrade > " + out_file)
 	if res != 0:
 	    raise Exception("build failed!")
-build_cmd = "\"%s\" %s /Rebuild \"release|%s\" /out ..\\CreateRedist\\Output\\build.log"%(os.path.join(VS_INST_DIR,'devenv'),'Engine.sln',
-    'win32' if vc_build_bits == '32' else 'x64')
+build_cmd = "\"%s\" %s /Rebuild \"release|%s\" /out %s"%(os.path.join(VS_INST_DIR,'devenv'),'Engine.sln',
+    'win32' if vc_build_bits == '32' else 'x64',out_file)
 #build_cmd = "\"%s\" %s /Rebuild \"Release|x%s\""%(os.path.join(VS_INST_DIR,'devenv.exe'),'Engine.sln',
 #    '86' if vc_build_bits == '32' else '64')
 print 'building .. %s'%build_cmd
@@ -212,14 +219,15 @@ logFilename = "BuildEngine"
 
 print "* Build EE_NI.wixproj"
 
+wix_out_file = os.path.join(SCRIPT_DIR,output_dir__, logFilename + ".txt")
 if VS_NEED_UPGRADE == 1:
-    res = subprocess.call("\""+VS_INST_DIR + "devenv\" EE_NI.sln /upgrade /out " + SCRIPT_DIR + "\\Output\\" + logFilename + ".txt",close_fds=True)
+    res = subprocess.call("\""+VS_INST_DIR + "devenv\" EE_NI.sln /upgrade /out %s"%wix_out_file,close_fds=True)
     if res != 0:
         raise Exception("Failed upgrade installer!")
 
 
 wix_build_cmd = '"%s" %s /Build "release|%s" /out %s'%(os.path.join(VS_INST_DIR,'devenv'), 'EE_NI.wixproj' ,'x86' if vc_build_bits == '32' else 'x64',
-						       os.path.join(SCRIPT_DIR,'Output',logFilename + ".txt"))
+						       wix_out_file)
 print "wix_build_cmd=%s"%wix_build_cmd
 res = subprocess.call(wix_build_cmd)
 #res = subprocess.call("\""+VS_INST_DIR + "devenv\" EE_NI.wixproj /build \"release|x86"\
@@ -229,7 +237,8 @@ if res != 0:
 
 currDir = os.getcwd()
 print currDir
-moveCmd = "move bin\\Release\\en-US\\EE_NI.msi " + SCRIPT_DIR + "\\Output\\Sensor-Win-OpenSource" + str(vc_build_bits) + "-" + SDK_VER + ".msi"
+target_path = os.path.join(SCRIPT_DIR, final_dir__,"Sensor-Win-OpenSource" + str(vc_build_bits) + "-" + SDK_VER + ".msi")
+moveCmd = "move bin\\Release\\en-US\\EE_NI.msi %s"%target_path
 print moveCmd + "..."
 os.system(moveCmd)
 #print "* Move installers"
