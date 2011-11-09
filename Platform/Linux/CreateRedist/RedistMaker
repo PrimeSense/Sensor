@@ -1,0 +1,91 @@
+#!/bin/bash -e
+
+OS_TYPE=`uname -s`
+MACHINE_TYPE=`uname -m`
+
+echo $#
+
+if [ $# -gt 1 ]
+then
+	if [ $# -lt 3 ] 
+	then
+		echo "Usaga: $0 [ PLATFORM CXX STAGING_DIR ]"
+		exit 1
+	fi
+	
+	PLATFORM=$1
+	CXX_ARG=$2
+	STAGING_DIR=$3
+	
+	MAKE_ARGS="PLATFORM=$PLATFORM CXX=$CXX_ARG STAGING_DIR=$STAGING_DIR"
+else
+	case $MACHINE_TYPE in
+	x86 | i386 | i686)
+		PLATFORM="x86" ;;
+	x86_64)
+		PLATFORM="x64" ;;
+	arm)
+		PLATFORM="Arm" ;;
+	*)
+		echo "Unknown platform: $MACHINE_TYPE"
+		exit 1
+		;;
+	esac
+
+	MAKE_ARGS="PLATFORM=$PLATFORM"
+fi
+
+if [ "$OS_TYPE" == "Darwin" ]; then
+	TAR_TARGET="MacOSX"
+else
+	TAR_TARGET="Linux-$PLATFORM"
+fi
+
+SCRIPT_DIR=`pwd`
+
+# Take version
+MAJOR=`grep "#define XN_PS_MAJOR_VERSION" ../../../Include/XnPsVersion.h | awk '{ print $3 }' | strings -n 1`
+MINOR=`grep "#define XN_PS_MINOR_VERSION" ../../../Include/XnPsVersion.h | awk '{ print $3 }' | strings -n 1`
+MAINTENANCE=`grep "#define XN_PS_MAINTENANCE_VERSION" ../../../Include/XnPsVersion.h | awk '{ print $3 }' | strings -n 1`
+BUILD=`grep "#define XN_PS_BUILD_VERSION" ../../../Include/XnPsVersion.h | awk '{ print $3 }' | strings -n 1`
+
+PS_VERSION="$MAJOR.$MINOR.$MAINTENANCE.$BUILD"
+
+REDIST_DIR="Sensor-Bin-$TAR_TARGET-v$PS_VERSION"
+
+# clean
+rm -rf Final
+rm -rf ../$REDIST_DIR
+
+# Build Engine
+#make $MAKE_ARGS -C ../Build clean
+make $MAKE_ARGS -C ../Build
+
+# create redist folder structure
+mkdir -p ../$REDIST_DIR
+mkdir -p ../$REDIST_DIR/Lib
+mkdir -p ../$REDIST_DIR/Bin
+mkdir -p ../$REDIST_DIR/Install
+mkdir -p ../$REDIST_DIR/Config
+
+# copy files to redist
+cp ../../../GPL.txt ../$REDIST_DIR
+cp ../../../LGPL.txt ../$REDIST_DIR
+cp ../Bin/$PLATFORM-Release/libXnDeviceSensorV2.* ../$REDIST_DIR/Lib
+cp ../Bin/$PLATFORM-Release/libXnDeviceFile.* ../$REDIST_DIR/Lib
+cp ../Bin/$PLATFORM-Release/libXnDDK.* ../$REDIST_DIR/Lib
+cp ../Bin/$PLATFORM-Release/libXnFormats.* ../$REDIST_DIR/Lib
+cp ../Bin/$PLATFORM-Release/libXnCore.* ../$REDIST_DIR/Lib
+cp ../Bin/$PLATFORM-Release/XnSensorServer ../$REDIST_DIR/Bin
+cp ../Install/* ../$REDIST_DIR/Install
+cp install.sh ../$REDIST_DIR
+
+cp ../../../Data/GlobalDefaults.ini ../$REDIST_DIR/Config
+
+# create tar
+mkdir -p Final
+cd ..
+
+tar -cjf $SCRIPT_DIR/Final/$REDIST_DIR.tar.bz2 $REDIST_DIR
+
+cd -

@@ -266,6 +266,9 @@ XnStatus BCSetDepthProperties(XnPropertySet* pSet, XnStreamPropertiesV3* pStream
 	nRetVal = XnPropertySetAddStringProperty(pSet, XN_STREAM_NAME_DEPTH, XN_STREAM_PROPERTY_TYPE, XN_STREAM_TYPE_DEPTH);
 	XN_IS_STATUS_OK(nRetVal);
 
+	nRetVal = XnPropertySetAddIntProperty(pSet, XN_STREAM_NAME_DEPTH, XN_STREAM_PROPERTY_STATE, pStreamProperties->DepthFormat != XN_DEPTH_FORMAT_DISABLED);
+	XN_IS_STATUS_OK(nRetVal);
+
 	XnCropping cropping = {0};
 	XnGeneralBuffer gbCropping = XN_PACK_GENERAL_BUFFER(cropping);
 	nRetVal = XnPropertySetAddGeneralProperty(pSet, XN_STREAM_NAME_DEPTH, XN_STREAM_PROPERTY_CROPPING, &gbCropping);
@@ -385,6 +388,9 @@ XnStatus BCSetImageProperties(XnPropertySet* pSet, XnStreamPropertiesV3* pStream
 	nRetVal = XnPropertySetAddStringProperty(pSet, XN_STREAM_NAME_IMAGE, XN_STREAM_PROPERTY_TYPE, XN_STREAM_TYPE_IMAGE);
 	XN_IS_STATUS_OK(nRetVal);
 
+	nRetVal = XnPropertySetAddIntProperty(pSet, XN_STREAM_NAME_IMAGE, XN_STREAM_PROPERTY_STATE, pStreamProperties->ImageFormat != XN_IMAGE_FORMAT_DISABLED);
+	XN_IS_STATUS_OK(nRetVal);
+
 	XnCropping cropping = {0};
 	XnGeneralBuffer gbCropping = XN_PACK_GENERAL_BUFFER(cropping);
 	nRetVal = XnPropertySetAddGeneralProperty(pSet, XN_STREAM_NAME_IMAGE, XN_STREAM_PROPERTY_CROPPING, &gbCropping);
@@ -451,6 +457,9 @@ XnStatus BCSetAudioProperties(XnPropertySet* pSet, XnStreamPropertiesV3* pStream
 	XN_IS_STATUS_OK(nRetVal);
 
 	nRetVal = XnPropertySetAddStringProperty(pSet, XN_STREAM_NAME_AUDIO, XN_STREAM_PROPERTY_TYPE, XN_STREAM_TYPE_AUDIO);
+	XN_IS_STATUS_OK(nRetVal);
+
+	nRetVal = XnPropertySetAddIntProperty(pSet, XN_STREAM_NAME_AUDIO, XN_STREAM_PROPERTY_STATE, pStreamProperties->AudioFormat != XN_AUDIO_FORMAT_DISABLED);
 	XN_IS_STATUS_OK(nRetVal);
 
 	nRetVal = XnPropertySetAddIntProperty(pSet, XN_STREAM_NAME_AUDIO, XN_STREAM_PROPERTY_NUMBER_OF_FRAMES, (XnUInt64)pStreamProperties->nNumOfFrames);

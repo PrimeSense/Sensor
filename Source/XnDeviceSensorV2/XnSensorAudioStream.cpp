@@ -40,10 +40,11 @@
 //---------------------------------------------------------------------------
 // Code
 //---------------------------------------------------------------------------
-XnSensorAudioStream::XnSensorAudioStream(const XnChar* strDeviceName, const XnChar* StreamName, XnSensorObjects* pObjects) :
+XnSensorAudioStream::XnSensorAudioStream(const XnChar* strDeviceName, const XnChar* StreamName, XnSensorObjects* pObjects, XnBool bAllowOtherUsers) :
 	XnAudioStream(StreamName, XN_AUDIO_MAX_NUMBER_OF_CHANNELS),
 	m_strDeviceName(strDeviceName),
 	m_Helper(pObjects),
+	m_bAllowOtherUsers(bAllowOtherUsers),
 	m_LeftChannelVolume(XN_STREAM_PROPERTY_LEFT_CHANNEL_VOLUME, XN_AUDIO_STREAM_DEFAULT_VOLUME),
 	m_RightChannelVolume(XN_STREAM_PROPERTY_RIGHT_CHANNEL_VOLUME, XN_AUDIO_STREAM_DEFAULT_VOLUME),
 	m_SharedBufferName(XN_STREAM_PROPERTY_SHARED_BUFFER_NAME),
@@ -483,7 +484,7 @@ XnStatus XnSensorAudioStream::ReallocBuffer()
 		nRetVal = RequiredSizeProperty().UnsafeUpdateValue(nMaxBufferSize);
 		XN_IS_STATUS_OK(nRetVal);
 
-		nRetVal = xnOSCreateSharedMemory(strSharedName, nSharedBufferSize, XN_OS_FILE_READ | XN_OS_FILE_WRITE, &m_hSharedMemory);
+		nRetVal = xnOSCreateSharedMemoryEx(strSharedName, nSharedBufferSize, XN_OS_FILE_READ | XN_OS_FILE_WRITE, m_bAllowOtherUsers, &m_hSharedMemory);
 		XN_IS_STATUS_OK(nRetVal);
 
 		XnUChar* pAddress;

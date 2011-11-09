@@ -41,10 +41,10 @@ XnPixelStream::XnPixelStream(const XnChar* csType, const XnChar* csName, XnBool 
 	m_Cropping(XN_STREAM_PROPERTY_CROPPING, &m_CroppingData, sizeof(XnCropping), ReadCroppingFromFileCallback),
 	m_SupportedModesCount(XN_STREAM_PROPERTY_SUPPORT_MODES_COUNT, 0),
 	m_SupportedModes(XN_STREAM_PROPERTY_SUPPORT_MODES),
-	m_bAllowCustomResolutions(bAllowCustomResolutions)
+	m_bAllowCustomResolutions(bAllowCustomResolutions),
+	m_supportedModesData(30)
 {
 	xnOSMemSet(&m_CroppingData, 0, sizeof(XnCropping));
-	m_supportedModesData.Reserve(30);
 	m_SupportedModes.UpdateGetCallback(GetSupportedModesCallback, this);
 }
 
@@ -108,6 +108,23 @@ XnStatus XnPixelStream::AddSupportedModes(XnCmosPreset* aPresets, XnUInt32 nCoun
 	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);
+}
+
+XnStatus XnPixelStream::ValidateSupportedMode(const XnCmosPreset& preset)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+	
+	for (XnUInt32 i = 0; i < m_supportedModesData.GetSize(); ++i)
+	{
+		if (preset.nFormat == m_supportedModesData[i].nFormat &&
+			preset.nResolution == m_supportedModesData[i].nResolution && 
+			preset.nFPS == m_supportedModesData[i].nFPS)
+		{
+			return (XN_STATUS_OK);
+		}
+	}
+
+	XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DDK, "Mode is not supported (format: %d, resolution: %d, FPS: %d)!", preset.nFormat, preset.nResolution, preset.nFPS);
 }
 
 XnStatus XnPixelStream::GetSupportedModes(XnCmosPreset* aPresets, XnUInt32& nCount)

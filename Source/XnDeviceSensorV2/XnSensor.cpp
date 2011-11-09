@@ -39,6 +39,7 @@
 #define XN_SENSOR_MAX_STREAM_COUNT						5
 #define XN_SENSOR_FRAME_SYNC_MAX_DIFF					3
 #define XN_SENSOR_DEFAULT_CLOSE_STREAMS_ON_SHUTDOWN		TRUE
+#define XN_SENSOR_DEFAULT_ENABLE_MULTI_USERS			FALSE
 #define XN_GLOBAL_CONFIG_FILE_NAME						"GlobalDefaults.ini"
 
 //---------------------------------------------------------------------------
@@ -79,6 +80,7 @@ XnSensor::XnSensor() :
 	m_USBPath(XN_MODULE_PROPERTY_USB_PATH),
 	m_DeviceName(XN_MODULE_PROPERTY_PHYSICAL_DEVICE_NAME),
 	m_VendorSpecificData(XN_MODULE_PROPERTY_VENDOR_SPECIFIC_DATA),
+	m_AllowOtherUsers(XN_MODULE_PROPERTY_ENABLE_MULTI_USERS, XN_SENSOR_DEFAULT_ENABLE_MULTI_USERS),
 	m_Firmware(&m_DevicePrivateData),
 	m_FixedParams(&m_Firmware, &m_DevicePrivateData),
 	m_SensorIO(&m_DevicePrivateData.SensorHandle),
@@ -340,7 +342,7 @@ XnStatus XnSensor::CreateDeviceModule(XnDeviceModuleHolder** ppModuleHolder)
 		&m_ReadFromEP2, &m_ReadFromEP3, &m_ReadData, &m_NumberOfBuffers, &m_FirmwareParam, 
 		&m_CmosBlankingUnits, &m_CmosBlankingTime, &m_Reset, &m_FirmwareMode, &m_Version, 
 		&m_FixedParam, &m_FrameSync, &m_CloseStreamsOnShutdown, &m_InstancePointer, &m_ID,
-		&m_USBPath, &m_DeviceName, &m_VendorSpecificData,
+		&m_USBPath, &m_DeviceName, &m_VendorSpecificData, &m_AllowOtherUsers,
 	};
 
 	nRetVal = pModule->AddProperties(pProps, sizeof(pProps)/sizeof(XnProperty*));
@@ -393,28 +395,28 @@ XnStatus XnSensor::CreateStreamModule(const XnChar* StreamType, const XnChar* St
 	if (strcmp(StreamType, XN_STREAM_TYPE_DEPTH) == 0)
 	{
 		XnSensorDepthStream* pDepthStream;
-		XN_VALIDATE_NEW(pDepthStream, XnSensorDepthStream, GetUSBPath(), StreamName, &m_Objects, m_NumberOfBuffers.GetValue());
+		XN_VALIDATE_NEW(pDepthStream, XnSensorDepthStream, GetUSBPath(), StreamName, &m_Objects, m_NumberOfBuffers.GetValue(), AreOtherUsersAllowed());
 		pStream = pDepthStream;
 		pHelper = pDepthStream->GetHelper();
 	}
 	else if (strcmp(StreamType, XN_STREAM_TYPE_IMAGE) == 0)
 	{
 		XnSensorImageStream* pImageStream;
-		XN_VALIDATE_NEW(pImageStream, XnSensorImageStream, GetUSBPath(), StreamName, &m_Objects, m_NumberOfBuffers.GetValue());
+		XN_VALIDATE_NEW(pImageStream, XnSensorImageStream, GetUSBPath(), StreamName, &m_Objects, m_NumberOfBuffers.GetValue(), AreOtherUsersAllowed());
 		pStream = pImageStream;
 		pHelper = pImageStream->GetHelper();
 	}
 	else if (strcmp(StreamType, XN_STREAM_TYPE_IR) == 0)
 	{
 		XnSensorIRStream* pIRStream;
-		XN_VALIDATE_NEW(pIRStream, XnSensorIRStream, GetUSBPath(), StreamName, &m_Objects, m_NumberOfBuffers.GetValue());
+		XN_VALIDATE_NEW(pIRStream, XnSensorIRStream, GetUSBPath(), StreamName, &m_Objects, m_NumberOfBuffers.GetValue(), AreOtherUsersAllowed());
 		pStream = pIRStream;
 		pHelper = pIRStream->GetHelper();
 	}
 	else if (strcmp(StreamType, XN_STREAM_TYPE_AUDIO) == 0)
 	{
 		XnSensorAudioStream* pAudioStream;
-		XN_VALIDATE_NEW(pAudioStream, XnSensorAudioStream, GetUSBPath(), StreamName, &m_Objects);
+		XN_VALIDATE_NEW(pAudioStream, XnSensorAudioStream, GetUSBPath(), StreamName, &m_Objects, AreOtherUsersAllowed());
 		pStream = pAudioStream;
 		pHelper = pAudioStream->GetHelper();
 	}

@@ -65,6 +65,9 @@ public:
 
 protected:
 	virtual void FilterProperties(XnActualPropertiesHash* pHash);
+
+private:
+	XnUInt32 FindSupportedInputFormat(XnUInt32* anAllowedInputFormats, XnUInt32 nAllowedInputFormats);
 };
 
 class XnExportedSensorImageGenerator : public XnExportedSensorGenerator

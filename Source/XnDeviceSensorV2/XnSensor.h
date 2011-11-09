@@ -92,6 +92,7 @@ public:
 	XnStatus ConfigureModuleFromGlobalFile(const XnChar* strModule, const XnChar* strSection = NULL);
 
 	const XnChar* GetUSBPath() { return m_USBPath.GetValue(); }
+	XnBool AreOtherUsersAllowed() { return (m_AllowOtherUsers.GetValue() == TRUE); }
 
 
 protected:
@@ -193,6 +194,7 @@ private:
 	XnActualStringProperty m_USBPath;
 	XnActualStringProperty m_DeviceName;
 	XnActualStringProperty m_VendorSpecificData;
+	XnActualIntProperty m_AllowOtherUsers;
 
 	XnSensorFirmware m_Firmware;
 	XnDevicePrivateData m_DevicePrivateData;

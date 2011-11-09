@@ -27,6 +27,15 @@
 #include "XnSensorImageStream.h"
 
 //---------------------------------------------------------------------------
+// Static Data
+//---------------------------------------------------------------------------
+static const XnUInt32 INVALID_INPUT_FORMAT = 9999;
+static XnUInt32 g_anAllowedRGBFormats[] = { XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_IO_IMAGE_FORMAT_YUV422, XN_IO_IMAGE_FORMAT_BAYER, XN_IO_IMAGE_FORMAT_UNCOMPRESSED_BAYER };
+static XnUInt32 g_anAllowedYUVFormats[] = { XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_IO_IMAGE_FORMAT_YUV422 };
+static XnUInt32 g_anAllowedJPEGFormats[] = { XN_IO_IMAGE_FORMAT_JPEG };
+static XnUInt32 g_anAllowedGray8Formats[] = { XN_IO_IMAGE_FORMAT_UNCOMPRESSED_GRAY8, XN_IO_IMAGE_FORMAT_BAYER, XN_IO_IMAGE_FORMAT_UNCOMPRESSED_BAYER };
+
+//---------------------------------------------------------------------------
 // XnSensorImageGenerator class
 //---------------------------------------------------------------------------
 XnSensorImageGenerator::XnSensorImageGenerator(xn::Context& context, xn::Device& sensor, XnDeviceBase* pSensor, const XnChar* strStreamName) :
@@ -61,7 +70,8 @@ XnBool XnSensorImageGenerator::IsPixelFormatSupported(XnPixelFormat Format)
 			}
 			break;
 		case XN_PIXEL_FORMAT_GRAYSCALE_8_BIT:
-			if (m_aSupportedModes[i].nInputFormat == XN_IO_IMAGE_FORMAT_BAYER)
+			if (m_aSupportedModes[i].nInputFormat == XN_IO_IMAGE_FORMAT_BAYER ||
+				m_aSupportedModes[i].nInputFormat == XN_IO_IMAGE_FORMAT_UNCOMPRESSED_GRAY8)
 			{
 				return TRUE;
 			}
@@ -81,6 +91,43 @@ XnBool XnSensorImageGenerator::IsPixelFormatSupported(XnPixelFormat Format)
 	return FALSE;
 }
 
+XnUInt32 XnSensorImageGenerator::FindSupportedInputFormat(XnUInt32* anAllowedInputFormats, XnUInt32 nAllowedInputFormats)
+{
+	// first check if current one is allowed
+	XnUInt64 nCurrentInputFormat;
+	GetIntProperty(XN_STREAM_PROPERTY_INPUT_FORMAT, nCurrentInputFormat);
+
+	for (XnUInt32 i = 0; i < nAllowedInputFormats; ++i)
+	{
+		if (anAllowedInputFormats[i] == nCurrentInputFormat)
+		{
+			return nCurrentInputFormat;
+		}
+	}
+
+	// current one is not allowed. find a matching mode and take its input format
+	XnMapOutputMode outputMode;
+	GetMapOutputMode(outputMode);
+
+	// the order in the allowed input formats is the preferred one
+	for (XnUInt32 iInput = 0; iInput < nAllowedInputFormats; ++iInput)
+	{
+		// see if such a mode exists
+		for (XnUInt32 iMode = 0; iMode < m_nSupportedModesCount; ++iMode)
+		{
+			if (m_aSupportedModes[iMode].nInputFormat == anAllowedInputFormats[iInput] &&
+				m_aSupportedModes[iMode].OutputMode.nXRes == outputMode.nXRes &&
+				m_aSupportedModes[iMode].OutputMode.nYRes == outputMode.nYRes &&
+				m_aSupportedModes[iMode].OutputMode.nFPS == outputMode.nFPS)
+			{
+				return anAllowedInputFormats[iInput];
+			}
+		}
+	}
+
+	return INVALID_INPUT_FORMAT;
+}
+
 XnStatus XnSensorImageGenerator::SetPixelFormat(XnPixelFormat Format)
 {
 	if (GetPixelFormat() == Format)
@@ -88,42 +135,47 @@ XnStatus XnSensorImageGenerator::SetPixelFormat(XnPixelFormat Format)
 		return (XN_STATUS_OK);
 	}
 
-	XnUInt64 nCurrentInputFormat;
-	GetIntProperty(XN_STREAM_PROPERTY_INPUT_FORMAT, nCurrentInputFormat);
-
 	XN_PROPERTY_SET_CREATE_ON_STACK(props);
 	XnStatus nRetVal = XnPropertySetAddModule(&props, m_strModule);
 	XN_IS_STATUS_OK(nRetVal);
 
 	XnOutputFormats OutputFormat;
+	XnUInt32* anAllowedInputFormats = NULL;
+	XnUInt32 nAllowedInputFormats = 0;
 
 	switch (Format)
 	{
 	case XN_PIXEL_FORMAT_RGB24:
 		OutputFormat = XN_OUTPUT_FORMAT_RGB24;
+		anAllowedInputFormats = g_anAllowedRGBFormats;
+		nAllowedInputFormats = sizeof(g_anAllowedRGBFormats)/sizeof(XnUInt32);
 		break;
 	case XN_PIXEL_FORMAT_YUV422:
 		OutputFormat = XN_OUTPUT_FORMAT_YUV422;
+		anAllowedInputFormats = g_anAllowedYUVFormats;
+		nAllowedInputFormats = sizeof(g_anAllowedYUVFormats)/sizeof(XnUInt32);
 		break;
 	case XN_PIXEL_FORMAT_GRAYSCALE_8_BIT:
 		OutputFormat = XN_OUTPUT_FORMAT_GRAYSCALE8;
+		anAllowedInputFormats = g_anAllowedGray8Formats;
+		nAllowedInputFormats = sizeof(g_anAllowedGray8Formats)/sizeof(XnUInt32);
 		break;
 	case XN_PIXEL_FORMAT_MJPEG:
 		OutputFormat = XN_OUTPUT_FORMAT_JPEG;
+		anAllowedInputFormats = g_anAllowedJPEGFormats;
+		nAllowedInputFormats = sizeof(g_anAllowedJPEGFormats)/sizeof(XnUInt32);
 		break;
 	default:
 		return XN_STATUS_INVALID_OPERATION;
 	}
 
-	if (nCurrentInputFormat != XN_IO_IMAGE_FORMAT_JPEG && OutputFormat == XN_OUTPUT_FORMAT_JPEG)
+	XnUInt32 nInputFormat = FindSupportedInputFormat(anAllowedInputFormats, nAllowedInputFormats);
+	if (nInputFormat == INVALID_INPUT_FORMAT)
 	{
-		XnPropertySetAddIntProperty(&props, m_strModule, XN_STREAM_PROPERTY_INPUT_FORMAT, (XnUInt64)XN_IO_IMAGE_FORMAT_JPEG);
-	}
-	else if (nCurrentInputFormat == XN_IO_IMAGE_FORMAT_JPEG && OutputFormat != XN_OUTPUT_FORMAT_JPEG)
-	{
-		XnPropertySetAddIntProperty(&props, m_strModule, XN_STREAM_PROPERTY_INPUT_FORMAT, (XnUInt64)XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT);
+		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Cannot set pixel format to %s - no matching input format.", xnPixelFormatToString(Format));
 	}
 
+	XnPropertySetAddIntProperty(&props, m_strModule, XN_STREAM_PROPERTY_INPUT_FORMAT, (XnUInt64)nInputFormat);
 	XnPropertySetAddIntProperty(&props, m_strModule, XN_STREAM_PROPERTY_OUTPUT_FORMAT, (XnUInt64)OutputFormat);
 
 	return m_pSensor->BatchConfig(&props);

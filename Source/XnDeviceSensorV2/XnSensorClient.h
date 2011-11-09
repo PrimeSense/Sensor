@@ -100,6 +100,7 @@ private:
 
 	XN_CRITICAL_SECTION_HANDLE m_hLock;
 	XnChar m_strConfigDir[XN_FILE_MAX_PATH];
+	XnChar m_strConfigFile[XN_FILE_MAX_PATH];
 };
 
 #endif //__XN_SENSOR_CLIENT_H__

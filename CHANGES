@@ -1,6 +1,19 @@
 Detailed Change log:
 --------------------
 
+Version 5.0.4.4 (Unstable version - Nov 7th 2011)
+-------------------------------------------------
+  * Added YUV input in high res for FW 5.3.28 and above.
+  * Added grayscale 8 input format.
+  * Added automatic setting of input format, and automatic checking of modes.
+  * Updated to newer common makefiles
+  * Sensor client-server on windows: Allow starting server and client in different sessions (requires a special setting in GlobalDefaults.ini, as this causes things not to work properly if running on a machine with UAC on).
+  * Changed Engine changed to Sensor in the final installation files.
+  * Renamed Linux-x86 to "Linux" (supports x86, x64, Arm and MacOSX).
+  * Allow better cross compiling.
+  * Bug Fix: old XNS files would not set their IsGenerating property (and so it is left FALSE, even if node has frames).
+  * Updated the value of the UsbInterface property once endpoints are opened.
+
 Version 5.0.4.3 (Stable version - Sep 18th 2011)
 ------------------------------------------------
   * Some minor windows installer UI fix (title position).
