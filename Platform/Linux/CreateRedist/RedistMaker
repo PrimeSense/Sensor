@@ -3,7 +3,14 @@
 OS_TYPE=`uname -s`
 MACHINE_TYPE=`uname -m`
 
-echo $#
+function calc_jobs_number() {
+	if [ $OS_TYPE == "Darwin" ] ; then
+		N_CORES=$(sysctl -n hw.physicalcpu)
+	else
+		N_CORES=$(grep "processor\W:" /proc/cpuinfo | wc -l)
+	fi
+	echo $((N_CORES*2))
+}
 
 if [ $# -gt 1 ]
 then
@@ -17,7 +24,7 @@ then
 	CXX_ARG=$2
 	STAGING_DIR=$3
 	
-	MAKE_ARGS="PLATFORM=$PLATFORM CXX=$CXX_ARG STAGING_DIR=$STAGING_DIR"
+	MAKE_ARGS="PLATFORM=$PLATFORM CXX=$CXX_ARG TARGET_SYS_ROOT=$STAGING_DIR"
 else
 	case $MACHINE_TYPE in
 	x86 | i386 | i686)
@@ -34,6 +41,7 @@ else
 
 	MAKE_ARGS="PLATFORM=$PLATFORM"
 fi
+MAKE_ARGS="$MAKE_ARGS -j$(calc_jobs_number)"
 
 if [ "$OS_TYPE" == "Darwin" ]; then
 	TAR_TARGET="MacOSX"
@@ -51,17 +59,23 @@ BUILD=`grep "#define XN_PS_BUILD_VERSION" ../../../Include/XnPsVersion.h | awk '
 
 PS_VERSION="$MAJOR.$MINOR.$MAINTENANCE.$BUILD"
 
-REDIST_DIR="Sensor-Bin-$TAR_TARGET-v$PS_VERSION"
+echo "Creating redist for Sensor v$PS_VERSION"
+
+REDIST_NAME="Sensor-Bin-$TAR_TARGET-v$PS_VERSION"
+REDIST_DIR="Redist/$REDIST_NAME"
 
 # clean
+echo "Cleaning previous outputs..."
 rm -rf Final
 rm -rf ../$REDIST_DIR
 
 # Build Engine
-#make $MAKE_ARGS -C ../Build clean
+echo "Building..."
+make $MAKE_ARGS -C ../Build clean > /dev/null
 make $MAKE_ARGS -C ../Build
 
 # create redist folder structure
+echo "Creating redist folder..."
 mkdir -p ../$REDIST_DIR
 mkdir -p ../$REDIST_DIR/Lib
 mkdir -p ../$REDIST_DIR/Bin
@@ -83,9 +97,12 @@ cp install.sh ../$REDIST_DIR
 cp ../../../Data/GlobalDefaults.ini ../$REDIST_DIR/Config
 
 # create tar
+echo "Creating tar..."
 mkdir -p Final
-cd ..
+cd ../Redist
 
-tar -cjf $SCRIPT_DIR/Final/$REDIST_DIR.tar.bz2 $REDIST_DIR
+tar -cjf $SCRIPT_DIR/Final/$REDIST_NAME.tar.bz2 $REDIST_NAME
 
-cd -
+cd $SCRIPT_DIR
+
+echo "Done!"

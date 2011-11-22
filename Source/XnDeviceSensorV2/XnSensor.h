@@ -132,6 +132,7 @@ private:
 	// Setters
 	//---------------------------------------------------------------------------
 	XnStatus SetInterface(XnSensorUsbInterface nInterface);
+	XnStatus SetAllowOtherUsers(XnBool bAllowOtherUsers);
 	XnStatus SetNumberOfBuffers(XnUInt32 nCount);
 	XnStatus SetReadEndpoint1(XnBool bRead);
 	XnStatus SetReadEndpoint2(XnBool bRead);
@@ -147,6 +148,7 @@ private:
 	// Callbacks
 	//---------------------------------------------------------------------------
 	static XnStatus XN_CALLBACK_TYPE SetInterfaceCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE SetAllowOtherUsersCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE SetNumberOfBuffersCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE SetReadEndpoint1Callback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE SetReadEndpoint2Callback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);

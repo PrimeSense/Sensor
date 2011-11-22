@@ -96,6 +96,7 @@ XnSensor::XnSensor() :
 
 	m_ResetSensorOnStartup.UpdateSetCallbackToDefault();
 	m_Interface.UpdateSetCallback(SetInterfaceCallback, this);
+	m_AllowOtherUsers.UpdateSetCallback(SetAllowOtherUsersCallback, this);
 	m_NumberOfBuffers.UpdateSetCallback(SetNumberOfBuffersCallback, this);
 	m_ReadFromEP1.UpdateSetCallback(SetReadEndpoint1Callback, this);
 	m_ReadFromEP2.UpdateSetCallback(SetReadEndpoint2Callback, this);
@@ -1004,6 +1005,23 @@ XnStatus XnSensor::SetInterface(XnSensorUsbInterface nInterface)
 	return (XN_STATUS_OK);
 }
 
+XnStatus XnSensor::SetAllowOtherUsers(XnBool bAllowOtherUsers)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	// we only allow changing this *before* creating any streams
+	if (m_ReadData.GetValue() == TRUE &&
+		m_AllowOtherUsers.GetValue() != bAllowOtherUsers)
+	{
+		return (XN_STATUS_DEVICE_PROPERTY_READ_ONLY);
+	}
+
+	nRetVal = m_AllowOtherUsers.UnsafeUpdateValue(bAllowOtherUsers);
+	XN_IS_STATUS_OK(nRetVal);
+
+	return (XN_STATUS_OK);
+}
+
 XnStatus XnSensor::SetNumberOfBuffers(XnUInt32 nCount)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
@@ -1232,6 +1250,12 @@ XnStatus XN_CALLBACK_TYPE XnSensor::SetInterfaceCallback(XnActualIntProperty* pS
 {
 	XnSensor* pThis = (XnSensor*)pCookie;
 	return pThis->XnSensor::SetInterface((XnSensorUsbInterface)nValue);
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensor::SetAllowOtherUsersCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+{
+	XnSensor* pThis = (XnSensor*)pCookie;
+	return pThis->XnSensor::SetAllowOtherUsers(nValue == 1);
 }
 
 XnStatus XN_CALLBACK_TYPE XnSensor::SetNumberOfBuffersCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)

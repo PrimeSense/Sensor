@@ -97,18 +97,16 @@ XnStatus XnSensorClient::InitImpl(const XnDeviceConfig* pDeviceConfig)
 	XN_MUTEX_HANDLE hServerRunningMutex = NULL;
 	XnOSEvent serverRunningEvent;
 
-	XnBool bEnableMultiUsers = FALSE;
-
 	XnUInt32 nValue;
 	if (XN_STATUS_OK == xnOSReadIntFromINI(m_strConfigFile, XN_SENSOR_SERVER_CONFIG_FILE_SECTION, XN_MODULE_PROPERTY_ENABLE_MULTI_USERS, &nValue))
 	{
-		bEnableMultiUsers = (nValue == TRUE);
+		m_bAllowServerFromOtherUser = (nValue == TRUE);
 	}
 
-	nRetVal = serverRunningEvent.Open(XN_SENSOR_SERVER_RUNNING_EVENT_NAME, bEnableMultiUsers);
+	nRetVal = serverRunningEvent.Open(XN_SENSOR_SERVER_RUNNING_EVENT_NAME, m_bAllowServerFromOtherUser);
 	if (nRetVal != XN_STATUS_OK)
 	{
-		nRetVal = serverRunningEvent.Create(XN_SENSOR_SERVER_RUNNING_EVENT_NAME, TRUE, bEnableMultiUsers);
+		nRetVal = serverRunningEvent.Create(XN_SENSOR_SERVER_RUNNING_EVENT_NAME, TRUE, m_bAllowServerFromOtherUser);
 		if (nRetVal != XN_STATUS_OK)
 		{
 			xnLogError(XN_MASK_SENSOR_CLIENT, "Failed to create server running event: %s", xnGetStatusString(nRetVal));
@@ -116,7 +114,7 @@ XnStatus XnSensorClient::InitImpl(const XnDeviceConfig* pDeviceConfig)
 		}
 	}
 	
-	nRetVal = xnOSCreateNamedMutexEx(&hServerRunningMutex, XN_SENSOR_SERVER_RUNNING_MUTEX_NAME, bEnableMultiUsers);
+	nRetVal = xnOSCreateNamedMutexEx(&hServerRunningMutex, XN_SENSOR_SERVER_RUNNING_MUTEX_NAME, m_bAllowServerFromOtherUser);
 	XN_IS_STATUS_OK(nRetVal);
 	
 	nRetVal = xnOSLockMutex(hServerRunningMutex, XN_SENSOR_SERVER_RUNNING_MUTEX_TIMEOUT);

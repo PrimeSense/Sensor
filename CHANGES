@@ -1,6 +1,12 @@
 Detailed Change log:
 --------------------
 
+Version 5.0.5.1 (Unstable version - Nov 17th 2011)
+--------------------------------------------------
+  * Removed support for very old 2.0 devices.
+  * Linux: XnSensorServer dependency was missing.
+  * Bug Fix: AllowMultiUsers property was not handled correctly.
+
 Version 5.0.4.4 (Unstable version - Nov 7th 2011)
 -------------------------------------------------
   * Added YUV input in high res for FW 5.3.28 and above.

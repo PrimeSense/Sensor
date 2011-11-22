@@ -56,7 +56,7 @@ XnStatus XnSensorClientStream::OpenSharedMemory()
 	nRetVal = GetProperty(XN_STREAM_PROPERTY_SHARED_BUFFER_NAME, strSharedMemoryName);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = xnOSOpenSharedMemory(strSharedMemoryName, XN_OS_FILE_READ, &m_hSharedMemory);
+	nRetVal = xnOSOpenSharedMemoryEx(strSharedMemoryName, XN_OS_FILE_READ, m_pClient->IsServerFromOtherUserAllowed(), &m_hSharedMemory);
 	XN_IS_STATUS_OK(nRetVal);
 
 	nRetVal = xnOSSharedMemoryGetAddress(m_hSharedMemory, (void**)&m_pSharedMemory);

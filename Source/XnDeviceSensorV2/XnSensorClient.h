@@ -59,6 +59,7 @@ public:
 	XnStatus Read(XnStreamDataSet* pStreamOutputSet);
 
 	void SetConfigDir(const XnChar* strConfigDir);
+	XnBool IsServerFromOtherUserAllowed() { return m_bAllowServerFromOtherUser; }
 
 protected:
 	XnStatus SendBye();
@@ -101,6 +102,7 @@ private:
 	XN_CRITICAL_SECTION_HANDLE m_hLock;
 	XnChar m_strConfigDir[XN_FILE_MAX_PATH];
 	XnChar m_strConfigFile[XN_FILE_MAX_PATH];
+	XnBool m_bAllowServerFromOtherUser;
 };
 
 #endif //__XN_SENSOR_CLIENT_H__
