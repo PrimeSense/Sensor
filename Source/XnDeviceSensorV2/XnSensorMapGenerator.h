@@ -31,6 +31,10 @@
 //---------------------------------------------------------------------------
 // Types
 //---------------------------------------------------------------------------
+// disable the "inherits via dominance" warning. This is exactly what we want.
+#pragma warning (push)
+#pragma warning (disable: 4250)
+
 class XnSensorMapGenerator : 
 	public XnSensorGenerator, 
 	virtual public xn::ModuleMapGenerator,
@@ -70,5 +74,7 @@ protected:
 	SupportedMode* m_aSupportedModes;
 	XnUInt32 m_nSupportedModesCount;
 };
+
+#pragma warning (pop)
 
 #endif // __XN_SENSOR_MAP_GENERATOR_H__

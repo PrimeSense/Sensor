@@ -94,7 +94,7 @@ protected:
 	* @param	nFrameID	[in]	ID of this frame.
 	* @param	nFrameTS	[in]	Timestamp of this frame.
 	*/
-	virtual void OnFrameReady(XnUInt32 nFrameID, XnUInt64 nFrameTS) {}
+	virtual void OnFrameReady(XnUInt32 /*nFrameID*/, XnUInt64 /*nFrameTS*/) {}
 
 	//---------------------------------------------------------------------------
 	// Utility Functions
@@ -168,8 +168,8 @@ private:
 
 	XnChar m_csInDumpMask[100];
 	XnChar m_csInternalDumpMask[100];
-	XnDump m_InDump;
-	XnDump m_InternalDump;
+	XnDumpFile* m_InDump;
+	XnDumpFile* m_InternalDump;
 	XnBool m_bFrameCorrupted;
 	XnBool m_bAllowDoubleSOF;
 	XnUInt16 m_nLastSOFPacketID;

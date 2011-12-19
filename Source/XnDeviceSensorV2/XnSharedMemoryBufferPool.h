@@ -40,7 +40,7 @@ public:
 
 	inline const XnChar* GetSharedMemoryName() const { return m_strName; }
 
-	inline XnUInt32 GetBufferOffset(XnBuffer* pBuffer) const { return ((XnUChar*)pBuffer->GetData() - m_pSharedMemoryAddress); }
+	inline XnUInt32 GetBufferOffset(XnBuffer* pBuffer) const { return (XnUInt32)((XnUChar*)pBuffer->GetData() - m_pSharedMemoryAddress); }
 
 protected:
 	virtual XnStatus AllocateBuffers();

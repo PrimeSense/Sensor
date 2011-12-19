@@ -55,7 +55,7 @@ XnStatus XnJpegToRGBImageProcessor::Init()
 	return (XN_STATUS_OK);
 }
 
-void XnJpegToRGBImageProcessor::ProcessFramePacketChunk(const XnSensorProtocolResponseHeader* pHeader, const XnUChar* pData, XnUInt32 nDataOffset, XnUInt32 nDataSize)
+void XnJpegToRGBImageProcessor::ProcessFramePacketChunk(const XnSensorProtocolResponseHeader* /*pHeader*/, const XnUChar* pData, XnUInt32 /*nDataOffset*/, XnUInt32 nDataSize)
 {
 	XN_PROFILING_START_SECTION("XnJpegToRGBImageProcessor::ProcessFramePacketChunk")
 
@@ -95,10 +95,9 @@ void XnJpegToRGBImageProcessor::OnEndOfFrame(const XnSensorProtocolResponseHeade
 		xnLogWarning(XN_MASK_SENSOR_PROTOCOL_IMAGE, "Failed to uncompress JPEG for frame %d: %s (%d)\n", GetCurrentFrameID(), xnGetStatusString(nRetVal), pWriteBuffer->GetSize());
 		FrameIsCorrupted();
 
-		XnDump badImageDump = XN_DUMP_CLOSED;
-		xnDumpInit(&badImageDump, XN_DUMP_BAD_IMAGE, NULL, "BadImage_%d.jpeg", GetCurrentFrameID());
-		xnDumpWriteBuffer(badImageDump, m_RawData.GetData(), m_RawData.GetSize());
-		xnDumpClose(&badImageDump);
+		XnDumpFile* badImageDump = xnDumpFileOpen(XN_DUMP_BAD_IMAGE, "BadImage_%d.jpeg", GetCurrentFrameID());
+		xnDumpFileWriteBuffer(badImageDump, m_RawData.GetData(), m_RawData.GetSize());
+		xnDumpFileClose(badImageDump);
 	}
 
 	pWriteBuffer->UnsafeUpdateSize(nOutputSize);

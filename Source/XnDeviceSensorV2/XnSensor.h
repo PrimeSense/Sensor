@@ -61,8 +61,8 @@ public:
 	virtual XnStatus OpenAllStreams();
 	virtual XnStatus ReadStream(XnStreamData* pStreamOutput);
 	virtual XnStatus Read(XnStreamDataSet* pStreamOutputSet);
-	virtual XnStatus WriteStream(const XnStreamData* pStreamOutput);
-	virtual XnStatus Write(const XnStreamDataSet* pStreamOutputSet);
+	virtual XnStatus WriteStream(XnStreamData* pStreamOutput);
+	virtual XnStatus Write(XnStreamDataSet* pStreamOutputSet);
 	virtual XnStatus Seek(XnUInt64 nTimestamp);
 	virtual XnStatus SeekFrame(XnUInt32 nFrameID);
 	virtual XnStatus LoadConfigFromFile(const XnChar* csINIFilePath, const XnChar* csSectionName);
@@ -106,7 +106,6 @@ protected:
 
 private:
 	XnStatus InitSensor(const XnDeviceConfig* pDeviceConfig);
-	XnStatus ParseConnectionString(const XnChar* csConnectionString, XnChar* csSensorID, XnUInt32* pnBoardID);
 	XnStatus ValidateSensorID(XnChar* csSensorID);
 	XnStatus ReadFromStreamImpl(XnDeviceStream* pStream, XnStreamData* pStreamOutput);
 	XnStatus SetMirrorForModule(XnDeviceModule* pModule, XnUInt64 nValue);
@@ -115,6 +114,8 @@ private:
 	XnStatus InitReading();
 	XnBool HasSynchedFrameArrived(const XnChar* strDepthStream, const XnChar* strImageStream);
 	XnStatus OnFrameSyncPropertyChanged();
+
+	static XnStatus XN_CALLBACK_TYPE GetInstanceCallback(const XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie);
 
 
 	//---------------------------------------------------------------------------
@@ -167,6 +168,7 @@ private:
 	static XnStatus XN_CALLBACK_TYPE GetCmosBlankingUnitsCallback(const XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE GetCmosBlankingTimeCallback(const XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE GetFirmwareModeCallback(const XnIntProperty* pSender, XnUInt64* pnValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE GetAudioSupportedCallback(const XnIntProperty* pSender, XnUInt64* pnValue, void* pCookie);
 
 
 	//---------------------------------------------------------------------------
@@ -190,13 +192,13 @@ private:
 	XnVersions m_VersionData;
 	XnActualGeneralProperty m_Version;
 	XnGeneralProperty m_FixedParam;
-	XnSensor* m_pThis;
-	XnActualGeneralProperty m_InstancePointer;
+	XnGeneralProperty m_InstancePointer;
 	XnActualStringProperty m_ID;
 	XnActualStringProperty m_USBPath;
 	XnActualStringProperty m_DeviceName;
 	XnActualStringProperty m_VendorSpecificData;
 	XnActualIntProperty m_AllowOtherUsers;
+	XnIntProperty m_AudioSupported;
 
 	XnSensorFirmware m_Firmware;
 	XnDevicePrivateData m_DevicePrivateData;
@@ -208,7 +210,7 @@ private:
 	XnSensorObjects m_Objects;
 
 
-	XnDump m_FrameSyncDump;
+	XnDumpFile* m_FrameSyncDump;
 	XnBool m_bInitialized;
 
 	XnIntPropertySynchronizer m_PropSynchronizer;

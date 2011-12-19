@@ -25,6 +25,7 @@
 #include "XnServerSession.h"
 #include "XnSensorClientServer.h"
 #include <XnDDK/XnStreamDataInternal.h>
+#include <XnMacros.h>
 
 //---------------------------------------------------------------------------
 // Code
@@ -137,7 +138,7 @@ XnStatus XnServerSession::SendReply(XnSensorServerCustomMessages Type, XnStatus 
 	// lock this so that messages don't mix up
 	{
 		XnAutoCSLocker lock(m_hCommLock);
-		nRetVal = m_privateOutgoingPacker.WriteCustomData(Type, message, pEnd - message);
+		nRetVal = m_privateOutgoingPacker.WriteCustomData(Type, message, (XnUInt32)(pEnd - message));
 	}
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -168,8 +169,6 @@ XnStatus XnServerSession::SendInitialState()
 
 XnStatus XnServerSession::FindStreamByServerName(const XnChar* strName, SessionStream** ppStream)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	for (SessionStreamsHash::Iterator it = m_streamsHash.begin(); it != m_streamsHash.end(); ++it)
 	{
 		SessionStream* pStream = &it.Value();
@@ -229,8 +228,6 @@ XnStatus XnServerSession::OpenSensorImpl(const XnChar* strConnectionString)
 
 XnStatus XnServerSession::CloseSensorImpl()
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	if (m_pSensor == NULL)
 	{
 		return XN_STATUS_OK;
@@ -905,6 +902,8 @@ XnStatus XnServerSession::HandleCloseSession()
 	xnLogVerbose(XN_MASK_SENSOR_SERVER, "Received BYE from client %u", m_nID);
 
 	XnStatus nActionResult = CloseSessionImpl();
+	XN_ASSERT(nActionResult == XN_STATUS_OK);
+	XN_REFERENCE_VARIABLE(nActionResult);
 
 	// client shouldn't care if close succeeded or not. always send OK.
 	nRetVal = SendReply(XN_SENSOR_SERVER_MESSAGE_BYE, XN_STATUS_OK);
@@ -934,12 +933,9 @@ XnStatus XnServerSession::HandleSingleRequest()
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	XnPackedDataType nType;
+	XnUInt32 nType;
 	nRetVal = m_privateIncomingPacker.ReadNextObject(&nType);
 	XN_IS_STATUS_OK(nRetVal);
-
-	XnChar strModule[XN_DEVICE_MAX_STRING_LENGTH];
-	XnChar strProp[XN_DEVICE_MAX_STRING_LENGTH];
 
 	switch (nType)
 	{
@@ -1048,7 +1044,7 @@ XnStatus XnServerSession::HandleSingleRequest()
 		}
 
 	default:
-		xnLogWarning(XN_MASK_SENSOR_SERVER, "Unknown client request: %d", nType);
+		xnLogWarning(XN_MASK_SENSOR_SERVER, "Unknown client request: %u", nType);
 		nRetVal = SendReply(XN_SENSOR_SERVER_MESSAGE_GENERAL_OP_RESPOND, XN_STATUS_ERROR);
 		XN_IS_STATUS_OK(nRetVal);
 
@@ -1196,7 +1192,7 @@ void XN_CALLBACK_TYPE XnServerSession::PropertyChangedCallback(const XnProperty*
 	pThis->OnPropertyChanged(pProp);
 }
 
-void XN_CALLBACK_TYPE XnServerSession::StreamNewDataCallback(const XnChar* strName, XnUInt64 nTimestamp, XnUInt32 nFrameID, void* pCookie)
+void XN_CALLBACK_TYPE XnServerSession::StreamNewDataCallback(const XnChar* /*strName*/, XnUInt64 nTimestamp, XnUInt32 nFrameID, void* pCookie)
 {
 	SessionStream* pStream = (SessionStream*)pCookie;
 	pStream->pSession->OnNewData(pStream, nTimestamp, nFrameID);

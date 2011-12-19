@@ -57,8 +57,6 @@ XnStatus XnFileDevice::BCInit()
 
 XnStatus XnFileDevice::BCCalculatePackedBufferSize()
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	XnStreamPropertiesV3* pStreamProperties = &m_pBCData->StreamProperties;
 	XnPackedStreamProperties* pPackedStreamProperties = &m_pBCData->PackedStreamProperties;
 
@@ -182,8 +180,6 @@ XnStatus XnFileDevice::BCCalculatePackedBufferSize()
 	nBufferSize += sizeof(XnPackedStreamFrameHeaderV3);
 
 	return nBufferSize;
-
-	return (XN_STATUS_OK);
 }
 
 XnStatus XnFileDevice::BCReadInitialState(XnPropertySet* pSet)
@@ -317,7 +313,7 @@ XnStatus XnFileDevice::BCReadInitialState(XnPropertySet* pSet)
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnFileDevice::BCSeek(XnUInt64 nTimestamp)
+XnStatus XnFileDevice::BCSeek(XnUInt64 /*nTimestamp*/)
 {
 	return (XN_STATUS_IO_DEVICE_FUNCTION_NOT_SUPPORTED);
 }
@@ -449,10 +445,6 @@ XnStatus XnFileDevice::BCReadFrame(XnBool* pbWrapOccured)
 	// Local function variables
 	XnStatus nRetVal = XN_STATUS_OK;
 	XnDeviceFileFrameHeaderV3 FileFrameHeader;
-	XnUInt64 nCurrTime = 0;
-	XnUInt64 nDiffTime = 0;
-	XnUInt64 nFramesDiffTime = 0;
-	XnUInt32 nSleepTime = 0;
 
 	*pbWrapOccured = FALSE;
 

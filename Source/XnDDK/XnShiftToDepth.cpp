@@ -82,7 +82,7 @@ XN_DDK_API XnStatus XnShiftToDepthUpdate(XnShiftToDepthTables* pShiftToDepth, co
 
 	for (nIndex = 1; nIndex < pConfig->nDeviceMaxShiftValue; nIndex++)
 	{
-		nShiftValue = nIndex;
+		nShiftValue = (XnInt16)nIndex;
 
 		dFixedRefX = (XnDouble)(nShiftValue - nConstShift) / (XnDouble)pConfig->nParamCoeff;
 		dFixedRefX -= 0.375;
@@ -97,7 +97,7 @@ XN_DDK_API XnStatus XnShiftToDepthUpdate(XnShiftToDepthTables* pShiftToDepth, co
 			for (XnUInt16 i = nLastDepth; i < dDepth; i++)
 				pDepthToShiftTable[i] = nLastIndex;
 
-			nLastIndex = nIndex;
+			nLastIndex = (XnUInt16)nIndex;
 			nLastDepth = (XnUInt16)dDepth;
 		}
 	}

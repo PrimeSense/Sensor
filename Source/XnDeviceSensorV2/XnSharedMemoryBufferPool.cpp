@@ -38,7 +38,7 @@ XnSharedMemoryBufferPool::XnSharedMemoryBufferPool(XnUInt32 nBufferCount, const 
 	// to make the name unique, we'll add process ID
 	XN_PROCESS_ID procID;
 	xnOSGetCurrentProcessID(&procID);
-	sprintf(m_strName, "%u_%s_%s", procID, strDeviceName, strStreamName);
+	sprintf(m_strName, "%u_%s_%s", (XnUInt32)procID, strDeviceName, strStreamName);
 }
 
 XnSharedMemoryBufferPool::~XnSharedMemoryBufferPool()
@@ -91,7 +91,7 @@ XnStatus XnSharedMemoryBufferPool::AllocateBuffers()
 
 		pBuffer->SetExternalBuffer(m_pSharedMemoryAddress + i*m_nMaxBufferSize, m_nMaxBufferSize);
 
-		xnDumpWriteString(Dump(), "Allocated buffer %u with size %u\n", i, m_nMaxBufferSize);
+		xnDumpFileWriteString(Dump(), "Allocated buffer %u with size %u\n", i, m_nMaxBufferSize);
 
 		// add it to free list
 		m_AllBuffers.AddLast(pBuffer);

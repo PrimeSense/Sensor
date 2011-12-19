@@ -70,8 +70,6 @@ XnStatus XnStreamReaderStream::Free()
 
 XnStatus XnStreamReaderStream::ReadImpl(XnStreamData* pStreamData)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	pStreamData->nFrameID = m_pLastData->nFrameID;
 	pStreamData->nTimestamp = m_pLastData->nTimestamp;
 
@@ -97,8 +95,9 @@ XnStatus XnStreamReaderStream::CalcRequiredSize(XnUInt32* pnRequiredSize) const
 	return XN_STATUS_OK;
 }
 
-void XnStreamReaderStream::NewDataAvailable(XnUInt64 nTimestamp, XnUInt32 nFrameID)
+void XnStreamReaderStream::NewDataAvailable(XnUInt64 nTimestamp, XnUInt32 /*nFrameID*/)
 {
+	m_pLastData->nTimestamp = nTimestamp;
 	m_pLastData->nFrameID = ++m_nLastFrameIDFromStream;
 	XnDeviceStream::NewDataAvailable(m_pLastData->nTimestamp, m_pLastData->nFrameID);
 }
@@ -129,7 +128,7 @@ XnStatus XnStreamReaderStream::OnRequiredSizeChanged()
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnStreamReaderStream::RequiredSizeChangedCallback(const XnProperty* pSender, void* pCookie)
+XnStatus XnStreamReaderStream::RequiredSizeChangedCallback(const XnProperty* /*pSender*/, void* pCookie)
 {
 	XnStreamReaderStream* pThis = (XnStreamReaderStream*)pCookie;
 	return pThis->OnRequiredSizeChanged();

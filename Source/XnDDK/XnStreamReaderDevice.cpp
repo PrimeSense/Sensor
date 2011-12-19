@@ -165,8 +165,6 @@ XnStatus XnStreamReaderDevice::SetInitialState(const XnDeviceConfig* pDeviceConf
 
 XnStatus XnStreamReaderDevice::CreateStreamModule(const XnChar* StreamType, const XnChar* StreamName, XnDeviceModuleHolder** ppStreamHolder)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	XnStreamReaderStream* pStream;
 	XN_VALIDATE_NEW(pStream, XnStreamReaderStream, StreamType, StreamName);
 
@@ -479,7 +477,7 @@ XnStatus XnStreamReaderDevice::ReadStreamData()
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnStreamReaderDevice::HandleStreamData(XnStreamData* pDataProps, XnCompressionFormats nCompression, XnUInt32 nCompressedSize)
+XnStatus XnStreamReaderDevice::HandleStreamData(XnStreamData* pDataProps, XnCompressionFormats /*nCompression*/, XnUInt32 /*nCompressedSize*/)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	

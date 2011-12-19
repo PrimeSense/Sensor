@@ -73,14 +73,13 @@ protected:
 	//---------------------------------------------------------------------------
 	// Virtual Methods
 	//---------------------------------------------------------------------------
-	virtual XnStatus PostProcessFrame(XnStreamData* pFrameData) { return XN_STATUS_OK; }
+	virtual XnStatus PostProcessFrame(XnStreamData* /*pFrameData*/) { return XN_STATUS_OK; }
 	virtual XnStatus ReallocTripleFrameBuffer();
 
 	//---------------------------------------------------------------------------
 	// Overridden Methods
 	//---------------------------------------------------------------------------
 	XnStatus ReadImpl(XnStreamData* pStreamOutput);
-	XnStatus HandleNoNewData(XnStreamData* pStreamOutput);
 
 private:
 	XnStatus OnRequiredSizeChanging();

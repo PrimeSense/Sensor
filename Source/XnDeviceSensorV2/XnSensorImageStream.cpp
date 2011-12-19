@@ -148,6 +148,54 @@ XnStatus XnSensorImageStream::Init()
 		nRetVal = XnHostProtocolGetCmosPresets(m_Helper.GetPrivateData(), XN_CMOS_TYPE_IMAGE, aSupportedModes, nCount);
 		XN_IS_STATUS_OK(nRetVal);
 
+		if (nCount == 0)
+		{
+			xnLogError(XN_MASK_DEVICE_SENSOR, "Device does not support any image mode!");
+			return XN_STATUS_DEVICE_UNSUPPORTED_PARAMETER;
+		}
+
+		// check if our current (default) configuration is valid
+		XnUInt16 nValidInputFormat = XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT;
+		XnBool bModeFound = FALSE;
+
+		for (XnUInt32 i = 0; i < nCount; ++i)
+		{
+			if (aSupportedModes[i].nResolution == XN_IMAGE_STREAM_DEFAULT_RESOLUTION &&
+				aSupportedModes[i].nFPS == XN_IMAGE_STREAM_DEFAULT_FPS)
+			{
+				// found
+				if (!bModeFound)
+				{
+					bModeFound = TRUE;
+					nValidInputFormat = aSupportedModes[i].nFormat;
+				}
+
+				if (aSupportedModes[i].nFormat == XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT)
+				{
+					nValidInputFormat = XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT;
+					break;					
+				}
+			}
+		}
+
+		if (!bModeFound)
+		{
+			xnLogWarning(XN_MASK_DEVICE_SENSOR, "Default mode (res + FPS) is not supported by device. Changing defaults...");
+
+			nRetVal = ResolutionProperty().UnsafeUpdateValue(aSupportedModes[0].nResolution);
+			XN_IS_STATUS_OK(nRetVal);
+			nRetVal = FPSProperty().UnsafeUpdateValue(aSupportedModes[0].nFPS);
+			XN_IS_STATUS_OK(nRetVal);
+			nRetVal = m_InputFormat.UnsafeUpdateValue(aSupportedModes[0].nFormat);
+			XN_IS_STATUS_OK(nRetVal);
+		}
+		else
+		{
+			// just update input format
+			nRetVal = m_InputFormat.UnsafeUpdateValue(nValidInputFormat);
+			XN_IS_STATUS_OK(nRetVal);
+		}
+
 		nRetVal = AddSupportedModes(aSupportedModes, nCount);
 		XN_IS_STATUS_OK(nRetVal);
 	}
@@ -222,8 +270,16 @@ XnStatus XnSensorImageStream::Init()
 			XN_IS_STATUS_OK(nRetVal);
 		}
 
+		// Add all supported modes to the stream
 		nRetVal = AddSupportedModes(supportedModes.GetData(), supportedModes.GetSize());
 		XN_IS_STATUS_OK(nRetVal);
+
+		if (!bUncompressedAllowed)
+		{
+			// update default input format
+			nRetVal = m_InputFormat.UnsafeUpdateValue(XN_IO_IMAGE_FORMAT_YUV422);
+			XN_IS_STATUS_OK(nRetVal);
+		}
 	}
 
 	return (XN_STATUS_OK);
@@ -345,7 +401,7 @@ XnStatus XnSensorImageStream::ValidateMode()
 	}
 
 	// now check that mode exists
-	XnCmosPreset preset = { nInputFormat, nResolution, nFPS };
+	XnCmosPreset preset = { (XnUInt16)nInputFormat, (XnUInt16)nResolution, (XnUInt16)nFPS };
 	nRetVal = ValidateSupportedMode(preset);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -518,7 +574,7 @@ XnStatus XnSensorImageStream::SetMirror(XnBool bIsMirrored)
 
 	xnOSEnterCriticalSection(GetLock());
 
-	nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareMirror, bFirmwareMirror);
+	nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareMirror, (XnUInt16)bFirmwareMirror);
 	if (nRetVal != XN_STATUS_OK)
 	{
 		xnOSLeaveCriticalSection(GetLock());
@@ -537,7 +593,7 @@ XnStatus XnSensorImageStream::SetFPS(XnUInt32 nFPS)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	nRetVal = m_Helper.BeforeSettingFirmwareParam(FPSProperty(), nFPS);
+	nRetVal = m_Helper.BeforeSettingFirmwareParam(FPSProperty(), (XnUInt16)nFPS);
 	XN_IS_STATUS_OK(nRetVal);
 
 	nRetVal = XnImageStream::SetFPS(nFPS);
@@ -553,7 +609,7 @@ XnStatus XnSensorImageStream::SetResolution(XnResolutions nResolution)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	nRetVal = m_Helper.BeforeSettingFirmwareParam(ResolutionProperty(), nResolution);
+	nRetVal = m_Helper.BeforeSettingFirmwareParam(ResolutionProperty(), (XnUInt16)nResolution);
 	XN_IS_STATUS_OK(nRetVal);
 
 	nRetVal = XnImageStream::SetResolution(nResolution);
@@ -582,7 +638,7 @@ XnStatus XnSensorImageStream::SetInputFormat(XnIOImageFormats nInputFormat)
 		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Unknown image input format: %d", nInputFormat);
 	}
 
-	nRetVal = m_Helper.SimpleSetFirmwareParam(m_InputFormat, nInputFormat);
+	nRetVal = m_Helper.SimpleSetFirmwareParam(m_InputFormat, (XnUInt16)nInputFormat);
 	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);
@@ -592,16 +648,14 @@ XnStatus XnSensorImageStream::SetAntiFlicker(XnUInt32 nFrequency)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	nRetVal = m_Helper.SimpleSetFirmwareParam(m_AntiFlicker, nFrequency);
+	nRetVal = m_Helper.SimpleSetFirmwareParam(m_AntiFlicker, (XnUInt16)nFrequency);
 	XN_IS_STATUS_OK(nRetVal);
 	
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnSensorImageStream::SetImageQuality(XnUInt32 nQuality)
+XnStatus XnSensorImageStream::SetImageQuality(XnUInt32 /*nQuality*/)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	// check relevance
 	if (m_InputFormat.GetValue() != XN_IO_IMAGE_FORMAT_JPEG)
 	{
@@ -644,7 +698,9 @@ XnStatus XnSensorImageStream::SetCropping(const XnCropping* pCropping)
 		}
 
 		if (nRetVal == XN_STATUS_OK)
-			nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareCropEnabled, pCropping->bEnabled);
+		{
+			nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareCropEnabled, (XnUInt16)pCropping->bEnabled);
+		}
 
 		if (nRetVal != XN_STATUS_OK)
 		{
@@ -693,7 +749,7 @@ XnStatus XnSensorImageStream::SetColorTemperature( XnInt32 nValue )
 	XnStatus nRetVal = XN_STATUS_OK;
 
 	XnBool bIsAuto = (nValue == XN_AUTO_CONTROL);
-	nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareAutoWhiteBalance, bIsAuto);
+	nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareAutoWhiteBalance, (XnUInt16)bIsAuto);
 	XN_IS_STATUS_OK(nRetVal);
 
 	if (!bIsAuto)
@@ -733,7 +789,7 @@ XnStatus XnSensorImageStream::SetExposure( XnInt32 nValue )
 	XnStatus nRetVal = XN_STATUS_OK;
 
 	XnBool bIsAuto = (nValue == XN_AUTO_CONTROL);
-	nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareAutoExposure, bIsAuto);
+	nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareAutoExposure, (XnUInt16)bIsAuto);
 	XN_IS_STATUS_OK(nRetVal);
 
 	if (!bIsAuto)
@@ -760,10 +816,7 @@ XnStatus XnSensorImageStream::SetLowLightCompensation( XnInt32 nValue )
 
 XnStatus XnSensorImageStream::PostProcessFrame(XnStreamData* pFrameData)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	m_Helper.GetFPS()->MarkOutputImage(pFrameData->nFrameID, pFrameData->nTimestamp);
-
 	return (XN_STATUS_OK);
 }
 
@@ -857,8 +910,6 @@ XnUInt32 XnSensorImageStream::CalculateExpectedSize()
 
 XnStatus XnSensorImageStream::CreateDataProcessor(XnDataProcessor** ppProcessor)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	XnStreamProcessor* pNew;
 
 	switch (m_InputFormat.GetValue())
@@ -909,61 +960,61 @@ XnStatus XnSensorImageStream::CreateDataProcessor(XnDataProcessor** ppProcessor)
 	return XN_STATUS_OK;
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetInputFormatCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetInputFormatCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnSensorImageStream* pThis = (XnSensorImageStream*)pCookie;
 	return pThis->SetInputFormat((XnIOImageFormats)nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetAntiFlickerCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetAntiFlickerCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnSensorImageStream* pThis = (XnSensorImageStream*)pCookie;
 	return pThis->SetAntiFlicker((XnUInt32)nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetImageQualityCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetImageQualityCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnSensorImageStream* pThis = (XnSensorImageStream*)pCookie;
 	return pThis->SetImageQuality((XnUInt32)nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetActualReadCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetActualReadCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnSensorImageStream* pThis = (XnSensorImageStream*)pCookie;
 	return pThis->SetActualRead(nValue == TRUE);
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetSharpnessCallback( XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie )
+XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetSharpnessCallback( XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie )
 {
 	XnSensorImageStream* pThis = (XnSensorImageStream*)pCookie;
 	return pThis->SetSharpness((XnInt32)nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetColorTemperatureCallback( XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie )
+XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetColorTemperatureCallback( XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie )
 {
 	XnSensorImageStream* pThis = (XnSensorImageStream*)pCookie;
 	return pThis->SetColorTemperature((XnInt32)nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetBacklightCompensationCallback( XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie )
+XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetBacklightCompensationCallback( XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie )
 {
 	XnSensorImageStream* pThis = (XnSensorImageStream*)pCookie;
 	return pThis->SetBacklightCompensation((XnInt32)nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetGainCallback( XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie )
+XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetGainCallback( XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie )
 {
 	XnSensorImageStream* pThis = (XnSensorImageStream*)pCookie;
 	return pThis->SetGain((XnInt32)nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetLowLightCompensationCallback( XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie )
+XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetLowLightCompensationCallback( XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie )
 {
 	XnSensorImageStream* pThis = (XnSensorImageStream*)pCookie;
 	return pThis->SetLowLightCompensation((XnInt32)nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetExposureCallback( XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie )
+XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetExposureCallback( XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie )
 {
 	XnSensorImageStream* pThis = (XnSensorImageStream*)pCookie;
 	return pThis->SetExposure((XnInt32)nValue);

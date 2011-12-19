@@ -97,7 +97,7 @@ XnStatus XnSensorIRStream::Init()
 		{
 			{ 0, XN_RESOLUTION_SXGA, 30 },
 		};
-		nRetVal = AddSupportedModes(aSupportedModes, sizeof(aSupportedModes)/sizeof(aSupportedModes[0]));
+		nRetVal = AddSupportedModes(aSupportedModesSXGA, sizeof(aSupportedModesSXGA)/sizeof(aSupportedModesSXGA[0]));
 		XN_IS_STATUS_OK(nRetVal);
 	}
 
@@ -282,7 +282,7 @@ XnStatus XnSensorIRStream::SetFPS(XnUInt32 nFPS)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	nRetVal = m_Helper.BeforeSettingFirmwareParam(FPSProperty(), nFPS);
+	nRetVal = m_Helper.BeforeSettingFirmwareParam(FPSProperty(), (XnUInt16)nFPS);
 	XN_IS_STATUS_OK(nRetVal);
 
 	nRetVal = XnIRStream::SetFPS(nFPS);
@@ -298,7 +298,7 @@ XnStatus XnSensorIRStream::SetResolution(XnResolutions nResolution)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	nRetVal = m_Helper.BeforeSettingFirmwareParam(ResolutionProperty(), nResolution);
+	nRetVal = m_Helper.BeforeSettingFirmwareParam(ResolutionProperty(), (XnUInt16)nResolution);
 	XN_IS_STATUS_OK(nRetVal);
 
 	nRetVal = XnIRStream::SetResolution(nResolution);
@@ -333,7 +333,7 @@ XnStatus XnSensorIRStream::SetCropping(const XnCropping* pCropping)
 		XnUInt16 nXOffset = pCropping->nXOffset;
 		if (IsMirrored())
 		{
-			nXOffset = GetXRes() - pCropping->nXOffset - pCropping->nXSize;
+			nXOffset = (XnUInt16)(GetXRes() - pCropping->nXOffset - pCropping->nXSize);
 		}
 
 		if (pCropping->bEnabled)
@@ -351,7 +351,9 @@ XnStatus XnSensorIRStream::SetCropping(const XnCropping* pCropping)
 		}
 
 		if (nRetVal == XN_STATUS_OK)
-			nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareCropEnabled, pCropping->bEnabled);
+		{
+			nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareCropEnabled, (XnUInt16)pCropping->bEnabled);
+		}
 
 		if (nRetVal != XN_STATUS_OK)
 		{
@@ -444,8 +446,6 @@ XnStatus XnSensorIRStream::CropImpl(XnStreamData* pStreamOutput, const XnCroppin
 
 XnStatus XnSensorIRStream::CreateDataProcessor(XnDataProcessor** ppProcessor)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	XnDataProcessor* pNew;
 	XN_VALIDATE_NEW_AND_INIT(pNew, XnIRProcessor, this, &m_Helper);
 
@@ -469,13 +469,13 @@ XnStatus XnSensorIRStream::OnIsMirroredChanged()
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnSensorIRStream::IsMirroredChangedCallback(const XnProperty* pSender, void* pCookie)
+XnStatus XnSensorIRStream::IsMirroredChangedCallback(const XnProperty* /*pSender*/, void* pCookie)
 {
 	XnSensorIRStream* pThis = (XnSensorIRStream*)pCookie;
 	return pThis->OnIsMirroredChanged();
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensorIRStream::SetActualReadCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnSensorIRStream::SetActualReadCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnSensorIRStream* pThis = (XnSensorIRStream*)pCookie;
 	return pThis->SetActualRead(nValue == TRUE);

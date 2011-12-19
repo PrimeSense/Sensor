@@ -31,7 +31,8 @@
 XnSensorProductionNode::XnSensorProductionNode(xn::Context& context, const XnChar* strInstanceName, XnDeviceBase* pSensor, const XnChar* strModuleName) : 
 	m_Context(context),
 	m_pSensor(pSensor),
-	m_pNotifications(NULL)
+	m_pNotifications(NULL),
+	m_pCookie(NULL)
 {
 	strcpy(m_strInstanceName, strInstanceName);
 	strcpy(m_strModule, strModuleName);
@@ -105,7 +106,7 @@ XnStatus XnSensorProductionNode::SetLockState(XnBool bLocked)
 XnBool XnSensorProductionNode::GetLockState()
 {
 	XnUInt64 nValue = FALSE;
-	XnStatus nRetVal = m_pSensor->GetProperty(m_strModule, XN_MODULE_PROPERTY_LOCK, &nValue);
+	m_pSensor->GetProperty(m_strModule, XN_MODULE_PROPERTY_LOCK, &nValue);
 	return (nValue == TRUE);
 }
 

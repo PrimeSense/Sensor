@@ -1,6 +1,27 @@
 Detailed Change log:
 --------------------
 
+Version 5.1.0.25 (Unstable version - Dec 18th 2011)
+---------------------------------------------------
+  * Bug Fix: server-client didn't always work due to an uninitialized member.
+  * Installer bug fix: versions were compared by string instead of by number.
+  * Added Support for FW 5.5:
+    1) Support product ID 0601.
+	2) ISO and BULK interfaces are now switched.
+	3) AudioGenerator is no longer supported.
+  * Enumeration Bug Fix: From now on, a generator will not return on enumeration if one already exists from the same device.
+  * Android: makefiles now match ndk v7.
+  * Bug Fix: client-server did not pass timestamp correct in the NewDataAvailbale event, causing FrameSync to malfunction.
+  * Bug Fix: Enumeration for ImageGenerator could cause a crash.
+  * Default UsbInterface is now BULK on Arm (for performance reasons) and ISO on all other platforms.
+  * Default Image format is now uncompressed in ISO, and compressed in BULK.
+  * Server (Multiprocess) is not on by default on Arm.
+  * BC Bug fix: XnVInitStreamPropertiesInternal::IsProperty did not function correctly. 
+  * BC Bug Fix: XnVDepthRepresentation would not set correct Y resolution.
+  * Added support for FW 5.6 (no audio)
+  * Added Android support to open source.
+  * Temporary patch for MacOSX: Cache the device path's since running enum on the MAC takes several seconds!  
+
 Version 5.0.5.1 (Unstable version - Nov 17th 2011)
 --------------------------------------------------
   * Removed support for very old 2.0 devices.

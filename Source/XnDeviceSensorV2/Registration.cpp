@@ -55,8 +55,8 @@ inline XnDouble XnXRegistrationFunction1000(XnRegistrationInformation1000& regIn
 		regInfo1000.FuncX.dD,
 		regInfo1000.FuncX.dE,
 		regInfo1000.FuncX.dF,
-		nX - nXRes/2, 
-		nY - nYRes/2);
+		(XnUInt16)(nX - nXRes/2), 
+		(XnUInt16)(nY - nYRes/2));
 }
 
 inline XnDouble XnYRegistrationFunction1000(XnRegistrationInformation1000& regInfo1000, XnUInt16 nX, XnUInt16 nY, XnUInt32 nXRes, XnUInt32 nYRes)
@@ -68,8 +68,8 @@ inline XnDouble XnYRegistrationFunction1000(XnRegistrationInformation1000& regIn
 		regInfo1000.FuncY.dD,
 		regInfo1000.FuncY.dE,
 		regInfo1000.FuncY.dF,
-		nX - nXRes/2, 
-		nY - nYRes/2);
+		(XnUInt16)(nX - nXRes/2), 
+		(XnUInt16)(nY - nYRes/2));
 }
 
 XnStatus XnRegistration::BuildRegTable1000()
@@ -78,7 +78,7 @@ XnStatus XnRegistration::BuildRegTable1000()
 	
 	// take needed parameters to perform registration
 	XnRegistrationInformation1000 regInfo1000;
-	nRetVal = XnHostProtocolAlgorithmParams(m_pDevicePrivateData, XN_HOST_PROTOCOL_ALGORITHM_REGISTRATION, &regInfo1000, sizeof(regInfo1000), m_pDepthStream->GetResolution(), m_pDepthStream->GetFPS());
+	nRetVal = XnHostProtocolAlgorithmParams(m_pDevicePrivateData, XN_HOST_PROTOCOL_ALGORITHM_REGISTRATION, &regInfo1000, sizeof(regInfo1000), m_pDepthStream->GetResolution(), (XnUInt16)m_pDepthStream->GetFPS());
 	XN_IS_STATUS_OK(nRetVal);
 	
 	XnUInt16* pRegTable = m_pRegistrationTable;
@@ -87,8 +87,8 @@ XnStatus XnRegistration::BuildRegTable1000()
 	XnDouble dNewX = 0,
 		dNewY = 0;
 
-	XnUInt64 nDepthXRes = m_pDepthStream->GetXRes();
-	XnUInt64 nDepthYRes = m_pDepthStream->GetYRes();
+	XnUInt32 nDepthXRes = m_pDepthStream->GetXRes();
+	XnUInt32 nDepthYRes = m_pDepthStream->GetYRes();
 
 	const XnUInt16 nIllegalValue = XnUInt16(nDepthXRes*4);
 
@@ -246,12 +246,12 @@ void BuildDepthToShiftTable(XnUInt16* pDepth2Shift, XnSensorDepthStream* m_pStre
 	XnUInt64 nPlaneDsr;
 	XnDouble dPlaneDsr;
 	m_pStream->GetProperty(XN_STREAM_PROPERTY_ZERO_PLANE_DISTANCE, &nPlaneDsr);
-	dPlaneDsr = nPlaneDsr;
+	dPlaneDsr = (XnDouble)nPlaneDsr;
 
 	XnUInt64 nDCRCDist;
 	XnDouble dDCRCDist;
 	m_pStream->GetProperty(XN_STREAM_PROPERTY_DCMOS_RCMOS_DISTANCE, &nDCRCDist);
-	dDCRCDist = nDCRCDist;
+	dDCRCDist = (XnDouble)nDCRCDist;
 
 	XnDouble dPelSize = 1.0 / (dPlanePixelSize * nXScale * S2D_PEL_CONST);
 	XnDouble dPelDCC = dDCRCDist * dPelSize * S2D_PEL_CONST;
@@ -262,7 +262,7 @@ void BuildDepthToShiftTable(XnUInt16* pDepth2Shift, XnSensorDepthStream* m_pStre
 	for (nIndex = 0; nIndex < nMaxDepth; nIndex++)
 	{
 		dDepth = nIndex * dPelSize;
-		pRGBRegDepthToShiftTable[nIndex] = ((dPelDCC * (dDepth - dPelDSR) / dDepth) + (S2D_CONST_OFFSET)) * RGB_REG_X_VAL_SCALE;
+		pRGBRegDepthToShiftTable[nIndex] = (XnInt16)(((dPelDCC * (dDepth - dPelDSR) / dDepth) + (S2D_CONST_OFFSET)) * RGB_REG_X_VAL_SCALE);
 	}
 }
 
@@ -272,11 +272,11 @@ XnStatus XnRegistration::BuildRegTable1080()
 	
 	// take needed parameters to perform registration
 	XnRegistrationInformation1080 RegData;
-	nRetVal = XnHostProtocolAlgorithmParams(m_pDevicePrivateData, XN_HOST_PROTOCOL_ALGORITHM_REGISTRATION, &RegData, sizeof(RegData), m_pDepthStream->GetResolution(), m_pDepthStream->GetFPS());
+	nRetVal = XnHostProtocolAlgorithmParams(m_pDevicePrivateData, XN_HOST_PROTOCOL_ALGORITHM_REGISTRATION, &RegData, sizeof(RegData), m_pDepthStream->GetResolution(), (XnUInt16)m_pDepthStream->GetFPS());
 	XN_IS_STATUS_OK(nRetVal);
 
 	xnOSMemSet(&m_padInfo, 0, sizeof(m_padInfo));
-	nRetVal = XnHostProtocolAlgorithmParams(m_pDevicePrivateData, XN_HOST_PROTOCOL_ALGORITHM_PADDING, &m_padInfo, sizeof(m_padInfo), m_pDepthStream->GetResolution(), m_pDepthStream->GetFPS());
+	nRetVal = XnHostProtocolAlgorithmParams(m_pDevicePrivateData, XN_HOST_PROTOCOL_ALGORITHM_PADDING, &m_padInfo, sizeof(m_padInfo), m_pDepthStream->GetResolution(), (XnUInt16)m_pDepthStream->GetFPS());
 	XN_IS_STATUS_OK(nRetVal);
 
 	XN_VALIDATE_ALIGNED_CALLOC(m_pDepthToShiftTable, XnUInt16, m_pDepthStream->GetXRes()*m_pDepthStream->GetYRes(), XN_DEFAULT_MEM_ALIGN);
@@ -287,10 +287,8 @@ XnStatus XnRegistration::BuildRegTable1080()
 	XnDouble* RegXTable = XN_NEW_ARR(XnDouble, RGB_REG_X_RES*RGB_REG_Y_RES);
 	XnDouble* RegYTable = XN_NEW_ARR(XnDouble, RGB_REG_X_RES*RGB_REG_Y_RES);
 
-	XnInt16* pRGBRegDepthToShiftTable = (XnInt16*)m_pDepthToShiftTable; 
 	XnUInt16 nDepthXRes = XN_DEPTH_XRES;
 	XnUInt16 nDepthYRes = XN_DEPTH_YRES;
-	XnUInt32 nXScale = XN_CMOS_VGAOUTPUT_XRES / XN_DEPTH_XRES;
 	XnDouble* pRegXTable = (XnDouble*)RegXTable;
 	XnDouble* pRegYTable = (XnDouble*)RegYTable;
 	XnInt16* pRegTable = (XnInt16*)m_pRegistrationTable;
@@ -351,8 +349,8 @@ XnStatus XnRegistration::BuildRegTable1080()
 				goto FinishLoop;
 			}
 
-			*pRegTable = nNewX;
-			*(pRegTable+1) = nNewY;
+			*pRegTable = (XnInt16)nNewX;
+			*(pRegTable+1) = (XnInt16)nNewY;
 
 			pRegXTable++;
 			pRegYTable++;
@@ -369,8 +367,6 @@ FinishLoop:
 
 XnStatus XnRegistration::BuildRegTable()
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	m_b1000 = (m_pDevicePrivateData->ChipInfo.nChipVer == XN_SENSOR_CHIP_VER_PS1000);
 	if (m_b1000)
 	{
@@ -380,8 +376,6 @@ XnStatus XnRegistration::BuildRegTable()
 	{
 		return BuildRegTable1080();
 	}
-	
-	return (XN_STATUS_OK);
 }
 
 XnStatus XnRegistration::Init(XnDevicePrivateData* pDevicePrivateData, XnSensorDepthStream* pDepthStream, XnUInt16* pDepthToShiftTable)
@@ -514,8 +508,6 @@ void XnRegistration::Apply1080(XnDepthPixel* pInput, XnDepthPixel* pOutput)
 
 	// entire map should be shifted by X lines
 	XnUInt32 nConstOffset = nDepthXRes*m_padInfo.nStartLines;
-
-	XnDepthPixel* pInputEnd = pInput + nDepthYRes*nDepthXRes;
 
 	XnBool bMirror = m_pDepthStream->IsMirrored();
 

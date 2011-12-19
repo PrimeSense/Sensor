@@ -90,7 +90,7 @@ XnDeviceBase::XnDeviceBase(const XnChar* csName, XnBool bStrictProperties) :
 	m_nLastReadFrameID(0),
 	m_nLastTimestamp(0),
 	m_nLastFrameID(0),
-	m_StreamsDataDump(XN_DUMP_CLOSED)
+	m_StreamsDataDump(NULL)
 {
 	// update set callbacks
 	m_PrimaryStream.UpdateSetCallback(SetPrimaryStreamCallback, this);
@@ -162,7 +162,7 @@ XnStatus XnDeviceBase::InitImpl(const XnDeviceConfig* pDeviceConfig)
 	XN_IS_STATUS_OK(nRetVal);
 
 	// init dump
-	xnDumpInit(&m_StreamsDataDump, XN_DUMP_STREAMS_DATA, "", "%s.csv", XN_DUMP_STREAMS_DATA);
+	m_StreamsDataDump = xnDumpFileOpen(XN_DUMP_STREAMS_DATA, "%s.csv", XN_DUMP_STREAMS_DATA);
 
 	return (XN_STATUS_OK);
 }
@@ -201,14 +201,13 @@ XnStatus XnDeviceBase::Destroy()
 	xnOSCloseEvent(&m_hNewDataEvent);
 
 	// close dump
-	xnDumpClose(&m_StreamsDataDump);
+	xnDumpFileClose(m_StreamsDataDump);
 
 	return XN_STATUS_OK;
 }
 
 XnStatus XnDeviceBase::CreateModule(const XnChar* strName, XnDeviceModuleHolder** ppModuleHolder)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
 	XnDeviceModule* pModule;
 	XnDeviceModuleHolder* pHolder;
 
@@ -317,8 +316,6 @@ XnStatus XnDeviceBase::SetHighresTimestamps(XnBool bHighRes)
 
 XnStatus XnDeviceBase::GetSupportedStreams(const XnChar** aStreamNames, XnUInt32* pnStreamNamesCount)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	XN_VALIDATE_OUTPUT_PTR(pnStreamNamesCount);
 	// NOTE: we allow aStreamName to be NULL
 
@@ -423,7 +420,6 @@ XnStatus XnDeviceBase::CloseAllStreams()
 	// go over modules list, and look for closed streams
 	for (XnStringsHash::Iterator it = m_Modules.begin(); it != m_Modules.end(); ++it)
 	{
-		const XnChar* Name = it.Key();
 		XnDeviceModuleHolder* pModuleHolder = (XnDeviceModuleHolder*)it.Value();
 		if (IsStream(pModuleHolder->GetModule()))
 		{
@@ -443,8 +439,6 @@ XnStatus XnDeviceBase::CloseAllStreams()
 
 XnStatus XnDeviceBase::GetStreamNames(const XnChar** pstrNames, XnUInt32* pnNamesCount)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	// first we need to count them
 	XnUInt32 nCount = 0;
 
@@ -680,7 +674,7 @@ XnStatus XnDeviceBase::Read(XnStreamDataSet* pStreamOutputSet)
 
 	XnUInt64 nNow;
 	xnOSGetHighResTimeStamp(&nNow);
-	xnDumpWriteString(m_StreamsDataDump, "%llu,Read Called\n", nNow);
+	xnDumpFileWriteString(m_StreamsDataDump, "%llu,Read Called\n", nNow);
 
 	// First thing to do is wait for primary stream to advance. We do this BEFORE checking streams
 	// because device streams might change during this wait.
@@ -688,7 +682,7 @@ XnStatus XnDeviceBase::Read(XnStreamDataSet* pStreamOutputSet)
 	XN_IS_STATUS_OK(nRetVal);
 
 	xnOSGetHighResTimeStamp(&nNow);
-	xnDumpWriteString(m_StreamsDataDump, "%llu,Read Condition Met\n", nNow);
+	xnDumpFileWriteString(m_StreamsDataDump, "%llu,Read Condition Met\n", nNow);
 
 	// take the list of stream output objects
 	XnStreamData* apStreamOutputs[XN_DEVICE_BASE_MAX_STREAMS_COUNT];
@@ -787,8 +781,6 @@ XnStatus XnDeviceBase::Write(XnStreamDataSet* pStreamDataSet)
 
 XnStatus XnDeviceBase::Tell(XnUInt64* pnTimestamp)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	XN_VALIDATE_OUTPUT_PTR(pnTimestamp);
 
 	*pnTimestamp = m_nLastTimestamp;
@@ -798,8 +790,6 @@ XnStatus XnDeviceBase::Tell(XnUInt64* pnTimestamp)
 
 XnStatus XnDeviceBase::TellFrame(XnUInt32* pnFrameID)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	XN_VALIDATE_OUTPUT_PTR(pnFrameID);
 
 	*pnFrameID = m_nLastFrameID;
@@ -964,9 +954,9 @@ XnStatus XnDeviceBase::CreateStreamsFromFile(const XnChar* csINIFilePath, const 
 	XnUInt32 nStreamIndex = 0;
 	XnChar csKeyName[XN_INI_MAX_LEN];
 
-	while (TRUE)
+	for (;;)
 	{
-		sprintf(csKeyName, "Stream%d_Type", nStreamIndex);
+		sprintf(csKeyName, "Stream%u_Type", nStreamIndex);
 
 		XnChar csStreamType[XN_INI_MAX_LEN];
 		XnChar csStreamName[XN_INI_MAX_LEN];
@@ -978,7 +968,7 @@ XnStatus XnDeviceBase::CreateStreamsFromFile(const XnChar* csINIFilePath, const 
 		}
 
 		// check if the stream has a name
-		sprintf(csKeyName, "Stream%d_Name", nStreamIndex);
+		sprintf(csKeyName, "Stream%u_Name", nStreamIndex);
 		nRetVal = xnOSReadStringFromINI(csINIFilePath, csSectionName, csKeyName, csStreamName, XN_INI_MAX_LEN);
 		if (nRetVal != XN_STATUS_OK)
 		{
@@ -1324,8 +1314,6 @@ XnStatus XnDeviceBase::CreateStreams(const XnPropertySet* pSet)
 
 XnStatus XnDeviceBase::ValidateOnlyModule(const XnPropertySet* pSet, const XnChar* StreamName)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	XnPropertySetData::ConstIterator it = pSet->pData->begin();
 	if (it == pSet->pData->end())
 	{
@@ -1462,8 +1450,6 @@ XnStatus XnDeviceBase::CreateStreamImpl(const XnChar* strType, const XnChar* str
 
 XnStatus XnDeviceBase::StreamAdded(XnDeviceStream* pStream)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	// register to the NewData event
 	if (m_ReadWriteMode.GetValue() == XN_DEVICE_MODE_READ)
 	{
@@ -1544,8 +1530,6 @@ XnStatus XnDeviceBase::GetModulesList(XnDeviceModuleHolder** apModules, XnUInt32
 
 XnStatus XnDeviceBase::GetModulesList(XnDeviceModuleHolderList& list)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	list.Clear();
 
 	for (XnStringsHash::Iterator it = m_Modules.begin(); it != m_Modules.end(); ++it)
@@ -1558,8 +1542,6 @@ XnStatus XnDeviceBase::GetModulesList(XnDeviceModuleHolderList& list)
 
 XnStatus XnDeviceBase::GetStreamsList(XnDeviceModuleHolderList& list)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	list.Clear();
 
 	for (XnStringsHash::Iterator it = m_Modules.begin(); it != m_Modules.end(); ++it)
@@ -1585,7 +1567,7 @@ void XnDeviceBase::OnNewStreamData(XnDeviceStream* pStream, XnUInt64 nTimestamp,
 {
 	XnUInt64 nNow;
 	xnOSGetHighResTimeStamp(&nNow);
-	xnDumpWriteString(m_StreamsDataDump, "%llu,%s,%llu,%u\n", nNow, pStream->GetName(), nTimestamp, nFrameID);
+	xnDumpFileWriteString(m_StreamsDataDump, "%llu,%s,%llu,%u\n", nNow, pStream->GetName(), nTimestamp, nFrameID);
 
 	if (strcmp(m_PrimaryStream.GetValue(), XN_PRIMARY_STREAM_ANY) == 0 ||
 		strcmp(m_PrimaryStream.GetValue(), XN_PRIMARY_STREAM_NONE) == 0)
@@ -1729,7 +1711,7 @@ XnStatus XnDeviceBase::WaitForPrimaryStream(XN_EVENT_HANDLE hNewDataEvent, XnStr
 	return (XN_STATUS_OK);
 }
 
-XnStatus XN_CALLBACK_TYPE XnDeviceBase::PropertyValueChangedCallback(const XnProperty* pSender, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnDeviceBase::PropertyValueChangedCallback(const XnProperty* /*pSender*/, void* pCookie)
 {
 	XnPropertyCallback* pUserCallback = (XnPropertyCallback*)pCookie;
 
@@ -1739,19 +1721,19 @@ XnStatus XN_CALLBACK_TYPE XnDeviceBase::PropertyValueChangedCallback(const XnPro
 	return XN_STATUS_OK;
 }
 
-XnStatus XN_CALLBACK_TYPE XnDeviceBase::SetPrimaryStreamCallback(XnActualStringProperty* pSender, const XnChar* strValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnDeviceBase::SetPrimaryStreamCallback(XnActualStringProperty* /*pSender*/, const XnChar* strValue, void* pCookie)
 {
 	XnDeviceBase* pThis = (XnDeviceBase*)pCookie;
 	return pThis->SetPrimaryStream(strValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnDeviceBase::SetMirrorCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnDeviceBase::SetMirrorCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnDeviceBase* pThis = (XnDeviceBase*)pCookie;
 	return pThis->SetMirror((XnBool)nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnDeviceBase::SetHighresTimestampsCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnDeviceBase::SetHighresTimestampsCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnDeviceBase* pThis = (XnDeviceBase*)pCookie;
 	return pThis->SetHighresTimestamps((XnBool)nValue);

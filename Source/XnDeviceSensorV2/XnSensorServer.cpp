@@ -161,9 +161,7 @@ XnStatus XnSensorServer::InitServer()
 
 XnStatus XnSensorServer::ServerMainLoop()
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
-	while (TRUE)
+	for (;;)
 	{
 		CheckForNewClients(XN_SENSOR_SERVER_ACCEPT_CONNECTION_TIMEOUT);
 
@@ -187,7 +185,7 @@ void XnSensorServer::CheckForNewClients(XnUInt32 nTimeout)
 
 	// run in loop until we break due to timeout
 	XN_SOCKET_HANDLE hClientSocket;
-	while (TRUE)
+	for (;;)
 	{
 		nRetVal = xnOSAcceptSocket(m_hListenSocket, &hClientSocket, nTimeout);
 		if (nRetVal == XN_STATUS_OS_NETWORK_TIMEOUT)
@@ -286,8 +284,6 @@ XnBool XnSensorServer::ShutdownIfPossible()
 
 void XnSensorServer::Free()
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	if (m_hServerRunningEvent != NULL)
 	{
 		xnOSCloseEvent(&m_hServerRunningEvent);

@@ -32,6 +32,10 @@
 //---------------------------------------------------------------------------
 // Types
 //---------------------------------------------------------------------------
+// disable the "inherits via dominance" warning. This is exactly what we want.
+#pragma warning (push)
+#pragma warning (disable: 4250)
+
 class XnSensorAudioGenerator : 
 	public XnSensorGenerator,
 	virtual public xn::ModuleAudioGenerator
@@ -65,7 +69,12 @@ class XnExportedSensorAudioGenerator : public XnExportedSensorGenerator
 {
 public:
 	XnExportedSensorAudioGenerator();
+
+protected:
+	virtual XnStatus IsSupportedForDevice(xn::Context& context, xn::NodeInfo& sensorInfo, XnBool* pbSupported);
 	virtual XnSensorGenerator* CreateGenerator(xn::Context& context, xn::Device& sensor, XnDeviceBase* pSensor, const XnChar* strStreamName);
 };
+
+#pragma warning (pop)
 
 #endif // __XN_SENSOR_AUDIO_GENERATOR_H__

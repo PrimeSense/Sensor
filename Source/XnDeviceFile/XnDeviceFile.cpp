@@ -45,7 +45,7 @@ XnStatus XnDeviceFile::GetDefinition(XnDeviceDefinition* pDeviceDefinition)
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnDeviceFile::Enumerate(XnConnectionString* aConnectionStrings, XnUInt32* pnCount)
+XnStatus XnDeviceFile::Enumerate(XnConnectionString* /*aConnectionStrings*/, XnUInt32* pnCount)
 {
 	XN_VALIDATE_INPUT_PTR(pnCount);
 

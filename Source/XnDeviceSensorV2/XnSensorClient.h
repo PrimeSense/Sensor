@@ -86,6 +86,7 @@ private:
 	XnStatus StartServerProcess();
 
 	static XN_THREAD_PROC ListenThread(XN_THREAD_PARAM pThreadParam);
+	static XnStatus XN_CALLBACK_TYPE GetInstanceCallback(const XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie);
 
 	XN_SOCKET_HANDLE m_hSocket;
 	XN_EVENT_HANDLE m_hReplyEvent;
@@ -95,8 +96,7 @@ private:
 	XnSensorClientServerReply m_LastReply;
 	XnBool m_bConnected;
 
-	XnSensorClient* m_pThis;
-	XnActualGeneralProperty m_InstancePointer;
+	XnGeneralProperty m_InstancePointer;
 	XnActualIntProperty m_ErrorState;
 
 	XN_CRITICAL_SECTION_HANDLE m_hLock;

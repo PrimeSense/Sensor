@@ -302,7 +302,7 @@ private:
 	NewStreamDataEvent m_OnNewStreamDataEvent;
 
 	XnSDKVersion m_SDKVersion;
-	XnDump m_StreamsDataDump;
+	XnDumpFile* m_StreamsDataDump;
 };
 
 #endif //__XN_DEVICE_BASE_H__

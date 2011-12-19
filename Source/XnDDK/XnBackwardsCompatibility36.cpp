@@ -31,8 +31,6 @@
 //---------------------------------------------------------------------------
 XnStatus XnBCDepthFormatToOutputFormat(XnStreamDepthFormat nDepthFormat, XnOutputFormats* pnOutputFormat)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	switch (nDepthFormat)
 	{
 	case XN_DEPTH_FORMAT_RAW10:
@@ -51,8 +49,6 @@ XnStatus XnBCDepthFormatToOutputFormat(XnStreamDepthFormat nDepthFormat, XnOutpu
 
 XnStatus XnBCOutputFormatToDepthFormat(XnOutputFormats nOutputFormat, XnStreamDepthFormat* pnDepthFormat)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	switch (nOutputFormat)
 	{
 	case XN_OUTPUT_FORMAT_DEPTH_VALUES:
@@ -70,8 +66,6 @@ XnStatus XnBCOutputFormatToDepthFormat(XnOutputFormats nOutputFormat, XnStreamDe
 
 XnStatus XnBCImageFormatToOutputFormat(XnStreamImageFormat nImageFormat, XnOutputFormats* pnOutputFormat)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	switch (nImageFormat)
 	{
 	case XN_IMAGE_FORMAT_GRAYSCALE8:
@@ -92,8 +86,6 @@ XnStatus XnBCImageFormatToOutputFormat(XnStreamImageFormat nImageFormat, XnOutpu
 
 XnStatus XnBCOutputFormatToImageFormat(XnOutputFormats nOutputFormat, XnStreamImageFormat* pnImageFormat)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	switch (nOutputFormat)
 	{
 	case XN_OUTPUT_FORMAT_GRAYSCALE8:
@@ -117,8 +109,6 @@ XnStatus XnBCOutputFormatToImageFormat(XnOutputFormats nOutputFormat, XnStreamIm
 
 XnStatus XnBCAudioFormatToOutputFormat(XnStreamAudioFormat nAudioFormat, XnOutputFormats* pnOutputFormat)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	switch (nAudioFormat)
 	{
 	case XN_AUDIO_FORMAT_PCM:
@@ -133,8 +123,6 @@ XnStatus XnBCAudioFormatToOutputFormat(XnStreamAudioFormat nAudioFormat, XnOutpu
 
 XnStatus XnBCOutputFormatToAudioFormat(XnOutputFormats nOutputFormat, XnStreamAudioFormat* pnAudioFormat)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	switch (nOutputFormat)
 	{
 	case XN_OUTPUT_FORMAT_PCM:

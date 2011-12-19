@@ -187,7 +187,7 @@ void XnSensorGenerator::FilterProperties(XnActualPropertiesHash* pHash)
 	pHash->Remove(XN_STREAM_PROPERTY_STATE);
 }
 
-void XN_CALLBACK_TYPE XnSensorGenerator::OnDeviceNewStreamData(XnDeviceHandle pDeviceHandle, const XnChar* StreamName, void* pCookie)
+void XN_CALLBACK_TYPE XnSensorGenerator::OnDeviceNewStreamData(XnDeviceHandle /*pDeviceHandle*/, const XnChar* StreamName, void* pCookie)
 {
 	NewDataCallback *pNewDataCBParams = (NewDataCallback*)pCookie;
 	if (strcmp(pNewDataCBParams->m_pGenerator->m_strInstanceName, StreamName) == 0)

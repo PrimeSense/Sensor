@@ -103,7 +103,7 @@ void XnBayerImageProcessor::ProcessFramePacketChunk(const XnSensorProtocolRespon
 	XnUInt32 nActualRead = 0;
 	XnBool bLastPart = pHeader->nType == XN_SENSOR_PROTOCOL_RESPONSE_IMAGE_END && (nDataOffset + nDataSize) == pHeader->nBufSize;
 	XnStatus nRetVal = XnStreamUncompressImageNew(pBuf, nBufSize, pWriteBuffer->GetUnsafeWritePointer(), 
-		&nWrittenOutput, GetActualXRes(), &nActualRead, bLastPart);
+		&nWrittenOutput, (XnUInt16)GetActualXRes(), &nActualRead, bLastPart);
 
 	if (nRetVal != XN_STATUS_OK)
 	{

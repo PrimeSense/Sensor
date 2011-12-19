@@ -58,44 +58,45 @@ XnStatus XnExportedSensorGenerator::EnumerateProductionTrees(xn::Context& contex
 	query.SetMinVersion(Description.Version);
 	query.SetMaxVersion(Description.Version);
 
-	nRetVal = context.AutoEnumerateOverSingleInput(TreesList, Description, NULL, XN_NODE_TYPE_DEVICE, pErrors, &query);
+	// check which devices are currently connected
+	xn::NodeInfoList devices;
+	nRetVal = context.EnumerateProductionTrees(XN_NODE_TYPE_DEVICE, &query, devices, pErrors);
+	if (nRetVal == XN_STATUS_NO_NODE_PRESENT)
+	{
+		// the error was already added to the EnumerationErrors object
+		return XN_STATUS_OK;
+	}
 	XN_IS_STATUS_OK(nRetVal);
 
-	if (!m_bIsAvailableInLowBand)
+	// now check each one, to find out if it supports our generator
+	for (xn::NodeInfoList::Iterator it = devices.Begin(); it != devices.End(); ++it)
 	{
-		xn::NodeInfoList::Iterator it = TreesList.Begin();
-		while (it != TreesList.End())
+		xn::NodeInfo deviceInfo = *it;
+
+		XnBool bIsGeneratorSupported = TRUE;
+		nRetVal = IsSupportedForDevice(context, deviceInfo, &bIsGeneratorSupported);
+		XN_IS_STATUS_OK(nRetVal);
+
+		if (bIsGeneratorSupported)
 		{
-			xn::NodeInfoList::Iterator curr = it;
-			it++;
-
-			xn::NodeInfo node = *curr;
-
-			// take sensor node
-			xn::NodeInfo sensorNode = *node.GetNeededNodes().Begin();
-
-			XnBool bIsLowBand;
-			nRetVal = XnSensorIO::IsSensorLowBandwidth(sensorNode.GetCreationInfo(), &bIsLowBand);
+			xn::NodeInfoList neededNodes;
+			nRetVal = neededNodes.AddNode(deviceInfo);
 			XN_IS_STATUS_OK(nRetVal);
 
-			if (bIsLowBand)
-			{
-				// sensor is low band
-				nRetVal = TreesList.Remove(curr);
-				XN_IS_STATUS_OK(nRetVal);
-			}
+			nRetVal = TreesList.Add(Description, NULL, &neededNodes);
+			XN_IS_STATUS_OK(nRetVal);
 		}
+	}
 
-		if (TreesList.IsEmpty())
-		{
-			return XN_STATUS_NO_NODE_PRESENT;
-		}
+	if (TreesList.IsEmpty())
+	{
+		return XN_STATUS_NO_NODE_PRESENT;
 	}
 	
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnExportedSensorGenerator::Create(xn::Context& context, const XnChar* strInstanceName, const XnChar* strCreationInfo, xn::NodeInfoList* pNeededTrees, const XnChar* strConfigurationDir, xn::ModuleProductionNode** ppInstance)
+XnStatus XnExportedSensorGenerator::Create(xn::Context& context, const XnChar* strInstanceName, const XnChar* /*strCreationInfo*/, xn::NodeInfoList* pNeededTrees, const XnChar* /*strConfigurationDir*/, xn::ModuleProductionNode** ppInstance)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
@@ -153,3 +154,55 @@ void XnExportedSensorGenerator::Destroy(xn::ModuleProductionNode* pInstance)
 	XN_DELETE(pGenerator);
 }
 
+XnStatus XnExportedSensorGenerator::IsSupportedForDevice(xn::Context& context, xn::NodeInfo& sensorInfo, XnBool* pbSupported)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	*pbSupported = FALSE;
+
+	// first of all, make sure there isn't already a generator of that type from this device (not supported)
+	// Do this by searching in OpenNI
+	xn::Device sensor;
+	nRetVal = sensorInfo.GetInstance(sensor);
+	XN_IS_STATUS_OK(nRetVal);
+
+	if (sensor.IsValid())
+	{
+		xn::NodeInfoList existingGenerators;
+		nRetVal = context.EnumerateExistingNodes(existingGenerators, m_Type);
+		XN_IS_STATUS_OK(nRetVal);
+
+		// now leave only the ones needing our device
+		xn::Query query;
+		nRetVal = query.AddNeededNode(sensorInfo.GetInstanceName());
+		XN_IS_STATUS_OK(nRetVal);
+
+		nRetVal = existingGenerators.FilterList(context, query);
+		XN_IS_STATUS_OK(nRetVal);
+
+		// if there's anything left, then this device already has that generator
+		if (!existingGenerators.IsEmpty())
+		{
+			*pbSupported = FALSE;
+			return XN_STATUS_OK;
+		}
+	}
+
+	// now, check if this is a low-bandwidth device
+	if (!m_bIsAvailableInLowBand)
+	{
+		XnBool bIsLowBand;
+		nRetVal = XnSensorIO::IsSensorLowBandwidth(sensorInfo.GetCreationInfo(), &bIsLowBand);
+		XN_IS_STATUS_OK(nRetVal);
+
+		if (bIsLowBand)
+		{
+			*pbSupported = FALSE;
+			return XN_STATUS_OK;
+		}
+	}
+
+	*pbSupported = TRUE;
+
+	return (XN_STATUS_OK);
+}

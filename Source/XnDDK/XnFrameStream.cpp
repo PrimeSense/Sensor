@@ -203,19 +203,6 @@ XnStatus XnFrameStream::ReadImpl(XnStreamData* pStreamOutput)
 	return XN_STATUS_OK;
 }
 
-XnStatus XnFrameStream::HandleNoNewData(XnStreamData* pStreamOutput)
-{
-/*	// No new data, but if triple buffer was reallocated, we want the user buffer to be replaced
-	// (so that it has a buffer with a size that matches what he expects, even if no new data in it)
-	if (m_bTripleBufferReallocated && !pStreamOutput->pInternal->bAllocated)
-	{
-		XnFrameBuffer* pStableBuffer = m_pBufferManager->ReadLastStableBuffer();
-		pStreamOutput->pData = (void*)pStableBuffer->DataBuf.GetData();
-	}
-*/
-	return XN_STATUS_OK;
-}
-
 XnStatus XnFrameStream::GetLastRawFrame(XnDynamicSizeBuffer* pBuffer)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
@@ -226,25 +213,25 @@ XnStatus XnFrameStream::GetLastRawFrame(XnDynamicSizeBuffer* pBuffer)
 	return (XN_STATUS_OK);
 }
 
-XnStatus XN_CALLBACK_TYPE XnFrameStream::SetFPSCallback(XnActualIntProperty* pSenser, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnFrameStream::SetFPSCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnFrameStream* pThis = (XnFrameStream*)pCookie;
 	return pThis->SetFPS((XnUInt32)nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnFrameStream::RequiredSizeChangedCallback(const XnProperty* pSenser, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnFrameStream::RequiredSizeChangedCallback(const XnProperty* /*pSender*/, void* pCookie)
 {
 	XnFrameStream* pThis = (XnFrameStream*)pCookie;
 	return pThis->OnRequiredSizeChanging();
 }
 
-void XN_CALLBACK_TYPE XnFrameStream::OnTripleBufferNewData(XnFrameBufferManager* pTripleBuffer, XnUInt64 nTimestamp, void* pCookie)
+void XN_CALLBACK_TYPE XnFrameStream::OnTripleBufferNewData(XnFrameBufferManager* /*pTripleBuffer*/, XnUInt64 nTimestamp, void* pCookie)
 {
 	XnFrameStream* pThis = (XnFrameStream*)pCookie;
 	pThis->NewDataAvailable(nTimestamp, pThis->m_nLastReadFrame + 1);
 }
 
-XnStatus XN_CALLBACK_TYPE XnFrameStream::GetLastRawFrameCallback(const XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnFrameStream::GetLastRawFrameCallback(const XnGeneralProperty* /*pSender*/, const XnGeneralBuffer& gbValue, void* pCookie)
 {
 	XN_VALIDATE_GENERAL_BUFFER_TYPE(gbValue, XnDynamicSizeBuffer);
 	XnFrameStream* pThis = (XnFrameStream*)pCookie;

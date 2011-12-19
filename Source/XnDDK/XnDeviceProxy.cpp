@@ -57,8 +57,6 @@ XnHash g_StreamOutputHash;
 //---------------------------------------------------------------------------
 XN_DDK_API XnStatus XnDeviceProxyGetDeviceList(XnDeviceDefinition* aDeviceDefinitions, XnUInt32* pnCount)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	// take definitions
 	return XnDeviceManagerGetDeviceList(aDeviceDefinitions, pnCount);
 }
@@ -235,7 +233,6 @@ XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(Enumerate)(XnConnectionString* aConnec
 	XnUInt32 nDeviceCount = 0;
 	XnConnectionString* pDeviceConnectionStrings = NULL;
 	XnUInt32 nTotalCount = 0;
-	XnDeviceDescriptor* pDescriptor = NULL;
 	XnChar csConnectionStringPrefix[XN_DEVICE_MAX_STRING_LENGTH];
 	XnUInt32 nBytesWritten = 0;
 
@@ -282,7 +279,7 @@ XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(Create)(XnDeviceHandle* pDeviceHandle,
 
 	// copy device name
 	XnChar csDeviceName[XN_DEVICE_MAX_STRING_LENGTH];
-	nRetVal = xnOSStrNCopy(csDeviceName, pDeviceConfig->cpConnectionString, pSeparator - pDeviceConfig->cpConnectionString, XN_DEVICE_MAX_STRING_LENGTH);
+	nRetVal = xnOSStrNCopy(csDeviceName, pDeviceConfig->cpConnectionString, (XnUInt32)(pSeparator - pDeviceConfig->cpConnectionString), XN_DEVICE_MAX_STRING_LENGTH);
 	XN_IS_STATUS_OK(nRetVal);
 	csDeviceName[pSeparator - pDeviceConfig->cpConnectionString] = '\0';
 

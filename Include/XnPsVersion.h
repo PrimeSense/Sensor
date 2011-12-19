@@ -33,11 +33,11 @@
 /** Xiron major version. */ 
 #define XN_PS_MAJOR_VERSION 5
 /** Xiron minor version. */ 
-#define XN_PS_MINOR_VERSION 0
+#define XN_PS_MINOR_VERSION 1
 /** Xiron maintenance version. */ 
-#define XN_PS_MAINTENANCE_VERSION 5
+#define XN_PS_MAINTENANCE_VERSION 0
 /** Xiron build version. */ 
-#define XN_PS_BUILD_VERSION 1
+#define XN_PS_BUILD_VERSION 25
 
 /** Xiron version (in brief string format): "Major.Minor.Maintenance (Build)" */ 
 #define XN_PS_BRIEF_VERSION_STRING \

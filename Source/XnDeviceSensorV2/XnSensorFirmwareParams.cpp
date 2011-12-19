@@ -289,8 +289,6 @@ XnStatus XnSensorFirmwareParams::UpdateAllProperties()
 
 XnStatus XnSensorFirmwareParams::StartTransaction()
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	if (m_bInTransaction)
 	{
 		return XN_STATUS_ERROR;
@@ -420,8 +418,6 @@ XnStatus XnSensorFirmwareParams::CommitTransactionAsBatch()
 
 XnStatus XnSensorFirmwareParams::RollbackTransaction()
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	if (!m_bInTransaction)
 	{
 		return XN_STATUS_ERROR;
@@ -656,13 +652,13 @@ XnStatus XN_CALLBACK_TYPE XnSensorFirmwareParams::SetFirmwareAudioParamCallback(
 	return pThis->SetFirmwareAudioParam(pSender, nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensorFirmwareParams::SetImageResolutionCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnSensorFirmwareParams::SetImageResolutionCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnSensorFirmwareParams* pThis = (XnSensorFirmwareParams*)pCookie;
 	return pThis->SetImageResolution(nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensorFirmwareParams::SetImageFormatCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnSensorFirmwareParams::SetImageFormatCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnSensorFirmwareParams* pThis = (XnSensorFirmwareParams*)pCookie;
 	return pThis->SetImageFormat(nValue);
@@ -674,7 +670,7 @@ XnStatus XN_CALLBACK_TYPE XnSensorFirmwareParams::SetStreamModeCallback(XnActual
 	return pThis->SetStreamMode(pSender, nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensorFirmwareParams::ReferenceResolutionPropertyValueChanged(const XnProperty* pSender, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnSensorFirmwareParams::ReferenceResolutionPropertyValueChanged(const XnProperty* /*pSender*/, void* pCookie)
 {
 	XnSensorFirmwareParams* pThis = (XnSensorFirmwareParams*)pCookie;
 	return pThis->RecalculateReferenceResolution();

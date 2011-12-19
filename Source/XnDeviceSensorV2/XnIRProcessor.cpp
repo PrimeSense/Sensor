@@ -130,12 +130,12 @@ XnStatus XnIRProcessor::Unpack10to16(const XnUInt8* pcInput, const XnUInt32 nInp
 		pcInput++;
 	}
 
-	*pnActualRead = pcInput - pOrigInput;
+	*pnActualRead = (XnUInt32)(pcInput - pOrigInput);
 	*pnOutputSize = nNeededOutput;
 	return XN_STATUS_OK;
 }
 
-void XnIRProcessor::ProcessFramePacketChunk(const XnSensorProtocolResponseHeader* pHeader, const XnUChar* pData, XnUInt32 nDataOffset, XnUInt32 nDataSize)
+void XnIRProcessor::ProcessFramePacketChunk(const XnSensorProtocolResponseHeader* /*pHeader*/, const XnUChar* pData, XnUInt32 /*nDataOffset*/, XnUInt32 nDataSize)
 {
 	XN_PROFILING_START_SECTION("XnIRProcessor::ProcessFramePacketChunk")
 
@@ -198,7 +198,7 @@ void IRto888(XnUInt16* pInput, XnUInt32 nInputSize, XnUInt8* pOutput, XnUInt32* 
 
 	while (pInput != pInputEnd && pOutput < pOutputEnd)
 	{
-		*pOutput = (*pInput)>>2;
+		*pOutput = (XnUInt8)((*pInput)>>2);
 		*(pOutput+1) = *pOutput;
 		*(pOutput+2) = *pOutput;
 
@@ -206,7 +206,7 @@ void IRto888(XnUInt16* pInput, XnUInt32 nInputSize, XnUInt8* pOutput, XnUInt32* 
 		pInput++;
 	}
 
-	*pnOutputSize = pOutput - pOutputOrig;
+	*pnOutputSize = (XnUInt32)(pOutput - pOutputOrig);
 }
 
 XnUInt32 XnIRProcessor::CalculateExpectedSize()

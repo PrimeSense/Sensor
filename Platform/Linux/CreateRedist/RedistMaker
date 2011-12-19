@@ -14,17 +14,13 @@ function calc_jobs_number() {
 
 if [ $# -gt 1 ]
 then
-	if [ $# -lt 3 ] 
-	then
-		echo "Usaga: $0 [ PLATFORM CXX STAGING_DIR ]"
-		exit 1
-	fi
-	
+	echo "Usaga: $0 [PLATFORM]"
+	exit 1
+fi
+
+if [ $# -eq 1 ]
+then
 	PLATFORM=$1
-	CXX_ARG=$2
-	STAGING_DIR=$3
-	
-	MAKE_ARGS="PLATFORM=$PLATFORM CXX=$CXX_ARG TARGET_SYS_ROOT=$STAGING_DIR"
 else
 	case $MACHINE_TYPE in
 	x86 | i386 | i686)
@@ -34,14 +30,13 @@ else
 	arm)
 		PLATFORM="Arm" ;;
 	*)
-		echo "Unknown platform: $MACHINE_TYPE"
+		echo "Unknown machine type: $MACHINE_TYPE"
 		exit 1
 		;;
 	esac
-
-	MAKE_ARGS="PLATFORM=$PLATFORM"
 fi
-MAKE_ARGS="$MAKE_ARGS -j$(calc_jobs_number)"
+
+export PLATFORM
 
 if [ "$OS_TYPE" == "Darwin" ]; then
 	TAR_TARGET="MacOSX"
@@ -71,8 +66,8 @@ rm -rf ../$REDIST_DIR
 
 # Build Engine
 echo "Building..."
-make $MAKE_ARGS -C ../Build clean > /dev/null
-make $MAKE_ARGS -C ../Build
+make -C ../Build clean > /dev/null
+make -j$(calc_jobs_number) -C ../Build
 
 # create redist folder structure
 echo "Creating redist folder..."

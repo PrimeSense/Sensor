@@ -38,20 +38,21 @@
 class XnServerLogger
 {
 public:
-	inline XnServerLogger() : m_dump(XN_DUMP_CLOSED)
+	inline XnServerLogger() : m_dump(NULL)
 	{
-		xnDumpInit(&m_dump, XN_MASK_SENSOR_SERVER_COMM_DUMP, "TS,Type,Size,Client\n", "%s.csv", XN_MASK_SENSOR_SERVER_COMM_DUMP);
+		m_dump = xnDumpFileOpen(XN_MASK_SENSOR_SERVER_COMM_DUMP, "%s.csv", XN_MASK_SENSOR_SERVER_COMM_DUMP);
+		xnDumpFileWriteString(m_dump, "TS,Type,Size,Client\n");
 	}
 
 	inline void DumpMessage(const XnChar* strType, XnUInt32 nSize = 0, XnUInt32 nClientID = 0, const XnChar* strComment = "")
 	{
 		XnUInt64 nNow;
 		xnOSGetHighResTimeStamp(&nNow);
-		xnDumpWriteString(m_dump, "%llu,%s,%d,%d,%s\n", nNow, strType, nSize, nClientID, strComment);
+		xnDumpFileWriteString(m_dump, "%llu,%s,%d,%d,%s\n", nNow, strType, nSize, nClientID, strComment);
 	}
 
 private:
-	XnDump m_dump;
+	XnDumpFile* m_dump;
 };
 
 #endif // __XN_SERVER_LOGGER_H__

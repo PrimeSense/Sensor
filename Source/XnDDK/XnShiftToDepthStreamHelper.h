@@ -28,10 +28,10 @@
 class XN_DDK_CPP_API XnShiftToDepthStreamHelper
 {
 public:
-	XnShiftToDepthStreamHelper(XnDeviceModule* pModule);
+	XnShiftToDepthStreamHelper();
 	virtual ~XnShiftToDepthStreamHelper();
 
-	XnStatus Init();
+	XnStatus Init(XnDeviceModule* pModule);
 	XnStatus Free();
 
 	inline XnDepthPixel* GetShiftToDepthTable() const { return m_ShiftToDepthTables.pShiftToDepthTable; }

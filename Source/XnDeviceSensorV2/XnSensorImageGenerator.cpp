@@ -46,7 +46,7 @@ XnBool XnSensorImageGenerator::IsCapabilitySupported(const XnChar* strCapability
 {
 	return 
 		(GetGeneralIntInterface(strCapabilityName) != NULL ||
-		strcmp(strCapabilityName, XN_CAPABILITY_ANTI_FILCKER) == 0 ||
+		strcmp(strCapabilityName, XN_CAPABILITY_ANTI_FLICKER) == 0 ||
 		XnSensorMapGenerator::IsCapabilitySupported(strCapabilityName));
 }
 
@@ -101,7 +101,7 @@ XnUInt32 XnSensorImageGenerator::FindSupportedInputFormat(XnUInt32* anAllowedInp
 	{
 		if (anAllowedInputFormats[i] == nCurrentInputFormat)
 		{
-			return nCurrentInputFormat;
+			return (XnUInt32)nCurrentInputFormat;
 		}
 	}
 
@@ -385,7 +385,7 @@ XnStatus XnSensorImageGenerator::RegisterToValueChange( const XnChar* strCap, Xn
 	return RegisterToProps(handler, pCookie, hCallback, strProps);
 }
 
-void XnSensorImageGenerator::UnregisterFromValueChange( const XnChar* strCap, XnCallbackHandle hCallback )
+void XnSensorImageGenerator::UnregisterFromValueChange( const XnChar* /*strCap*/, XnCallbackHandle hCallback )
 {
 	UnregisterFromProps(hCallback);
 }
@@ -421,83 +421,50 @@ void XnSensorImageGenerator::UnregisterFromPowerLineFrequencyChange( XnCallbackH
 //---------------------------------------------------------------------------
 // XnExportedSensorImageGenerator class
 //---------------------------------------------------------------------------
-XN_DECLARE_STRINGS_HASH(XnBool, XnStringToBoolHash);
-
 XnExportedSensorImageGenerator::XnExportedSensorImageGenerator() :
 	XnExportedSensorGenerator(XN_NODE_TYPE_IMAGE, XN_STREAM_TYPE_IMAGE, FALSE)
 {}
 
-XnStatus XnExportedSensorImageGenerator::EnumerateProductionTrees(xn::Context& context, xn::NodeInfoList& TreesList, xn::EnumerationErrors* pErrors)
+XnStatus XnExportedSensorImageGenerator::IsSupportedForDevice(xn::Context& context, xn::NodeInfo& sensorInfo, XnBool* pbSupported)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-	
-	nRetVal = XnExportedSensorGenerator::EnumerateProductionTrees(context, TreesList, pErrors);
+
+	nRetVal = XnExportedSensorGenerator::IsSupportedForDevice(context, sensorInfo, pbSupported);
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnStringToBoolHash Devices;
-
-	// make sure device has image CMOS
-	xn::NodeInfoList::Iterator it = TreesList.Begin();
-	while (it != TreesList.End())
+	if (*pbSupported == FALSE)
 	{
-		xn::NodeInfoList::Iterator curr = it;
-		it++;
-
-		xn::NodeInfo node = *curr;
-
-		// take sensor node
-		xn::NodeInfo sensorNode = *node.GetNeededNodes().Begin();
-
-		XnBool bHasImageCMOS = TRUE;
-
-		if (XN_STATUS_OK != Devices.Get(sensorNode.GetCreationInfo(), bHasImageCMOS))
-		{
-			// wasn't checked yet. check it now
-			xn::Device sensor;
-			nRetVal = sensorNode.GetInstance(sensor);
-			XN_IS_STATUS_OK(nRetVal);
-
-			XnBool bShouldCreated = (!sensor.IsValid());
-
-			if (bShouldCreated)
-			{
-				nRetVal = context.CreateProductionTree(sensorNode, sensor);
-				XN_IS_STATUS_OK(nRetVal);
-			}
-
-			// This is an ugly patch to find out if this sensor has an image CMOS. It will be fixed
-			// in future firmwares so we can just ask.
-			XnCmosBlankingUnits units;
-			units.nCmosID = XN_CMOS_TYPE_IMAGE;
-			nRetVal = sensor.GetGeneralProperty(XN_MODULE_PROPERTY_CMOS_BLANKING_UNITS, sizeof(units), &units);
-			if (nRetVal != XN_STATUS_OK || units.nUnits == 0)
-			{
-				// Failed. this means no image CMOS
-				bHasImageCMOS = FALSE;
-			}
-
-			if (bShouldCreated)
-			{
-				sensor.Release();
-			}
-
-			// add to checked list
-			Devices.Set(sensorNode.GetCreationInfo(), bHasImageCMOS);
-		}
-
-		if (!bHasImageCMOS)
-		{
-			// remove it from enumeration
-			nRetVal = TreesList.Remove(curr);
-			XN_IS_STATUS_OK(nRetVal);
-		}
+		return XN_STATUS_OK;
 	}
 
-	if (TreesList.IsEmpty())
+	xn::Device sensor;
+	nRetVal = sensorInfo.GetInstance(sensor);
+	XN_IS_STATUS_OK(nRetVal);
+
+	XnBool bShouldBeCreated = (!sensor.IsValid());
+
+	if (bShouldBeCreated)
 	{
-		return XN_STATUS_NO_NODE_PRESENT;
+		nRetVal = context.CreateProductionTree(sensorInfo, sensor);
+		XN_IS_STATUS_OK(nRetVal);
 	}
-	
+
+	// This is an ugly patch to find out if this sensor has an image CMOS. It will be fixed
+	// in future firmwares so we can just ask.
+	XnCmosBlankingUnits units;
+	units.nCmosID = XN_CMOS_TYPE_IMAGE;
+	nRetVal = sensor.GetGeneralProperty(XN_MODULE_PROPERTY_CMOS_BLANKING_UNITS, sizeof(units), &units);
+	if (nRetVal != XN_STATUS_OK || units.nUnits == 0)
+	{
+		// Failed. this means no image CMOS
+		*pbSupported = FALSE;
+	}
+
+	if (bShouldBeCreated)
+	{
+		sensor.Release();
+	}
+
 	return (XN_STATUS_OK);
 }
 

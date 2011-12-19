@@ -61,12 +61,12 @@ void XnStreamDevice::DestroyImpl(XnBool bHasVTable)
 	}
 }
 
-XnStatus XnStreamDevice::Seek(XnUInt64 nTimestamp)
+XnStatus XnStreamDevice::Seek(XnUInt64 /*nTimestamp*/)
 {
 	return XN_STATUS_IO_DEVICE_FUNCTION_NOT_SUPPORTED;
 }
 
-XnStatus XnStreamDevice::SeekFrame(XnUInt32 nFrameID)
+XnStatus XnStreamDevice::SeekFrame(XnUInt32 /*nFrameID*/)
 {
 	return XN_STATUS_IO_DEVICE_FUNCTION_NOT_SUPPORTED;
 }

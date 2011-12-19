@@ -67,7 +67,7 @@ public:
 	inline void Lock() { xnOSEnterCriticalSection(&m_hLock); }
 	inline void Unlock() { xnOSLeaveCriticalSection(&m_hLock); }
 
-	inline XnDump& Dump() { return m_dump; }
+	inline XnDumpFile* Dump() { return m_dump; }
 
 protected:
 	XN_DECLARE_LIST(XnBufferInPool*, XnBuffersList);
@@ -83,7 +83,7 @@ protected:
 	XnBuffersList m_AllBuffers;
 	XnBuffersList m_FreeBuffers; // a list of available buffers
 	XN_CRITICAL_SECTION_HANDLE m_hLock;
-	XnDump m_dump;
+	XnDumpFile* m_dump;
 };
 
 #endif // __XN_BUFFER_POOL_H__

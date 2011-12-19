@@ -52,7 +52,7 @@ XnUInt8 Gamma[256] = {
 void BayerUpdateGamma(float fGammaCorr)
 {
 	for(XnUInt32 iG = 0; iG < 256;++iG)
-		Gamma[iG] = XnUInt32(255*pow(XnDouble(iG)/255.0,(XnDouble)fGammaCorr) + 0.5);
+		Gamma[iG] = XnUInt8(255*pow(XnDouble(iG)/255.0,(XnDouble)fGammaCorr) + 0.5);
 }
 
 static inline void WriteRGB(XnUInt8 *pBuffer, XnUInt8 nRed, XnUInt8 nGreen, XnUInt8 nBlue)
@@ -62,7 +62,7 @@ static inline void WriteRGB(XnUInt8 *pBuffer, XnUInt8 nRed, XnUInt8 nGreen, XnUI
 	pBuffer[BAYER_BLUE] = Gamma[nBlue];
 }
 
-void Bayer2RGB888(const XnUInt8* pBayerImage, XnUInt8* pRGBImage, XnUInt32 nXRes, XnUInt32 nYRes, XnUInt32 nDownSampleStep, XnUInt32 nBadPixels)
+void Bayer2RGB888(const XnUInt8* pBayerImage, XnUInt8* pRGBImage, XnUInt32 nXRes, XnUInt32 nYRes, XnUInt32 /*nDownSampleStep*/, XnUInt32 nBadPixels)
 {
 	XnUInt8 nRed;
 	XnUInt8 nGreen;

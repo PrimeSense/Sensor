@@ -42,8 +42,8 @@ public:
 	virtual XnStatus Init();
 	virtual XnStatus Free();
 
-	XnStatus Tell(XnUInt32* pnOffset);
-	XnStatus Seek(XnUInt32 nOffset);
+	XnStatus Tell(XnUInt64* pnOffset);
+	XnStatus Seek(XnUInt64 nOffset);
 
 private:
 	const XnChar* m_pcsFileName;

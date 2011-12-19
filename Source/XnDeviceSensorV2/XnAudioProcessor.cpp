@@ -32,14 +32,14 @@ XnAudioProcessor::XnAudioProcessor(XnSensorAudioStream* pStream, XnSensorStreamH
 	XnWholePacketProcessor(pHelper->GetPrivateData(), pStream->GetType(), nInputPacketSize),
 	m_pStream(pStream),
 	m_pHelper(pHelper),
-	m_AudioInDump(XN_DUMP_CLOSED)
+	m_AudioInDump(NULL)
 {
-	xnDumpInit(&m_AudioInDump, XN_DUMP_AUDIO_IN, NULL, "AudioIn.pcm");
+	m_AudioInDump = xnDumpFileOpen(XN_DUMP_AUDIO_IN, "AudioIn.pcm");
 }
 
 XnAudioProcessor::~XnAudioProcessor()
 {
-	xnDumpClose(&m_AudioInDump);
+	xnDumpFileClose(m_AudioInDump);
 	GetStream()->NumberOfChannelsProperty().OnChangeEvent().Unregister(m_hNumChannelsCallback);
 }
 
@@ -60,8 +60,6 @@ XnStatus XnAudioProcessor::Init()
 
 void XnAudioProcessor::ProcessWholePacket(const XnSensorProtocolResponseHeader* pHeader, const XnUChar* pData)
 {
-	XnInt32 nAvailableBytes = 0;
-
 	xnOSEnterCriticalSection(&m_pDevicePrivateData->hAudioBufferCriticalSection);
 
 	// take write packet
@@ -96,7 +94,7 @@ void XnAudioProcessor::ProcessWholePacket(const XnSensorProtocolResponseHeader* 
 		XnUInt64 nSysTime;
 		xnOSGetTimeStamp(&nSysTime);
 
-		xnDumpWriteString(m_pDevicePrivateData->BandwidthDump, "%llu,%s,%d,%d\n",
+		xnDumpFileWriteString(m_pDevicePrivateData->BandwidthDump, "%llu,%s,%d,%d\n",
 			nSysTime, "Audio", -1, m_nBytesReceived);
 
 		m_nBytesReceived = 0;
@@ -113,7 +111,7 @@ void XnAudioProcessor::ProcessWholePacket(const XnSensorProtocolResponseHeader* 
 
 	xnOSLeaveCriticalSection(&m_pDevicePrivateData->hAudioBufferCriticalSection);
 
-	xnDumpWriteBuffer(m_AudioInDump, pData, pHeader->nBufSize);
+	xnDumpFileWriteBuffer(m_AudioInDump, pData, pHeader->nBufSize);
 
 	if (m_pDevicePrivateData->pAudioCallback != NULL)
 	{
@@ -126,7 +124,7 @@ void XnAudioProcessor::CalcDeleteChannel()
 	m_bDeleteChannel = (m_pHelper->GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_2 && GetStream()->GetNumberOfChannels() == 1);
 }
 
-XnStatus XnAudioProcessor::DeleteChannelChangedCallback(const XnProperty* pSender, void* pCookie)
+XnStatus XnAudioProcessor::DeleteChannelChangedCallback(const XnProperty* /*pSender*/, void* pCookie)
 {
 	XnAudioProcessor* pThis = (XnAudioProcessor*)pCookie;
 	pThis->CalcDeleteChannel();

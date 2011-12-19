@@ -71,9 +71,9 @@ protected:
 	void GetFirmwareStreamConfig(XnResolutions* pnRes, XnUInt32* pnFPS) { *pnRes = XN_RESOLUTION_CUSTOM; *pnFPS = 0; }
 	XnSharedMemoryBufferPool* GetSharedMemoryBuffer() { return NULL; }
 
-	XnStatus WriteImpl(XnStreamData* pStreamData) { return XN_STATUS_DEVICE_UNSUPPORTED_MODE; }
+	XnStatus WriteImpl(XnStreamData* /*pStreamData*/) { return XN_STATUS_DEVICE_UNSUPPORTED_MODE; }
 	XnStatus ReadImpl(XnStreamData* pStreamOutput);
-	XnStatus Mirror(XnStreamData* pStreamOutput) const { return XN_STATUS_OK; }
+	XnStatus Mirror(XnStreamData* /*pStreamOutput*/) const { return XN_STATUS_OK; }
 
 	//---------------------------------------------------------------------------
 	// Setters

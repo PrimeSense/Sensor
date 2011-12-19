@@ -69,7 +69,7 @@ XnStatus XnSensorClientStream::Open()
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	nRetVal = m_pClient->m_pOutgoingPacker->WriteCustomData(XN_SENSOR_SERVER_MESSAGE_OPEN_STREAM, GetName(), strlen(GetName()) + 1);
+	nRetVal = m_pClient->m_pOutgoingPacker->WriteCustomData(XN_SENSOR_SERVER_MESSAGE_OPEN_STREAM, GetName(), (XnUInt32)strlen(GetName()) + 1);
 	XN_IS_STATUS_OK(nRetVal);
 
 	// wait for reply
@@ -87,7 +87,7 @@ XnStatus XnSensorClientStream::Close()
 	XnStatus nRetVal = XN_STATUS_OK;
 
 	// read data from server
-	nRetVal = m_pClient->m_pOutgoingPacker->WriteCustomData(XN_SENSOR_SERVER_MESSAGE_CLOSE_STREAM, GetName(), strlen(GetName()) + 1);
+	nRetVal = m_pClient->m_pOutgoingPacker->WriteCustomData(XN_SENSOR_SERVER_MESSAGE_CLOSE_STREAM, GetName(), (XnUInt32)strlen(GetName()) + 1);
 	XN_IS_STATUS_OK(nRetVal);
 
 	// wait for reply
@@ -102,8 +102,6 @@ XnStatus XnSensorClientStream::Close()
 
 XnStatus XnSensorClientStream::Free()
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	if (m_hSharedMemory != NULL)
 	{
 		xnOSCloseSharedMemory(m_hSharedMemory);
@@ -131,7 +129,7 @@ XnStatus XnSensorClientFrameStream::ReadImpl(XnStreamData* pStreamOutput)
 	XnStatus nRetVal = XN_STATUS_OK;
 
 	// read data from server
-	nRetVal = m_pClient->m_pOutgoingPacker->WriteCustomData(XN_SENSOR_SERVER_MESSAGE_READ_STREAM, pStreamOutput->StreamName, strlen(pStreamOutput->StreamName) + 1);
+	nRetVal = m_pClient->m_pOutgoingPacker->WriteCustomData(XN_SENSOR_SERVER_MESSAGE_READ_STREAM, pStreamOutput->StreamName, (XnUInt32)strlen(pStreamOutput->StreamName) + 1);
 	XN_IS_STATUS_OK(nRetVal);
 
 	// wait for reply
@@ -176,7 +174,8 @@ XnSensorClientAudioStream::XnSensorClientAudioStream(XnSensorClient* pClient, co
 	m_pBuffer(NULL),
 	m_nLastReadIndex(0),
 	m_hLock(NULL),
-	m_nFrameID(0)
+	m_nFrameID(0),
+	m_pTimestamps(NULL)
 {}
 
 XnSensorClientAudioStream::~XnSensorClientAudioStream()
@@ -225,7 +224,7 @@ XnStatus XnSensorClientAudioStream::OpenSharedMemory()
 	return (XN_STATUS_OK);
 }
 
-void XnSensorClientAudioStream::NewDataAvailable(XnUInt64 nTimestamp, XnUInt32 nFrameID)
+void XnSensorClientAudioStream::NewDataAvailable(XnUInt64 /*nTimestamp*/, XnUInt32 /*nFrameID*/)
 {
 	// if a read is in progress, wait for it to complete
 	XnAutoCSLocker locker(m_hLock);
@@ -239,8 +238,6 @@ void XnSensorClientAudioStream::NewDataAvailable(XnUInt64 nTimestamp, XnUInt32 n
 
 XnStatus XnSensorClientAudioStream::ReadImpl(XnStreamData* pStreamOutput)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	pStreamOutput->nDataSize = 0;
 
 	// take last write index (note: this is taken from shared memory)

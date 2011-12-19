@@ -101,7 +101,6 @@ XnStatus XnPixelStream::AddSupportedModes(XnCmosPreset* aPresets, XnUInt32 nCoun
 	XN_IS_STATUS_OK(nRetVal);
 
 	// update our general property
-	XnCmosPreset* aAllPresets = m_supportedModesData.GetData();
 	XnUInt32 nAllPresetsCount = m_supportedModesData.GetSize();
 
 	nRetVal = m_SupportedModesCount.UnsafeUpdateValue(nAllPresetsCount);
@@ -112,8 +111,6 @@ XnStatus XnPixelStream::AddSupportedModes(XnCmosPreset* aPresets, XnUInt32 nCoun
 
 XnStatus XnPixelStream::ValidateSupportedMode(const XnCmosPreset& preset)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	for (XnUInt32 i = 0; i < m_supportedModesData.GetSize(); ++i)
 	{
 		if (preset.nFormat == m_supportedModesData[i].nFormat &&
@@ -203,8 +200,6 @@ XnStatus XnPixelStream::SetCropping(const XnCropping* pCropping)
 
 XnStatus XnPixelStream::ValidateCropping(const XnCropping* pCropping)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	if (pCropping->bEnabled)
 	{
 		if (pCropping->nXOffset > GetXRes() ||
@@ -346,8 +341,6 @@ XnStatus XnPixelStream::Mirror(XnStreamData* pStreamOutput) const
 
 XnStatus XnPixelStream::CropImpl(XnStreamData* pStreamOutput, const XnCropping* pCropping)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	XnUChar* pPixelData = (XnUChar*)pStreamOutput->pData;
 	XnUInt32 nCurDataSize = 0;
 
@@ -366,43 +359,43 @@ XnStatus XnPixelStream::CropImpl(XnStreamData* pStreamOutput, const XnCropping* 
 	return XN_STATUS_OK;
 }
 
-XnStatus XN_CALLBACK_TYPE XnPixelStream::ResolutionValueChangedCallback(const XnProperty* pSenser, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnPixelStream::ResolutionValueChangedCallback(const XnProperty* /*pSenser*/, void* pCookie)
 {
 	XnPixelStream* pStream = (XnPixelStream*)pCookie;
 	return pStream->OnResolutionChanged();
 }
 
-XnStatus XN_CALLBACK_TYPE XnPixelStream::OutputFormatValueChangedCallback(const XnProperty* pSenser, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnPixelStream::OutputFormatValueChangedCallback(const XnProperty* /*pSenser*/, void* pCookie)
 {
 	XnPixelStream* pStream = (XnPixelStream*)pCookie;
 	return pStream->OnOutputFormatChanged();
 }
 
-XnStatus XN_CALLBACK_TYPE XnPixelStream::FixCroppingCallback(const XnProperty* pSenser, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnPixelStream::FixCroppingCallback(const XnProperty* /*pSenser*/, void* pCookie)
 {
 	XnPixelStream* pStream = (XnPixelStream*)pCookie;
 	return pStream->FixCropping();
 }
 
-XnStatus XN_CALLBACK_TYPE XnPixelStream::SetResolutionCallback(XnActualIntProperty* pSenser, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnPixelStream::SetResolutionCallback(XnActualIntProperty* /*pSenser*/, XnUInt64 nValue, void* pCookie)
 {
 	XnPixelStream* pStream = (XnPixelStream*)pCookie;
 	return pStream->SetResolution((XnResolutions)nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnPixelStream::SetXResCallback(XnActualIntProperty* pSenser, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnPixelStream::SetXResCallback(XnActualIntProperty* /*pSenser*/, XnUInt64 nValue, void* pCookie)
 {
 	XnPixelStream* pStream = (XnPixelStream*)pCookie;
 	return pStream->SetXRes((XnUInt32)nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnPixelStream::SetYResCallback(XnActualIntProperty* pSenser, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnPixelStream::SetYResCallback(XnActualIntProperty* /*pSenser*/, XnUInt64 nValue, void* pCookie)
 {
 	XnPixelStream* pStream = (XnPixelStream*)pCookie;
 	return pStream->SetYRes((XnUInt32)nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnPixelStream::SetCroppingCallback(XnActualGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnPixelStream::SetCroppingCallback(XnActualGeneralProperty* /*pSender*/, const XnGeneralBuffer& gbValue, void* pCookie)
 {
 	XnPixelStream* pStream = (XnPixelStream*)pCookie;
 	if (gbValue.nDataSize != sizeof(XnCropping))
@@ -436,10 +429,10 @@ XnStatus XN_CALLBACK_TYPE XnPixelStream::ReadCroppingFromFileCallback(XnGeneralP
 		XN_STATUS_OK == xnOSReadIntFromINI(csINIFile, csCroppingSection, "Enabled", &bEnabled))
 	{
 		XnCropping Cropping;
-		Cropping.nXOffset = nOffsetX;
-		Cropping.nYOffset = nOffsetY;
-		Cropping.nXSize = nSizeX;
-		Cropping.nYSize = nSizeY;
+		Cropping.nXOffset = (XnUInt16)nOffsetX;
+		Cropping.nYOffset = (XnUInt16)nOffsetY;
+		Cropping.nXSize = (XnUInt16)nSizeX;
+		Cropping.nYSize = (XnUInt16)nSizeY;
 		Cropping.bEnabled = bEnabled;
 
 		// set value
@@ -450,7 +443,7 @@ XnStatus XN_CALLBACK_TYPE XnPixelStream::ReadCroppingFromFileCallback(XnGeneralP
 	return (XN_STATUS_OK);
 }
 
-XnStatus XN_CALLBACK_TYPE XnPixelStream::GetSupportedModesCallback(const XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnPixelStream::GetSupportedModesCallback(const XnGeneralProperty* /*pSender*/, const XnGeneralBuffer& gbValue, void* pCookie)
 {
 	XnPixelStream* pThis = (XnPixelStream*)pCookie;
 	if ((gbValue.nDataSize % sizeof(XnCmosPreset)) != 0)

@@ -304,8 +304,6 @@ XnStatus XnStreamWriterDevice::SetProperty(const XnChar* ModuleName, const XnCha
 
 XnStatus XnStreamWriterDevice::CreateStreamModule(const XnChar* StreamType, const XnChar* StreamName, XnDeviceModuleHolder** ppStreamHolder)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	XnStreamWriterStream* pStream;
 	XN_VALIDATE_NEW(pStream, XnStreamWriterStream, StreamType, StreamName, GetDataPacker());
 

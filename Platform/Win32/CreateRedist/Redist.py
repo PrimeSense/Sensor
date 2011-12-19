@@ -59,7 +59,7 @@ if len(sys.argv) in [4,5]:
         vc_build_type = "/Build"
     if len(sys.argv) > 4:
         if sys.argv[4] == '10':
-            VC_version = 10    
+            VC_version = 10
 
 CONFIG_XML = parse("Engine_Config.xml")
 SDK_VER = str(CONFIG_XML.getElementsByTagName("VERSION_NUMBER")[0].firstChild.data)
@@ -73,8 +73,8 @@ OUTPUT_DIR = os.path.join(ROOT_DIR, output_dir__)
 path2final = os.path.join(ROOT_DIR,final_dir__)
 SCRIPT_DIR = os.getcwd()
 
-print 'work dir of redist.py:'
-print SCRIPT_DIR
+print('work dir of redist.py:')
+print(SCRIPT_DIR)
 
 def finish_script(exit_code):
     os.chdir(SCRIPT_DIR)
@@ -135,21 +135,21 @@ if not os.path.exists(path2final):
 try:
     VS_NEED_UPGRADE = 0
     if not is_64_bit_platform:
-	MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\VisualStudio\9.0")
+        MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\VisualStudio\9.0")
     else:
-	MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Wow6432Node\Microsoft\VisualStudio\9.0")    
+        MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Wow6432Node\Microsoft\VisualStudio\9.0")
     #MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Wow6432Node\Microsoft\VisualStudio\9.0")
     MSVC_VALUES = [("InstallDir", win32con.REG_SZ)]
     VS_INST_DIR = get_reg_values(MSVC_KEY, MSVC_VALUES)[0]
 except Exception as e:
     VC_version = 10
 
-if VC_version == 10:    
+if VC_version == 10:
     VS_NEED_UPGRADE = 1
     if not is_64_bit_platform:
-	MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\VisualStudio\10.0")
+        MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\VisualStudio\10.0")
     else:
-	MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Wow6432Node\Microsoft\VisualStudio\10.0")
+        MSVC_KEY = (win32con.HKEY_LOCAL_MACHINE, r"SOFTWARE\Wow6432Node\Microsoft\VisualStudio\10.0")
     MSVC_VALUES = [("InstallDir", win32con.REG_SZ)]
     VS_INST_DIR = get_reg_values(MSVC_KEY, MSVC_VALUES)[0]
 
@@ -160,15 +160,15 @@ os.chdir(os.path.join(ROOT_DIR, "..", "Build"))
 
 out_file = os.path.join('..\\CreateRedist',output_dir__,'build.log')
 if VS_NEED_UPGRADE == 1:
-	#os.system("attrib -r * /s")	
-	res = os.system("\"" + VS_INST_DIR + "devenv\" " + "Engine.sln" + " /upgrade > " + out_file)
-	if res != 0:
-	    raise Exception("build failed!")
+        #os.system("attrib -r * /s")
+    res = os.system("\"" + VS_INST_DIR + "devenv\" " + "Engine.sln" + " /upgrade > " + out_file)
+    if res != 0:
+        raise Exception("build failed!")
 build_cmd = "\"%s\" %s /Rebuild \"release|%s\" /out %s"%(os.path.join(VS_INST_DIR,'devenv'),'Engine.sln',
     'win32' if vc_build_bits == '32' else 'x64',out_file)
 #build_cmd = "\"%s\" %s /Rebuild \"Release|x%s\""%(os.path.join(VS_INST_DIR,'devenv.exe'),'Engine.sln',
 #    '86' if vc_build_bits == '32' else '64')
-print 'building .. %s'%build_cmd
+print(('building .. %s'%build_cmd))
 #res = os.system("\"" + VS_INST_DIR + "devenv\" " + "Engine.sln" + " /build Release > ..\\CreateRedist\\Output\\build.log")
 #res = os.system(build_cmd)
 res = subprocess.call(build_cmd)
@@ -199,17 +199,17 @@ for file in os.listdir(RELEASE_DIR):
 DATA_DIR = os.path.join(ROOT_DIR, "..", "..", "..", "Data")
 for file in os.listdir(DATA_DIR):
     shutil.copy(os.path.join(DATA_DIR, file), os.path.join(REDIST_DIR, "Data"))
- 
+
 #if vc_build_bits == '64':
-#    print 'Finishing without creating the installer' 
-#    exit(0)   
+#    print 'Finishing without creating the installer'
+#    exit(0)
 # create installer
 print("Creating installer...")
 os.chdir(SCRIPT_DIR + "\\EE_NI")
 #print "* move XnLeanDeviceSensorV2.dll"
 #os.system("move /Y " + WORK_DIR + "\\Platform\\Win32\\Bin\\XnLeanDeviceSensorV2.dll \\Platform\\Win32\\Bin\\XnDeviceSensorV2.dll")
 
-print "* Set BinaryOnlyRedist=True"
+print("* Set BinaryOnlyRedist=True")
 os.system("attrib -r Includes\\EENIVariables.wxi")
 regx_replace("BinaryOnlyRedist=(.*)", "BinaryOnlyRedist=True?>", "Includes\\EENIVariables.wxi")
 
@@ -217,7 +217,7 @@ logFilename = "BuildEngine"
 
 
 
-print "* Build EE_NI.wixproj"
+print("* Build EE_NI.wixproj")
 
 wix_out_file = os.path.join(SCRIPT_DIR,output_dir__, logFilename + ".txt")
 if VS_NEED_UPGRADE == 1:
@@ -227,19 +227,19 @@ if VS_NEED_UPGRADE == 1:
 
 
 wix_build_cmd = '"%s" %s /Build "release|%s" /out %s'%(os.path.join(VS_INST_DIR,'devenv'), 'EE_NI.wixproj' ,'x86' if vc_build_bits == '32' else 'x64',
-						       wix_out_file)
-print "wix_build_cmd=%s"%wix_build_cmd
+                                                       wix_out_file)
+print(("wix_build_cmd=%s"%wix_build_cmd))
 res = subprocess.call(wix_build_cmd)
 #res = subprocess.call("\""+VS_INST_DIR + "devenv\" EE_NI.wixproj /build \"release|x86"\
-#		+"\" /out "+SCRIPT_DIR+"\\Output\\" + logFilename + ".txt",close_fds=True)
+#               +"\" /out "+SCRIPT_DIR+"\\Output\\" + logFilename + ".txt",close_fds=True)
 if res != 0:
     raise Exception("Failed creating installer!")
 
 currDir = os.getcwd()
-print currDir
+print(currDir)
 target_path = os.path.join(SCRIPT_DIR, final_dir__,"Sensor-Win-OpenSource" + str(vc_build_bits) + "-" + SDK_VER + ".msi")
 moveCmd = "move bin\\Release\\en-US\\EE_NI.msi %s"%target_path
-print moveCmd + "..."
+print((moveCmd + "..."))
 os.system(moveCmd)
 #print "* Move installers"
 #os.system("move .\\Output\\*.msi " + SCRIPT_DIR + "\\Output")

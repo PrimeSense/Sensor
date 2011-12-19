@@ -126,7 +126,7 @@ void XnImageProcessor::CalcActualRes()
 	}
 }
 
-XnStatus XnImageProcessor::ActualResChangedCallback(const XnProperty* pSender, void* pCookie)
+XnStatus XnImageProcessor::ActualResChangedCallback(const XnProperty* /*pSender*/, void* pCookie)
 {
 	XnImageProcessor* pThis = (XnImageProcessor*)pCookie;
 	pThis->CalcActualRes();

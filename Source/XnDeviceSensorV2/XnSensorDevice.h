@@ -30,6 +30,10 @@
 //---------------------------------------------------------------------------
 // Types
 //---------------------------------------------------------------------------
+// disable the "inherits via dominance" warning. This is exactly what we want.
+#pragma warning (push)
+#pragma warning (disable: 4250)
+
 class XnSensorDevice : 
 	public XnSensorProductionNode,
 	virtual public xn::ModuleDevice,
@@ -52,5 +56,7 @@ public:
 	virtual XnStatus GetVendorSpecificData(XnChar* strBuffer, XnUInt32& nBufferSize);
 	virtual XnStatus GetSerialNumber(XnChar* strBuffer, XnUInt32& nBufferSize);
 };
+
+#pragma warning (pop)
 
 #endif // __XN_SENSOR_DEVICE_H__

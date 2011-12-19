@@ -51,12 +51,13 @@ XnSensorClient::XnSensorClient() :
 	m_pOutgoingPacker(NULL),
 	m_bShouldRun(TRUE),
 	m_bConnected(TRUE),
-	m_pThis(this),
-	m_InstancePointer(XN_SENSOR_PROPERTY_INSTANCE_POINTER, &m_pThis, sizeof(m_pThis), NULL),
+	m_InstancePointer(XN_SENSOR_PROPERTY_INSTANCE_POINTER),
 	m_ErrorState(XN_MODULE_PROPERTY_ERROR_STATE, XN_STATUS_OK),
-	m_hLock(NULL)
+	m_hLock(NULL),
+	m_bAllowServerFromOtherUser(FALSE)
 {
 	strcpy(m_strConfigDir, ".");
+	m_InstancePointer.UpdateGetCallback(GetInstanceCallback, this);
 }
 
 XnSensorClient::~XnSensorClient()
@@ -86,8 +87,6 @@ XnStatus XnSensorClient::Init(const XnDeviceConfig* pDeviceConfig)
 	nRetVal = XnStreamReaderDevice::Init(pDeviceConfig);
 	XN_IS_STATUS_OK(nRetVal);
 
-	m_pThis = this;
-	
 	return (XN_STATUS_OK);
 }
 
@@ -733,7 +732,7 @@ XnStatus XnSensorClient::CreateIOStreamImpl(const XnChar *strConnectionString, X
 	}
 
 	// send server a request to open the sensor
-	nRetVal = m_pOutgoingPacker->WriteCustomData(XN_SENSOR_SERVER_MESSAGE_OPEN_SENSOR, strConnectionString, strlen(strConnectionString) + 1);
+	nRetVal = m_pOutgoingPacker->WriteCustomData(XN_SENSOR_SERVER_MESSAGE_OPEN_SENSOR, strConnectionString, (XnUInt32)strlen(strConnectionString) + 1);
 	if (nRetVal != XN_STATUS_OK)
 	{
 		XN_DELETE(pNetworkStream);
@@ -779,8 +778,6 @@ XnStatus XnSensorClient::CreateDeviceModule(XnDeviceModuleHolder** ppModuleHolde
 
 XnStatus XnSensorClient::CreateStreamModule(const XnChar* StreamType, const XnChar* StreamName, XnDeviceModuleHolder** ppStreamHolder)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	XnSensorClientStream* pStream;
 	if (strcmp(StreamType, XN_STREAM_TYPE_AUDIO) == 0)
 	{
@@ -906,5 +903,16 @@ XnStatus XnSensorClient::StartServerProcess()
 	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensorClient::GetInstanceCallback(const XnGeneralProperty* /*pSender*/, const XnGeneralBuffer& gbValue, void* pCookie)
+{
+	if (gbValue.nDataSize != sizeof(void*))
+	{
+		return XN_STATUS_DEVICE_PROPERTY_SIZE_DONT_MATCH;
+	}
+
+	*(void**)gbValue.pData = pCookie;
+	return XN_STATUS_OK;
 }
 

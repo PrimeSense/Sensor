@@ -888,7 +888,7 @@ XnStatus XnDataPacker::FixReadBCObjects()
 
 			// It is old version. Fix it.
 			// read all module names (+ modules end marker)
-			while (TRUE)
+			for (;;)
 			{
 				nRetVal = ReadNextObjectImpl();
 				XN_IS_STATUS_OK(nRetVal);
@@ -903,7 +903,7 @@ XnStatus XnDataPacker::FixReadBCObjects()
 			}
 
 			// read properties (+ properties end marker)
-			while (TRUE)
+			for (;;)
 			{
 				nRetVal = ReadNextObjectImpl();
 				XN_IS_STATUS_OK(nRetVal);
@@ -958,7 +958,7 @@ XnStatus XnDataPacker::FixReadBCObjects()
 	// move back to start
 	m_nInternalBufferReadIndex = nStartReadIndex;
 	// update size accordingly
-	pHeader->nSize = m_InternalBuffer.GetUnsafeWritePointer() - (XnUChar*)pHeader - sizeof(XnPackedDataHeader);
+	pHeader->nSize = (XnUInt32)(m_InternalBuffer.GetUnsafeWritePointer() - (XnUChar*)pHeader - sizeof(XnPackedDataHeader));
 	// now place header back at root object
 	m_pCurrentHeader = pHeader;
 
@@ -1029,7 +1029,7 @@ XnStatus XnDataPacker::WriteStringToBuffer(const XnChar* csString)
 	XnStatus nRetVal = XN_STATUS_OK;
 
 	// get length (including null termination)
-	XnUInt32 nLength = strlen(csString) + 1;
+	XnUInt32 nLength = (XnUInt32)strlen(csString) + 1;
 	if (nLength >= XN_DEVICE_MAX_STRING_LENGTH)
 		return (XN_STATUS_INTERNAL_BUFFER_TOO_SMALL);
 
@@ -1073,7 +1073,7 @@ void XnDataPacker::StartWritingIntenalObject(XnUInt32 nType)
 
 void XnDataPacker::EndWritingInternalObject()
 {
-	m_pCurrentHeader->nSize = m_InternalBuffer.GetUnsafeWritePointer() - (XnUChar*)m_pCurrentHeader - sizeof(XnPackedDataHeader);
+	m_pCurrentHeader->nSize = (XnUInt32)(m_InternalBuffer.GetUnsafeWritePointer() - (XnUChar*)m_pCurrentHeader - sizeof(XnPackedDataHeader));
 }
 
 XnStatus XnDataPacker::FlushInternalBuffer()

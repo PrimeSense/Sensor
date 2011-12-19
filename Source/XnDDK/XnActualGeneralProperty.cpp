@@ -59,12 +59,12 @@ void XnActualGeneralProperty::SetAsBufferOwner(XnBool bOwner)
 	m_bOwner = bOwner;
 }
 
-XnStatus XnActualGeneralProperty::SetCallback(XnActualGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie)
+XnStatus XnActualGeneralProperty::SetCallback(XnActualGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* /*pCookie*/)
 {
 	return pSender->UnsafeUpdateValue(gbValue);
 }
 
-XnStatus XnActualGeneralProperty::GetCallback(const XnActualGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie)
+XnStatus XnActualGeneralProperty::GetCallback(const XnActualGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* /*pCookie*/)
 {
 	if (gbValue.nDataSize != pSender->GetValue().nDataSize)
 	{

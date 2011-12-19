@@ -35,6 +35,10 @@ class XnMultiPropChangedHandler; // forward declaration
 //---------------------------------------------------------------------------
 // Types
 //---------------------------------------------------------------------------
+// disable the "inherits via dominance" warning. This is exactly what we want.
+#pragma warning (push)
+#pragma warning (disable: 4250)
+
 class XnSensorProductionNode : 
 	virtual public xn::ModuleProductionNode,
 	virtual public xn::ModuleLockAwareInterface,
@@ -106,5 +110,7 @@ protected:
 	XnCallbackHandle m_hStringProps;
 	XnCallbackHandle m_hGenProps;
 };
+
+#pragma warning (pop)
 
 #endif // __XN_SENSOR_PRODUCTION_NODE_H__

@@ -76,7 +76,7 @@ XnStatus XnGeneralProperty::ReadValueFromFile(const XnChar* csINIFile, const XnC
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnGeneralProperty::AddToPropertySet(XnPropertySet* pSet)
+XnStatus XnGeneralProperty::AddToPropertySet(XnPropertySet* /*pSet*/)
 {
 	return (XN_STATUS_ERROR);
 }

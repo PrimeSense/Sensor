@@ -82,7 +82,7 @@ XnStatus XnDeviceFileWriter::DestroyStream(const XnChar* StreamName)
 	nRetVal = FindStream(StreamName, &pStream);
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnUInt32 nCurPos;
+	XnUInt64 nCurPos;
 	nRetVal = GetIOStream()->Tell(&nCurPos);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -195,8 +195,6 @@ XnStatus XnDeviceFileWriter::StartTimer()
 
 XnStatus XnDeviceFileWriter::CreateStreamModule(const XnChar* StreamType, const XnChar* StreamName, XnDeviceModuleHolder** ppStreamHolder)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	XnFileWriterStream* pStream;
 	XN_VALIDATE_NEW(pStream, XnFileWriterStream, StreamType, StreamName, GetDataPacker());
 
@@ -225,7 +223,7 @@ XnStatus XnDeviceFileWriter::CreateIOStreamImpl(const XnChar* strConnectionStrin
 	XN_VALIDATE_NEW_AND_INIT(pStream, XnIOFileStream, strConnectionString, XN_OS_FILE_WRITE | XN_OS_FILE_TRUNCATE);
 
 	// write down the magic
-	nRetVal = pStream->WriteData((const XnUChar*)XN_DEVICE_FILE_MAGIC_V4, strlen(XN_DEVICE_FILE_MAGIC_V4));
+	nRetVal = pStream->WriteData((const XnUChar*)XN_DEVICE_FILE_MAGIC_V4, (XnUInt32)strlen(XN_DEVICE_FILE_MAGIC_V4));
 	if (nRetVal != XN_STATUS_OK)
 	{
 		XN_DELETE(pStream);

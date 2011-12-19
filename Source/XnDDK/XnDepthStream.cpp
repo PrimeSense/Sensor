@@ -49,8 +49,7 @@ XnDepthStream::XnDepthStream(const XnChar* csName, XnBool bAllowCustomResolution
 	m_EmitterDCmosDistance(XN_STREAM_PROPERTY_EMITTER_DCMOS_DISTANCE),
 	m_GetDCmosRCmosDistance(XN_STREAM_PROPERTY_DCMOS_RCMOS_DISTANCE),
 	m_NoDepthValue(XN_STREAM_PROPERTY_NO_SAMPLE),
-	m_ShadowValue(XN_STREAM_PROPERTY_SHADOW),
-	m_S2DHelper(this)
+	m_ShadowValue(XN_STREAM_PROPERTY_SHADOW)
 {
 	m_MinDepth.UpdateSetCallback(SetMinDepthCallback, this);
 	m_MaxDepth.UpdateSetCallback(SetMaxDepthCallback, this);
@@ -69,7 +68,7 @@ XnStatus XnDepthStream::Init()
 		&m_MaxShift, &m_ParamCoefficient, &m_ShiftScale, &m_ZeroPlaneDistance, &m_ZeroPlanePixelSize,
 		&m_EmitterDCmosDistance, &m_GetDCmosRCmosDistance, &m_NoDepthValue, &m_ShadowValue, &m_DeviceMaxDepth);
 
-	nRetVal = m_S2DHelper.Init();
+	nRetVal = m_S2DHelper.Init(this);
 	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);
@@ -113,9 +112,7 @@ XnStatus XnDepthStream::SetMaxDepth(XnDepthPixel nMaxDepth)
 
 XnStatus XnDepthStream::ValidateDepthValue(XnDepthPixel nDepth)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
-	if (nDepth < 0 || nDepth > GetDeviceMaxDepth())
+	if (nDepth > GetDeviceMaxDepth())
 	{
 		return XN_STATUS_DEVICE_BAD_PARAM;
 	}
@@ -154,19 +151,19 @@ XnStatus XnDepthStream::OnOutputFormatChanged()
 	return (XN_STATUS_OK);
 }
 
-XnStatus XN_CALLBACK_TYPE XnDepthStream::SetMinDepthCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnDepthStream::SetMinDepthCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnDepthStream* pStream = (XnDepthStream*)pCookie;
 	return pStream->SetMinDepth((XnDepthPixel)nValue);	
 }
 
-XnStatus XN_CALLBACK_TYPE XnDepthStream::SetMaxDepthCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnDepthStream::SetMaxDepthCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnDepthStream* pStream = (XnDepthStream*)pCookie;
 	return pStream->SetMaxDepth((XnDepthPixel)nValue);	
 }
 
-XnStatus XN_CALLBACK_TYPE XnDepthStream::OutputFormatValueChangedCallback(const XnProperty* pSender, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnDepthStream::OutputFormatValueChangedCallback(const XnProperty* /*pSender*/, void* pCookie)
 {
 	XnDepthStream* pStream = (XnDepthStream*)pCookie;
 	return pStream->OnOutputFormatChanged();

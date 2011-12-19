@@ -231,8 +231,6 @@ XnStatus XnDeviceManagerShutdown()
 
 XnStatus XnDeviceManagerGetDeviceList(XnDeviceDefinition* aDeviceDefinitions, XnUInt32* pnCount)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	// check if device manager is initialized
 	if (g_pDeviceManager == NULL)
 	{

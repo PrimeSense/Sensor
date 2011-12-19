@@ -38,7 +38,7 @@ XnUncompressedYUVImageProcessor::~XnUncompressedYUVImageProcessor()
 {
 }
 
-void XnUncompressedYUVImageProcessor::ProcessFramePacketChunk(const XnSensorProtocolResponseHeader* pHeader, const XnUChar* pData, XnUInt32 nDataOffset, XnUInt32 nDataSize)
+void XnUncompressedYUVImageProcessor::ProcessFramePacketChunk(const XnSensorProtocolResponseHeader* /*pHeader*/, const XnUChar* pData, XnUInt32 /*nDataOffset*/, XnUInt32 nDataSize)
 {
 	XN_PROFILING_START_SECTION("XnUncompressedYUVImageProcessor::ProcessFramePacketChunk")
 

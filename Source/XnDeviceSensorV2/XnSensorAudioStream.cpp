@@ -202,8 +202,6 @@ XnStatus XnSensorAudioStream::CloseStreamImpl()
 
 XnStatus XnSensorAudioStream::CreateDataProcessor(XnDataProcessor** ppProcessor)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	XnDataProcessor* pAudioProcessor;
 	XN_VALIDATE_NEW_AND_INIT(pAudioProcessor, XnAudioProcessor, this, &m_Helper, m_nOrigAudioPacketSize);
 
@@ -234,7 +232,7 @@ XnStatus XnSensorAudioStream::SetSampleRate(XnSampleRate nSampleRate)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	nRetVal = m_Helper.BeforeSettingFirmwareParam(SampleRateProperty(), nSampleRate);
+	nRetVal = m_Helper.BeforeSettingFirmwareParam(SampleRateProperty(), (XnUInt16)nSampleRate);
 	XN_IS_STATUS_OK(nRetVal);
 
 	nRetVal = XnAudioStream::SetSampleRate(nSampleRate);
@@ -250,7 +248,7 @@ XnStatus XnSensorAudioStream::SetNumberOfChannels(XnUInt32 nNumberOfChannels)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	nRetVal = m_Helper.BeforeSettingFirmwareParam(NumberOfChannelsProperty(), nNumberOfChannels);
+	nRetVal = m_Helper.BeforeSettingFirmwareParam(NumberOfChannelsProperty(), (XnUInt16)nNumberOfChannels);
 	XN_IS_STATUS_OK(nRetVal);
 
 	nRetVal = XnAudioStream::SetNumberOfChannels(nNumberOfChannels);
@@ -267,8 +265,6 @@ XnStatus XnSensorAudioStream::SetNumberOfChannels(XnUInt32 nNumberOfChannels)
 
 XnStatus XnSensorAudioStream::NewData()
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	XnDevicePrivateData* pDevicePrivateData = m_Helper.GetPrivateData();
 
 	// check how many buffers we have
@@ -289,8 +285,6 @@ XnStatus XnSensorAudioStream::NewData()
 
 XnStatus XnSensorAudioStream::ReadImpl(XnStreamData *pStreamOutput)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	XnDevicePrivateData* pDevicePrivateData = m_Helper.GetPrivateData();
 
 	pStreamOutput->nDataSize = 0;
@@ -431,7 +425,7 @@ XnStatus XnSensorAudioStream::SetLeftChannelVolume(XnUInt32 nVolume)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	nRetVal = m_Helper.SimpleSetFirmwareParam(m_LeftChannelVolume, nVolume);
+	nRetVal = m_Helper.SimpleSetFirmwareParam(m_LeftChannelVolume, (XnUInt16)nVolume);
 	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);
@@ -441,7 +435,7 @@ XnStatus XnSensorAudioStream::SetRightChannelVolume(XnUInt32 nVolume)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	nRetVal = m_Helper.SimpleSetFirmwareParam(m_RightChannelVolume, nVolume);
+	nRetVal = m_Helper.SimpleSetFirmwareParam(m_RightChannelVolume, (XnUInt16)nVolume);
 	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);
@@ -476,7 +470,7 @@ XnStatus XnSensorAudioStream::ReallocBuffer()
 		XN_PROCESS_ID procID;
 		xnOSGetCurrentProcessID(&procID);
 		XnChar strSharedName[XN_DEVICE_MAX_STRING_LENGTH];
-		sprintf(strSharedName, "%u_%s_%s", procID, m_strDeviceName, GetName());
+		sprintf(strSharedName, "%u_%s_%s", (XnUInt32)procID, m_strDeviceName, GetName());
 
 		nRetVal = m_SharedBufferName.UnsafeUpdateValue(strSharedName);
 		XN_IS_STATUS_OK(nRetVal);
@@ -497,7 +491,7 @@ XnStatus XnSensorAudioStream::ReallocBuffer()
 		pDevicePrivateData->nAudioBufferSize = nMaxBufferSize;
 
 		m_pSharedHeader->nTimestampsListOffset = sizeof(XnAudioSharedBuffer);
-		m_pSharedHeader->nBufferOffset = pDevicePrivateData->pAudioBuffer - pAddress;
+		m_pSharedHeader->nBufferOffset = (XnUInt32)(pDevicePrivateData->pAudioBuffer - pAddress);
 	}
 
 	// calculate current packet size
@@ -521,19 +515,19 @@ XnStatus XnSensorAudioStream::ReallocBuffer()
 	return (XN_STATUS_OK);
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensorAudioStream::SetLeftChannelVolumeCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnSensorAudioStream::SetLeftChannelVolumeCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnSensorAudioStream* pThis = (XnSensorAudioStream*)pCookie;
 	return pThis->SetLeftChannelVolume((XnUInt32)nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensorAudioStream::SetRightChannelVolumeCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnSensorAudioStream::SetRightChannelVolumeCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnSensorAudioStream* pThis = (XnSensorAudioStream*)pCookie;
 	return pThis->SetRightChannelVolume((XnUInt32)nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensorAudioStream::SetActualReadCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnSensorAudioStream::SetActualReadCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnSensorAudioStream* pThis = (XnSensorAudioStream*)pCookie;
 	return pThis->SetActualRead(nValue == TRUE);

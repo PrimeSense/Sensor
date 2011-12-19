@@ -246,8 +246,6 @@ XN_DDK_API XnBool XnDDKGetXYFromResolution(XnResolutions res, XnUInt32* pnXRes, 
 
 XN_DDK_API const XnChar* XnDDKGetResolutionName(XnResolutions res)
 {
-	const XnChar* strName = NULL;
-
 	// check if this is a known OpenNI resolution
 	XnResolution openRes = OldResToOpenNIRes(res);
 

@@ -334,7 +334,7 @@ XnStatus XnFileDevice::SeekTo(XnUInt64 nMinTimestamp, const XnChar* strNodeName,
 	XnPackedDataType nType = (XnPackedDataType)-1;
 	XnLastStreamDataHash StreamsHash;
 
-	while (TRUE)
+	for (;;)
 	{
 		XnUInt32 nPositionBefore;
 		nRetVal = m_pInputStream->Tell(&nPositionBefore);
@@ -442,8 +442,6 @@ XnStatus XnFileDevice::SeekTo(XnUInt64 nMinTimestamp, const XnChar* strNodeName,
 
 XnStatus XnFileDevice::SeekToTimeStamp(XnInt64 nTimeOffset, XnPlayerSeekOrigin origin)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	XnUInt64 nTimestamp = 0;
 	if (origin == XN_PLAYER_SEEK_CUR)
 	{
@@ -514,8 +512,6 @@ XnStatus XnFileDevice::SeekToFrame(const XnChar* strNodeName, XnInt32 nFrameOffs
 
 XnStatus XnFileDevice::TellTimestamp(XnUInt64& nTimestamp)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	nTimestamp = m_nCurrTimestamp;
 	
 	return (XN_STATUS_OK);
@@ -690,7 +686,7 @@ XnStatus XnFileDevice::HandleNewStream(const XnChar *strType, const XnChar *strN
 	}
 
 	// find compression type
-	XnActualIntProperty* pComp;
+	XnActualIntProperty* pComp = NULL;
 	nRetVal = pInitialValues->Get(XN_STREAM_PROPERTY_COMPRESSION, (XnProperty*&)pComp);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -892,7 +888,7 @@ XnStatus XnFileDevice::HandleStreamRemoved(const XnChar* strName)
 	XnPackedDataType nType = XN_PACKED_STREAM_REMOVED;
 	XnUInt32 nPositionBefore;
 
-	while (TRUE)
+	for (;;)
 	{
 		nRetVal = m_pInputStream->Tell(&nPositionBefore);
 		XN_IS_STATUS_OK(nRetVal);
@@ -992,15 +988,15 @@ XnStatus XnFileDevice::HandleIntProperty(const XnChar *strModule, const XnChar *
 
 		if (strcmp(strName, XN_STREAM_PROPERTY_X_RES) == 0)
 		{
-			mode.nXRes = nValue;
+			mode.nXRes = (XnUInt32)nValue;
 		}
 		else if (strcmp(strName, XN_STREAM_PROPERTY_Y_RES) == 0)
 		{
-			mode.nYRes = nValue;
+			mode.nYRes = (XnUInt32)nValue;
 		}
 		else if (strcmp(strName, XN_STREAM_PROPERTY_FPS) == 0)
 		{
-			mode.nFPS = nValue;
+			mode.nFPS = (XnUInt32)nValue;
 		}
 
 		// change supported modes to this one
@@ -1059,11 +1055,11 @@ XnStatus XnFileDevice::HandleIntProperty(const XnChar *strModule, const XnChar *
 
 		if (strcmp(strName, XN_STREAM_PROPERTY_SAMPLE_RATE) == 0)
 		{
-			mode.nSampleRate = nValue;
+			mode.nSampleRate = (XnUInt32)nValue;
 		}
 		else if (strcmp(strName, XN_STREAM_PROPERTY_NUMBER_OF_CHANNELS) == 0)
 		{
-			mode.nChannels = nValue;
+			mode.nChannels = (XnUInt8)nValue;
 		}
 
 		// change supported modes to this one
@@ -1296,10 +1292,10 @@ void TransformRGB24ToGrayscale16(XnUInt8* pBuffer, XnUInt32* pnBufferSize)
 		pOutput++;
 	}
 
-	*pnBufferSize = (XnUInt8*)pOutput - pBuffer;
+	*pnBufferSize = (XnUInt32)((XnUInt8*)pOutput - pBuffer);
 }
 
-XnStatus XnFileDevice::HandleStreamData(XnStreamData* pDataProps, XnCompressionFormats nCompression, XnUInt32 nCompressedSize)
+XnStatus XnFileDevice::HandleStreamData(XnStreamData* pDataProps, XnCompressionFormats /*nCompression*/, XnUInt32 /*nCompressedSize*/)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
@@ -1502,40 +1498,40 @@ XnStatus XnFileDevice::UpdateS2DTables(const xn::DepthGenerator& depth)
 
 	nRetVal = depth.GetIntProperty(XN_STREAM_PROPERTY_ZERO_PLANE_DISTANCE, nTemp);
 	XN_IS_STATUS_OK(nRetVal);
-	config.nZeroPlaneDistance = nTemp;
+	config.nZeroPlaneDistance = (XnDepthPixel)nTemp;
 
 	nRetVal = depth.GetRealProperty(XN_STREAM_PROPERTY_ZERO_PLANE_PIXEL_SIZE, dTemp);
 	XN_IS_STATUS_OK(nRetVal);
-	config.fZeroPlanePixelSize = dTemp;
+	config.fZeroPlanePixelSize = (XnFloat)dTemp;
 
 	nRetVal = depth.GetRealProperty(XN_STREAM_PROPERTY_EMITTER_DCMOS_DISTANCE, dTemp);
 	XN_IS_STATUS_OK(nRetVal);
-	config.fEmitterDCmosDistance = dTemp;
+	config.fEmitterDCmosDistance = (XnFloat)dTemp;
 
 	nRetVal = depth.GetIntProperty(XN_STREAM_PROPERTY_MAX_SHIFT, nTemp);
 	XN_IS_STATUS_OK(nRetVal);
-	config.nDeviceMaxShiftValue = nTemp;
+	config.nDeviceMaxShiftValue = (XnUInt32)nTemp;
 
 	config.nDeviceMaxDepthValue = depth.GetDeviceMaxDepth();
 
 	nRetVal = depth.GetIntProperty(XN_STREAM_PROPERTY_CONST_SHIFT, nTemp);
 	XN_IS_STATUS_OK(nRetVal);
-	config.nConstShift = nTemp;
+	config.nConstShift = (XnUInt32)nTemp;
 
 	nRetVal = depth.GetIntProperty(XN_STREAM_PROPERTY_PIXEL_SIZE_FACTOR, nTemp);
 	XN_IS_STATUS_OK(nRetVal);
-	config.nPixelSizeFactor = nTemp;
+	config.nPixelSizeFactor = (XnUInt32)nTemp;
 
 	nRetVal = depth.GetIntProperty(XN_STREAM_PROPERTY_PARAM_COEFF, nTemp);
 	XN_IS_STATUS_OK(nRetVal);
-	config.nParamCoeff = nTemp;
+	config.nParamCoeff = (XnUInt32)nTemp;
 
 	nRetVal = depth.GetIntProperty(XN_STREAM_PROPERTY_SHIFT_SCALE, nTemp);
 	XN_IS_STATUS_OK(nRetVal);
-	config.nShiftScale = nTemp;
+	config.nShiftScale = (XnUInt32)nTemp;
 
 	config.nDepthMinCutOff = 0;
-	config.nDepthMaxCutOff = config.nDeviceMaxDepthValue;
+	config.nDepthMaxCutOff = (XnDepthPixel)config.nDeviceMaxDepthValue;
 
 	if (!m_ShiftToDepth.bIsInitialized)
 	{

@@ -437,8 +437,6 @@ XnStatus XnServerSensorInvoker::ReadStream(XnStreamData* pStreamData, XnUInt32* 
 
 XnStatus XnServerSensorInvoker::OnPropertyChanged(const XnProperty* pProp)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	// some special handling
 	if (strcmp(pProp->GetName(), XN_STREAM_PROPERTY_STATE) == 0)
 	{
@@ -489,8 +487,6 @@ XnStatus XnServerSensorInvoker::OnStreamAdded(const XnChar* StreamName)
 	XnProperty* pProp = NULL;
 	nRetVal = pStreamProps->Get(XN_STREAM_PROPERTY_TYPE, pProp);
 	XN_IS_STATUS_OK(nRetVal);
-
-	XnActualStringProperty* pTypeProp = (XnActualStringProperty*)pProp;
 
 	// create stream data
 	SensorInvokerStream serverStream;
@@ -632,13 +628,13 @@ XnStatus XN_CALLBACK_TYPE XnServerSensorInvoker::PropertyChangedCallback(const X
 	return XN_STATUS_OK;
 }
 
-void XN_CALLBACK_TYPE XnServerSensorInvoker::StreamCollectionChangedCallback(XnDeviceHandle DeviceHandle, const XnChar* StreamName, XnStreamsChangeEventType EventType, void* pCookie)
+void XN_CALLBACK_TYPE XnServerSensorInvoker::StreamCollectionChangedCallback(XnDeviceHandle /*DeviceHandle*/, const XnChar* StreamName, XnStreamsChangeEventType EventType, void* pCookie)
 {
 	XnServerSensorInvoker* pThis = (XnServerSensorInvoker*)pCookie;
 	pThis->OnStreamCollectionChanged(StreamName, EventType);
 }
 
-void XN_CALLBACK_TYPE XnServerSensorInvoker::NewStreamDataCallback(XnDeviceHandle DeviceHandle, const XnChar* StreamName, void* pCookie)
+void XN_CALLBACK_TYPE XnServerSensorInvoker::NewStreamDataCallback(XnDeviceHandle /*DeviceHandle*/, const XnChar* StreamName, void* pCookie)
 {
 	XnServerSensorInvoker* pThis = (XnServerSensorInvoker*)pCookie;
 	pThis->OnNewStreamData(StreamName);

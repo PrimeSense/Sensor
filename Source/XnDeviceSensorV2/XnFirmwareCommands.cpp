@@ -45,5 +45,5 @@ XnStatus XnFirmwareCommands::SetFirmwareParam(XnUInt16 nParam, XnUInt16 nValue)
 
 XnStatus XnFirmwareCommands::SetMultipleFirmwareParams(XnInnerParamData* aParams, XnUInt32 nCount)
 {
-	return XnHostProtocolSetMultipleParams(m_pDevicePrivateData, nCount, aParams);
+	return XnHostProtocolSetMultipleParams(m_pDevicePrivateData, (XnUInt16)nCount, aParams);
 }

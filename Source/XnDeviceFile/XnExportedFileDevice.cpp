@@ -49,7 +49,7 @@ void XnExportedFileDevice::GetDescription(XnProductionNodeDescription* pDescript
 	pDescription->Type = XN_NODE_TYPE_PLAYER;
 }
 
-XnStatus XnExportedFileDevice::EnumerateProductionTrees(xn::Context& context, xn::NodeInfoList& TreesList, xn::EnumerationErrors* pErrors)
+XnStatus XnExportedFileDevice::EnumerateProductionTrees(xn::Context& /*context*/, xn::NodeInfoList& TreesList, xn::EnumerationErrors* /*pErrors*/)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
@@ -61,7 +61,7 @@ XnStatus XnExportedFileDevice::EnumerateProductionTrees(xn::Context& context, xn
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnExportedFileDevice::Create(xn::Context& context, const XnChar* strInstanceName, const XnChar* strCreationInfo, xn::NodeInfoList* pNeededTrees, const XnChar* strConfigurationDir, xn::ModuleProductionNode** ppInstance)
+XnStatus XnExportedFileDevice::Create(xn::Context& context, const XnChar* strInstanceName, const XnChar* /*strCreationInfo*/, xn::NodeInfoList* /*pNeededTrees*/, const XnChar* /*strConfigurationDir*/, xn::ModuleProductionNode** ppInstance)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
