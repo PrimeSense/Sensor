@@ -1,6 +1,10 @@
 Detailed Change log:
 --------------------
 
+Version 5.1.0.41 (Stable version - Dec 28th 2011)
+-------------------------------------------------
+  * No code changes, build is based on latest OpenNI.	
+
 Version 5.1.0.25 (Unstable version - Dec 18th 2011)
 ---------------------------------------------------
   * Bug Fix: server-client didn't always work due to an uninitialized member.
