@@ -29,6 +29,7 @@
 #include <XnUSB.h>
 #include <XnStreamParams.h>
 #include <XnDevice.h>
+#include "XnFirmwareInfo.h"
 
 //---------------------------------------------------------------------------
 // Structures & Enums
@@ -79,7 +80,7 @@ public:
 
 	XnStatus OpenDevice(const XnChar* strPath);
 
-	XnStatus OpenDataEndPoints(XnSensorUsbInterface nInterface);
+	XnStatus OpenDataEndPoints(XnSensorUsbInterface nInterface, const XnFirmwareInfo& fwInfo);
 
 	XnSensorUsbInterface GetCurrentInterface() { return m_interface; }
 

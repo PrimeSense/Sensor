@@ -43,6 +43,7 @@ public:
 	void Destroy(xn::ModuleProductionNode* pInstance);
 
 protected:
+	virtual XnStatus IsSupportedForDevice(xn::Context& context, xn::NodeInfo& sensorInfo, XnBool* pbSupported);
 	virtual XnSensorGenerator* CreateGenerator(xn::Context& context, xn::Device& sensor, XnDeviceBase* pSensor, const XnChar* strStreamName) = 0;
 
 private:

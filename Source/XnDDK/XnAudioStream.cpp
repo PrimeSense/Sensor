@@ -83,8 +83,6 @@ XnStatus XnAudioStream::SetNumberOfChannels(XnUInt32 nNumberOfChannels)
 
 XnStatus XnAudioStream::CalcRequiredSize(XnUInt32* pnRequiredSize) const
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	XnUInt32 nSampleSize = 2 * m_nMaxNumberOfChannels; // 16-bit per channel (2 bytes)
 	XnUInt32 nSamples = (XnUInt32)(GetSampleRate() * XN_AUDIO_STREAM_BUFFER_SIZE_IN_SECONDS);
 
@@ -93,13 +91,13 @@ XnStatus XnAudioStream::CalcRequiredSize(XnUInt32* pnRequiredSize) const
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnAudioStream::SetSampleRateCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XnAudioStream::SetSampleRateCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnAudioStream* pStream = (XnAudioStream*)pCookie;
 	return pStream->SetSampleRate((XnSampleRate)nValue);
 }
 
-XnStatus XnAudioStream::SetNumberOfChannelsCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XnAudioStream::SetNumberOfChannelsCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnAudioStream* pStream = (XnAudioStream*)pCookie;
 	return pStream->SetNumberOfChannels((XnUInt32)nValue);

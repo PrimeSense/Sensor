@@ -35,12 +35,12 @@ XnActualStringProperty::XnActualStringProperty(const XnChar* strName, const XnCh
 	UpdateGetCallback(GetCallback, this);
 }
 
-XnStatus XnActualStringProperty::SetCallback(XnActualStringProperty* pSender, const XnChar* strValue, void* pCookie)
+XnStatus XnActualStringProperty::SetCallback(XnActualStringProperty* pSender, const XnChar* strValue, void* /*pCookie*/)
 {
 	return pSender->UnsafeUpdateValue(strValue);
 }
 
-XnStatus XnActualStringProperty::GetCallback(const XnActualStringProperty* pSender, XnChar* csValue, void* pCookie)
+XnStatus XnActualStringProperty::GetCallback(const XnActualStringProperty* pSender, XnChar* csValue, void* /*pCookie*/)
 {
 	strncpy(csValue, pSender->GetValue(), XN_DEVICE_MAX_STRING_LENGTH);
 	return XN_STATUS_OK;

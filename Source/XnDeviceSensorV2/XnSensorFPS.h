@@ -58,7 +58,7 @@ private:
 	XnFPSData m_OutputImage;
 
 	XnUInt64 m_nLastPrint;
-	XnDump m_FramesDump;
+	XnDumpFile* m_FramesDump;
 };
 
 #endif //__XN_SENSOR_FPS_H__

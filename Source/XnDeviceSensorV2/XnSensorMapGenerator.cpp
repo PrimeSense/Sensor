@@ -55,9 +55,9 @@ XnStatus XnSensorMapGenerator::Init()
 	nRetVal = GetIntProperty(XN_STREAM_PROPERTY_SUPPORT_MODES_COUNT, nCount);
 	XN_IS_STATUS_OK(nRetVal);
 
-	m_aSupportedModes = (SupportedMode*)xnOSMalloc(sizeof(SupportedMode) * nCount);
+	m_aSupportedModes = (SupportedMode*)xnOSMalloc(sizeof(SupportedMode) * (XnSizeT)nCount);
 	XN_VALIDATE_ALLOC_PTR(m_aSupportedModes);
-	m_nSupportedModesCount = nCount;
+	m_nSupportedModesCount = (XnUInt32)nCount;
 
 	const XnUInt32 nAllocCount = 150;
 	XnCmosPreset aPresets[nAllocCount];
@@ -91,8 +91,6 @@ XnUInt32 XnSensorMapGenerator::GetSupportedMapOutputModesCount()
 
 XnStatus XnSensorMapGenerator::GetSupportedMapOutputModes(XnMapOutputMode aModes[], XnUInt32& nCount)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	XN_VALIDATE_INPUT_PTR(aModes);
 
 	if (nCount < m_nSupportedModesCount)
@@ -100,7 +98,6 @@ XnStatus XnSensorMapGenerator::GetSupportedMapOutputModes(XnMapOutputMode aModes
 		return XN_STATUS_OUTPUT_BUFFER_OVERFLOW;
 	}
 
-	XnUInt32 i = 0;
 	for (XnUInt32 i = 0; i < m_nSupportedModesCount; ++i)
 	{
 		aModes[i] = m_aSupportedModes[i].OutputMode;
@@ -145,7 +142,7 @@ XnStatus XnSensorMapGenerator::SetMapOutputMode(const XnMapOutputMode& Mode)
 			// if current input format is supported, it will always be preferred.
 			if (m_aSupportedModes[i].nInputFormat == nCurrInputFormat)
 			{
-				nChosenInputFormat = nCurrInputFormat;
+				nChosenInputFormat = (XnUInt32)nCurrInputFormat;
 				break;
 			}
 			else if (nChosenInputFormat == XN_MAX_UINT32)

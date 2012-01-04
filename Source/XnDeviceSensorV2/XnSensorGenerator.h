@@ -30,6 +30,10 @@
 //---------------------------------------------------------------------------
 // Types
 //---------------------------------------------------------------------------
+// disable the "inherits via dominance" warning. This is exactly what we want.
+#pragma warning (push)
+#pragma warning (disable: 4250)
+
 class XnSensorGenerator : 
 	public XnSensorProductionNode, 
 	virtual public xn::ModuleGenerator,
@@ -84,5 +88,7 @@ private:
 
 	static void XN_CALLBACK_TYPE OnDeviceNewStreamData(XnDeviceHandle pDeviceHandle, const XnChar* StreamName, void* pCookie);
 };
+
+#pragma warning (pop)
 
 #endif // __XN_SENSOR_GENERATOR_H__

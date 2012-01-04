@@ -28,16 +28,17 @@
 // Code
 //---------------------------------------------------------------------------
 
-XnSharedMemoryBufferPool::XnSharedMemoryBufferPool(XnUInt32 nBufferCount, const XnChar* strDeviceName, const XnChar* strStreamName, XnUInt32 nMaxBufferSize) :
+XnSharedMemoryBufferPool::XnSharedMemoryBufferPool(XnUInt32 nBufferCount, const XnChar* strDeviceName, const XnChar* strStreamName, XnUInt32 nMaxBufferSize, XnBool bAllowOtherUsers) :
 	XnBufferPool(nBufferCount),
 	m_nMaxBufferSize(nMaxBufferSize),
+	m_bAllowOtherUsers(bAllowOtherUsers),
 	m_hSharedMemory(NULL),
 	m_pSharedMemoryAddress(NULL)
 {
 	// to make the name unique, we'll add process ID
 	XN_PROCESS_ID procID;
 	xnOSGetCurrentProcessID(&procID);
-	sprintf(m_strName, "%u_%s_%s", procID, strDeviceName, strStreamName);
+	sprintf(m_strName, "%u_%s_%s", (XnUInt32)procID, strDeviceName, strStreamName);
 }
 
 XnSharedMemoryBufferPool::~XnSharedMemoryBufferPool()
@@ -62,7 +63,7 @@ XnStatus XnSharedMemoryBufferPool::AllocateBuffers()
 
 	// first time. allocate shared memory
 	XnUInt32 nTotalSize = m_nMaxBufferSize * m_nBufferCount;
-	nRetVal = xnOSCreateSharedMemory(m_strName, nTotalSize, XN_OS_FILE_READ | XN_OS_FILE_WRITE, &m_hSharedMemory);
+	nRetVal = xnOSCreateSharedMemoryEx(m_strName, nTotalSize, XN_OS_FILE_READ | XN_OS_FILE_WRITE, m_bAllowOtherUsers, &m_hSharedMemory);
 	XN_IS_STATUS_OK(nRetVal);
 
 	void* pAddress;
@@ -90,7 +91,7 @@ XnStatus XnSharedMemoryBufferPool::AllocateBuffers()
 
 		pBuffer->SetExternalBuffer(m_pSharedMemoryAddress + i*m_nMaxBufferSize, m_nMaxBufferSize);
 
-		xnDumpWriteString(Dump(), "Allocated buffer %u with size %u\n", i, m_nMaxBufferSize);
+		xnDumpFileWriteString(Dump(), "Allocated buffer %u with size %u\n", i, m_nMaxBufferSize);
 
 		// add it to free list
 		m_AllBuffers.AddLast(pBuffer);

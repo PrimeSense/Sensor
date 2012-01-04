@@ -176,18 +176,8 @@ XnStatus XnDeviceStream::Read(XnStreamData* pStreamOutput)
 		// and that we don't have new info
 		m_bNewDataAvailable = FALSE;
 	}
-	else
-	{
-		nRetVal = HandleNoNewData(pStreamOutput);
-		XN_IS_STATUS_OK(nRetVal);
-	}
 
 	return (XN_STATUS_OK);
-}
-
-XnStatus XnDeviceStream::HandleNoNewData(XnStreamData* pStreamOutput)
-{
-	return XN_STATUS_OK;
 }
 
 XnStatus XnDeviceStream::Write(XnStreamData* pStreamData)
@@ -238,13 +228,13 @@ XnStatus XnDeviceStream::UpdateRequiredSize()
 	return (XN_STATUS_OK);
 }
 
-XnStatus XN_CALLBACK_TYPE XnDeviceStream::UpdateRequiredSizeCallback(const XnProperty* pSenser, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnDeviceStream::UpdateRequiredSizeCallback(const XnProperty* /*pSenser*/, void* pCookie)
 {
 	XnDeviceStream* pStream = (XnDeviceStream*)pCookie;
 	return pStream->UpdateRequiredSize();
 }
 
-XnStatus XN_CALLBACK_TYPE XnDeviceStream::SetIsOpenCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnDeviceStream::SetIsOpenCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnDeviceStream* pStream = (XnDeviceStream*)pCookie;
 	if (nValue == TRUE)
@@ -257,13 +247,13 @@ XnStatus XN_CALLBACK_TYPE XnDeviceStream::SetIsOpenCallback(XnActualIntProperty*
 	}
 }
 
-XnStatus XN_CALLBACK_TYPE XnDeviceStream::SetOutputFormatCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnDeviceStream::SetOutputFormatCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnDeviceStream* pStream = (XnDeviceStream*)pCookie;
 	return pStream->SetOutputFormat((XnOutputFormats)nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnDeviceStream::SetIsMirrorCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnDeviceStream::SetIsMirrorCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnDeviceStream* pStream = (XnDeviceStream*)pCookie;
 	return pStream->SetMirror((XnBool)nValue);

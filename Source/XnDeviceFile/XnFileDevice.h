@@ -47,7 +47,7 @@ public:
 
 	XnStatus Init();
 
-	virtual XnBool IsCapabilitySupported(const XnChar* strCapabilityName) { return FALSE; }
+	virtual XnBool IsCapabilitySupported(const XnChar* /*strCapabilityName*/) { return FALSE; }
 
 	virtual const XnChar* GetSupportedFormat() { return "XNS"; }
 	virtual XnStatus SetInputStream(void *pStreamCookie, XnPlayerInputStreamInterface *pStream);

@@ -35,12 +35,12 @@ XnActualIntProperty::XnActualIntProperty(const XnChar* strName, XnUInt64 nInitia
 	UpdateGetCallback(GetCallback, this);
 }
 
-XnStatus XN_CALLBACK_TYPE XnActualIntProperty::SetCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnActualIntProperty::SetCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* /*pCookie*/)
 {
 	return pSender->UnsafeUpdateValue(nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnActualIntProperty::GetCallback(const XnActualIntProperty* pSender, XnUInt64* pnValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnActualIntProperty::GetCallback(const XnActualIntProperty* pSender, XnUInt64* pnValue, void* /*pCookie*/)
 {
 	*pnValue = pSender->GetValue();
 	return XN_STATUS_OK;

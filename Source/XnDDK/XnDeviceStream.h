@@ -109,8 +109,6 @@ protected:
 	virtual XnStatus Mirror(XnStreamData* pStreamOutput) const = 0;
 	/** Calculates the required size. */
 	virtual XnStatus CalcRequiredSize(XnUInt32* pnRequiredSize) const = 0;
-	/** Allows inheriting classes to do something when user called Read(), and there is no new data. */
-	virtual XnStatus HandleNoNewData(XnStreamData* pStreamOutput);
 
 	//---------------------------------------------------------------------------
 	// Utility Functions

@@ -34,7 +34,7 @@
 //---------------------------------------------------------------------------
 // Code
 //---------------------------------------------------------------------------
-XnStatus XnCodecFactory::Create(XnCompressionFormats nFormat, XnDeviceModule* pStream, const XnChar* StreamName, XnCodec** ppCodec)
+XnStatus XnCodecFactory::Create(XnCompressionFormats nFormat, XnDeviceModule* pStream, const XnChar* /*StreamName*/, XnCodec** ppCodec)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	XnCodec* pCodec = NULL;

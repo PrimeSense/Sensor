@@ -40,7 +40,7 @@ public:
 
 	inline XnUInt64 GetNumberOfFrames() const { return m_NumberOfFrames.GetValue(); }
 
-	XnUInt32 m_nNumFramesPos;
+	XnUInt64 m_nNumFramesPos;
 
 protected:
 	XnStatus WriteImpl(XnStreamData* pStreamData);

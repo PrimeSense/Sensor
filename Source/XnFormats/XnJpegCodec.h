@@ -66,7 +66,9 @@ public:
 	virtual XnUInt32 GetOverheadSize() const { return 0; }
 
 protected:
-	virtual XnStatus CompressImpl(const XnUChar* pData, XnUInt32 nDataSize, XnUChar* pCompressedData, XnUInt32* pnCompressedDataSize)
+	XN_DISABLE_COPY_AND_ASSIGN(XnJpegCodec);
+
+	virtual XnStatus CompressImpl(const XnUChar* pData, XnUInt32 /*nDataSize*/, XnUChar* pCompressedData, XnUInt32* pnCompressedDataSize)
 	{
 		if (m_bRGB)
 		{

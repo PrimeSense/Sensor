@@ -53,7 +53,7 @@
 class XnSensorDepthStream : public XnDepthStream, public IXnSensorStream
 {
 public:
-	XnSensorDepthStream(const XnChar* strDeviceName, const XnChar* strName, XnSensorObjects* pObjects, XnUInt32 nBufferCount);
+	XnSensorDepthStream(const XnChar* strDeviceName, const XnChar* strName, XnSensorObjects* pObjects, XnUInt32 nBufferCount, XnBool bAllowOtherUsers);
 	~XnSensorDepthStream() { Free(); }
 
 	//---------------------------------------------------------------------------
@@ -85,7 +85,7 @@ protected:
 	XnStatus CreateDataProcessor(XnDataProcessor** ppProcessor);
 	XnStatus MapPropertiesToFirmware();
 	void GetFirmwareStreamConfig(XnResolutions* pnRes, XnUInt32* pnFPS) { *pnRes = GetResolution(); *pnFPS = GetFPS(); }
-	XnStatus WriteImpl(XnStreamData* pStreamData) { return XN_STATUS_DEVICE_UNSUPPORTED_MODE; }
+	XnStatus WriteImpl(XnStreamData* /*pStreamData*/) { return XN_STATUS_DEVICE_UNSUPPORTED_MODE; }
 	XnSharedMemoryBufferPool* GetSharedMemoryBuffer() { return &m_BufferPool; }
 
 

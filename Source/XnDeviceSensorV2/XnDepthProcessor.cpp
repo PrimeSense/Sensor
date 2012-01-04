@@ -67,7 +67,7 @@ XnStatus XnDepthProcessor::Init()
 			XN_VALIDATE_ALLOC_PTR(m_pShiftToDepthTable);
 			for (XnUInt32 i = 0; i < XN_DEVICE_SENSOR_MAX_SHIFT_VALUE; ++i)
 			{
-				m_pShiftToDepthTable[i] = i;
+				m_pShiftToDepthTable[i] = (XnDepthPixel)i;
 			}
 			m_bShiftToDepthAllocated = TRUE;
 		}
@@ -160,8 +160,6 @@ void XnDepthProcessor::OnFrameReady(XnUInt32 nFrameID, XnUInt64 nFrameTS)
 
 void XnDepthProcessor::WriteShifts(XnUInt16* pShifts, XnUInt32 nCount)
 {
-	XnBuffer* pWriteBuffer = GetWriteBuffer();
-
 	XnUInt32 nOutputSize = nCount * sizeof(XnDepthPixel);
 
 	// make sure we have enough room

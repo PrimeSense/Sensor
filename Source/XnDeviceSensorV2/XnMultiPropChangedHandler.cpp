@@ -80,7 +80,7 @@ void XnMultiPropChangedHandler::Unregister()
 	}
 }
 
-void XnMultiPropChangedHandler::PropertyChangedCallback(XnDeviceHandle pDeviceHandle, const XnChar* ModuleName, const XnChar* PropertyName, void* pCookie)
+void XnMultiPropChangedHandler::PropertyChangedCallback(XnDeviceHandle /*pDeviceHandle*/, const XnChar* ModuleName, const XnChar* PropertyName, void* pCookie)
 {
 	XnMultiPropChangedHandler* pThis = (XnMultiPropChangedHandler*)pCookie;
 	pThis->OnModulePropertyChanged(ModuleName, PropertyName);
@@ -95,7 +95,7 @@ XnMultiPropStateChangedHandler::XnMultiPropStateChangedHandler(XnSensorProductio
 	m_pCookie(pCookie)
 {}
 
-void XnMultiPropStateChangedHandler::OnModulePropertyChanged(const XnChar* strModule, const XnChar* strProperty)
+void XnMultiPropStateChangedHandler::OnModulePropertyChanged(const XnChar* /*strModule*/, const XnChar* /*strProperty*/)
 {
 	m_pHandler(m_pCookie);
 }

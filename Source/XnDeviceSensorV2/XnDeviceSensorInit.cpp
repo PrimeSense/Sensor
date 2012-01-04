@@ -69,8 +69,6 @@ XnStatus XnDeviceSensorInit(XnDevicePrivateData* pDevicePrivateData)
 
 XnStatus XnDeviceSensorOpenInputThreads(XnDevicePrivateData* pDevicePrivateData, XnBool bOpen1, XnBool bOpen2, XnBool bOpen3)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	if (bOpen2)
 	{
 		// Depth
@@ -246,7 +244,6 @@ XnStatus XnDeviceSensorFreeBuffers(XnDevicePrivateData* pDevicePrivateData)
 
 XnStatus XnDeviceSensorConfigureVersion(XnDevicePrivateData* pDevicePrivateData)
 {
-	XnVersions Versions;
 	XnStatus nRetVal = XN_STATUS_OK;
 	
 	nRetVal = XnHostProtocolGetVersion(pDevicePrivateData, pDevicePrivateData->Version);

@@ -27,6 +27,15 @@
 #include "XnSensorImageStream.h"
 
 //---------------------------------------------------------------------------
+// Static Data
+//---------------------------------------------------------------------------
+static const XnUInt32 INVALID_INPUT_FORMAT = 9999;
+static XnUInt32 g_anAllowedRGBFormats[] = { XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_IO_IMAGE_FORMAT_YUV422, XN_IO_IMAGE_FORMAT_BAYER, XN_IO_IMAGE_FORMAT_UNCOMPRESSED_BAYER };
+static XnUInt32 g_anAllowedYUVFormats[] = { XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_IO_IMAGE_FORMAT_YUV422 };
+static XnUInt32 g_anAllowedJPEGFormats[] = { XN_IO_IMAGE_FORMAT_JPEG };
+static XnUInt32 g_anAllowedGray8Formats[] = { XN_IO_IMAGE_FORMAT_UNCOMPRESSED_GRAY8, XN_IO_IMAGE_FORMAT_BAYER, XN_IO_IMAGE_FORMAT_UNCOMPRESSED_BAYER };
+
+//---------------------------------------------------------------------------
 // XnSensorImageGenerator class
 //---------------------------------------------------------------------------
 XnSensorImageGenerator::XnSensorImageGenerator(xn::Context& context, xn::Device& sensor, XnDeviceBase* pSensor, const XnChar* strStreamName) :
@@ -37,7 +46,7 @@ XnBool XnSensorImageGenerator::IsCapabilitySupported(const XnChar* strCapability
 {
 	return 
 		(GetGeneralIntInterface(strCapabilityName) != NULL ||
-		strcmp(strCapabilityName, XN_CAPABILITY_ANTI_FILCKER) == 0 ||
+		strcmp(strCapabilityName, XN_CAPABILITY_ANTI_FLICKER) == 0 ||
 		XnSensorMapGenerator::IsCapabilitySupported(strCapabilityName));
 }
 
@@ -61,7 +70,8 @@ XnBool XnSensorImageGenerator::IsPixelFormatSupported(XnPixelFormat Format)
 			}
 			break;
 		case XN_PIXEL_FORMAT_GRAYSCALE_8_BIT:
-			if (m_aSupportedModes[i].nInputFormat == XN_IO_IMAGE_FORMAT_BAYER)
+			if (m_aSupportedModes[i].nInputFormat == XN_IO_IMAGE_FORMAT_BAYER ||
+				m_aSupportedModes[i].nInputFormat == XN_IO_IMAGE_FORMAT_UNCOMPRESSED_GRAY8)
 			{
 				return TRUE;
 			}
@@ -81,6 +91,43 @@ XnBool XnSensorImageGenerator::IsPixelFormatSupported(XnPixelFormat Format)
 	return FALSE;
 }
 
+XnUInt32 XnSensorImageGenerator::FindSupportedInputFormat(XnUInt32* anAllowedInputFormats, XnUInt32 nAllowedInputFormats)
+{
+	// first check if current one is allowed
+	XnUInt64 nCurrentInputFormat;
+	GetIntProperty(XN_STREAM_PROPERTY_INPUT_FORMAT, nCurrentInputFormat);
+
+	for (XnUInt32 i = 0; i < nAllowedInputFormats; ++i)
+	{
+		if (anAllowedInputFormats[i] == nCurrentInputFormat)
+		{
+			return (XnUInt32)nCurrentInputFormat;
+		}
+	}
+
+	// current one is not allowed. find a matching mode and take its input format
+	XnMapOutputMode outputMode;
+	GetMapOutputMode(outputMode);
+
+	// the order in the allowed input formats is the preferred one
+	for (XnUInt32 iInput = 0; iInput < nAllowedInputFormats; ++iInput)
+	{
+		// see if such a mode exists
+		for (XnUInt32 iMode = 0; iMode < m_nSupportedModesCount; ++iMode)
+		{
+			if (m_aSupportedModes[iMode].nInputFormat == anAllowedInputFormats[iInput] &&
+				m_aSupportedModes[iMode].OutputMode.nXRes == outputMode.nXRes &&
+				m_aSupportedModes[iMode].OutputMode.nYRes == outputMode.nYRes &&
+				m_aSupportedModes[iMode].OutputMode.nFPS == outputMode.nFPS)
+			{
+				return anAllowedInputFormats[iInput];
+			}
+		}
+	}
+
+	return INVALID_INPUT_FORMAT;
+}
+
 XnStatus XnSensorImageGenerator::SetPixelFormat(XnPixelFormat Format)
 {
 	if (GetPixelFormat() == Format)
@@ -88,42 +135,47 @@ XnStatus XnSensorImageGenerator::SetPixelFormat(XnPixelFormat Format)
 		return (XN_STATUS_OK);
 	}
 
-	XnUInt64 nCurrentInputFormat;
-	GetIntProperty(XN_STREAM_PROPERTY_INPUT_FORMAT, nCurrentInputFormat);
-
 	XN_PROPERTY_SET_CREATE_ON_STACK(props);
 	XnStatus nRetVal = XnPropertySetAddModule(&props, m_strModule);
 	XN_IS_STATUS_OK(nRetVal);
 
 	XnOutputFormats OutputFormat;
+	XnUInt32* anAllowedInputFormats = NULL;
+	XnUInt32 nAllowedInputFormats = 0;
 
 	switch (Format)
 	{
 	case XN_PIXEL_FORMAT_RGB24:
 		OutputFormat = XN_OUTPUT_FORMAT_RGB24;
+		anAllowedInputFormats = g_anAllowedRGBFormats;
+		nAllowedInputFormats = sizeof(g_anAllowedRGBFormats)/sizeof(XnUInt32);
 		break;
 	case XN_PIXEL_FORMAT_YUV422:
 		OutputFormat = XN_OUTPUT_FORMAT_YUV422;
+		anAllowedInputFormats = g_anAllowedYUVFormats;
+		nAllowedInputFormats = sizeof(g_anAllowedYUVFormats)/sizeof(XnUInt32);
 		break;
 	case XN_PIXEL_FORMAT_GRAYSCALE_8_BIT:
 		OutputFormat = XN_OUTPUT_FORMAT_GRAYSCALE8;
+		anAllowedInputFormats = g_anAllowedGray8Formats;
+		nAllowedInputFormats = sizeof(g_anAllowedGray8Formats)/sizeof(XnUInt32);
 		break;
 	case XN_PIXEL_FORMAT_MJPEG:
 		OutputFormat = XN_OUTPUT_FORMAT_JPEG;
+		anAllowedInputFormats = g_anAllowedJPEGFormats;
+		nAllowedInputFormats = sizeof(g_anAllowedJPEGFormats)/sizeof(XnUInt32);
 		break;
 	default:
 		return XN_STATUS_INVALID_OPERATION;
 	}
 
-	if (nCurrentInputFormat != XN_IO_IMAGE_FORMAT_JPEG && OutputFormat == XN_OUTPUT_FORMAT_JPEG)
+	XnUInt32 nInputFormat = FindSupportedInputFormat(anAllowedInputFormats, nAllowedInputFormats);
+	if (nInputFormat == INVALID_INPUT_FORMAT)
 	{
-		XnPropertySetAddIntProperty(&props, m_strModule, XN_STREAM_PROPERTY_INPUT_FORMAT, (XnUInt64)XN_IO_IMAGE_FORMAT_JPEG);
-	}
-	else if (nCurrentInputFormat == XN_IO_IMAGE_FORMAT_JPEG && OutputFormat != XN_OUTPUT_FORMAT_JPEG)
-	{
-		XnPropertySetAddIntProperty(&props, m_strModule, XN_STREAM_PROPERTY_INPUT_FORMAT, (XnUInt64)XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT);
+		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Cannot set pixel format to %s - no matching input format.", xnPixelFormatToString(Format));
 	}
 
+	XnPropertySetAddIntProperty(&props, m_strModule, XN_STREAM_PROPERTY_INPUT_FORMAT, (XnUInt64)nInputFormat);
 	XnPropertySetAddIntProperty(&props, m_strModule, XN_STREAM_PROPERTY_OUTPUT_FORMAT, (XnUInt64)OutputFormat);
 
 	return m_pSensor->BatchConfig(&props);
@@ -333,7 +385,7 @@ XnStatus XnSensorImageGenerator::RegisterToValueChange( const XnChar* strCap, Xn
 	return RegisterToProps(handler, pCookie, hCallback, strProps);
 }
 
-void XnSensorImageGenerator::UnregisterFromValueChange( const XnChar* strCap, XnCallbackHandle hCallback )
+void XnSensorImageGenerator::UnregisterFromValueChange( const XnChar* /*strCap*/, XnCallbackHandle hCallback )
 {
 	UnregisterFromProps(hCallback);
 }
@@ -369,83 +421,50 @@ void XnSensorImageGenerator::UnregisterFromPowerLineFrequencyChange( XnCallbackH
 //---------------------------------------------------------------------------
 // XnExportedSensorImageGenerator class
 //---------------------------------------------------------------------------
-XN_DECLARE_STRINGS_HASH(XnBool, XnStringToBoolHash);
-
 XnExportedSensorImageGenerator::XnExportedSensorImageGenerator() :
 	XnExportedSensorGenerator(XN_NODE_TYPE_IMAGE, XN_STREAM_TYPE_IMAGE, FALSE)
 {}
 
-XnStatus XnExportedSensorImageGenerator::EnumerateProductionTrees(xn::Context& context, xn::NodeInfoList& TreesList, xn::EnumerationErrors* pErrors)
+XnStatus XnExportedSensorImageGenerator::IsSupportedForDevice(xn::Context& context, xn::NodeInfo& sensorInfo, XnBool* pbSupported)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-	
-	nRetVal = XnExportedSensorGenerator::EnumerateProductionTrees(context, TreesList, pErrors);
+
+	nRetVal = XnExportedSensorGenerator::IsSupportedForDevice(context, sensorInfo, pbSupported);
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnStringToBoolHash Devices;
-
-	// make sure device has image CMOS
-	xn::NodeInfoList::Iterator it = TreesList.Begin();
-	while (it != TreesList.End())
+	if (*pbSupported == FALSE)
 	{
-		xn::NodeInfoList::Iterator curr = it;
-		it++;
-
-		xn::NodeInfo node = *curr;
-
-		// take sensor node
-		xn::NodeInfo sensorNode = *node.GetNeededNodes().Begin();
-
-		XnBool bHasImageCMOS = TRUE;
-
-		if (XN_STATUS_OK != Devices.Get(sensorNode.GetCreationInfo(), bHasImageCMOS))
-		{
-			// wasn't checked yet. check it now
-			xn::Device sensor;
-			nRetVal = sensorNode.GetInstance(sensor);
-			XN_IS_STATUS_OK(nRetVal);
-
-			XnBool bShouldCreated = (!sensor.IsValid());
-
-			if (bShouldCreated)
-			{
-				nRetVal = context.CreateProductionTree(sensorNode, sensor);
-				XN_IS_STATUS_OK(nRetVal);
-			}
-
-			// This is an ugly patch to find out if this sensor has an image CMOS. It will be fixed
-			// in future firmwares so we can just ask.
-			XnCmosBlankingUnits units;
-			units.nCmosID = XN_CMOS_TYPE_IMAGE;
-			nRetVal = sensor.GetGeneralProperty(XN_MODULE_PROPERTY_CMOS_BLANKING_UNITS, sizeof(units), &units);
-			if (nRetVal != XN_STATUS_OK || units.nUnits == 0)
-			{
-				// Failed. this means no image CMOS
-				bHasImageCMOS = FALSE;
-			}
-
-			if (bShouldCreated)
-			{
-				sensor.Release();
-			}
-
-			// add to checked list
-			Devices.Set(sensorNode.GetCreationInfo(), bHasImageCMOS);
-		}
-
-		if (!bHasImageCMOS)
-		{
-			// remove it from enumeration
-			nRetVal = TreesList.Remove(curr);
-			XN_IS_STATUS_OK(nRetVal);
-		}
+		return XN_STATUS_OK;
 	}
 
-	if (TreesList.IsEmpty())
+	xn::Device sensor;
+	nRetVal = sensorInfo.GetInstance(sensor);
+	XN_IS_STATUS_OK(nRetVal);
+
+	XnBool bShouldBeCreated = (!sensor.IsValid());
+
+	if (bShouldBeCreated)
 	{
-		return XN_STATUS_NO_NODE_PRESENT;
+		nRetVal = context.CreateProductionTree(sensorInfo, sensor);
+		XN_IS_STATUS_OK(nRetVal);
 	}
-	
+
+	// This is an ugly patch to find out if this sensor has an image CMOS. It will be fixed
+	// in future firmwares so we can just ask.
+	XnCmosBlankingUnits units;
+	units.nCmosID = XN_CMOS_TYPE_IMAGE;
+	nRetVal = sensor.GetGeneralProperty(XN_MODULE_PROPERTY_CMOS_BLANKING_UNITS, sizeof(units), &units);
+	if (nRetVal != XN_STATUS_OK || units.nUnits == 0)
+	{
+		// Failed. this means no image CMOS
+		*pbSupported = FALSE;
+	}
+
+	if (bShouldBeCreated)
+	{
+		sensor.Release();
+	}
+
 	return (XN_STATUS_OK);
 }
 

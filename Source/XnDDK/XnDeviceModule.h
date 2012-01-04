@@ -107,11 +107,11 @@ private:
 };
 
 #define XN_VALIDATE_ADD_PROPERTIES(pModule, ...)	\
-	do {	\
+	{												\
 		XnProperty* _aProps[] = { __VA_ARGS__ };	\
 		XnStatus _nRetVal = (pModule)->AddProperties(_aProps, sizeof(_aProps)/sizeof(XnProperty*));	\
-		XN_IS_STATUS_OK(_nRetVal);	\
-	} while (0)
+		XN_IS_STATUS_OK(_nRetVal);					\
+	}
 
 
 #endif //__XN_DEVICE_MODULE_H__

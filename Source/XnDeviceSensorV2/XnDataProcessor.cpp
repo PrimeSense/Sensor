@@ -69,7 +69,7 @@ void XnDataProcessor::ProcessData(const XnSensorProtocolResponseHeader* pHeader,
 		// log packet arrival
 		XnUInt64 nNow;
 		xnOSGetHighResTimeStamp(&nNow);
-		xnDumpWriteString(m_pDevicePrivateData->MiniPacketsDump, "%llu,0x%hx,0x%hx,0x%hx,%u\n", nNow, pHeader->nType, pHeader->nPacketID, pHeader->nBufSize, pHeader->nTimeStamp);
+		xnDumpFileWriteString(m_pDevicePrivateData->MiniPacketsDump, "%llu,0x%hx,0x%hx,0x%hx,%u\n", nNow, pHeader->nType, pHeader->nPacketID, pHeader->nBufSize, pHeader->nTimeStamp);
 	}
 
 	ProcessPacketChunk(pHeader, pData, nDataOffset, nDataSize);
@@ -88,7 +88,8 @@ XnUInt64 XnDataProcessor::GetTimeStamp(XnUInt32 nDeviceTimeStamp)
 	XnUInt64 nNow;
 	xnOSGetHighResTimeStamp(&nNow);
 
-	XnChar csDumpComment[200] = "";
+	const XnUInt32 nDumpCommentMaxLength = 200;
+	XnChar csDumpComment[nDumpCommentMaxLength] = "";
 
 	XnBool bCheckSanity = TRUE;
 
@@ -128,17 +129,17 @@ XnUInt64 XnDataProcessor::GetTimeStamp(XnUInt32 nDeviceTimeStamp)
 		XnUInt64 nOSTime = nNow - m_pDevicePrivateData->nGlobalReferenceOSTime;
 
 		// calculate wraparound length
-		XnFloat fWrapAroundInMicroseconds = nWrapPoint / (XnDouble)m_pDevicePrivateData->fDeviceFrequency;
+		XnDouble fWrapAroundInMicroseconds = nWrapPoint / (XnDouble)m_pDevicePrivateData->fDeviceFrequency;
 
 		// perform a rough estimation
-		XnInt32 nWraps = nOSTime / fWrapAroundInMicroseconds;
+		XnInt32 nWraps = (XnInt32)(nOSTime / fWrapAroundInMicroseconds);
 
 		// now fix the estimation by clipping TS to the correct wraparounds
 		XnInt64 nEstimatedTicks = 
 			nWraps * nWrapPoint + // wraps time
 			nDeviceTimeStamp - m_pDevicePrivateData->nGlobalReferenceTS;
 
-		XnInt64 nEstimatedTime = nEstimatedTicks / (XnDouble)m_pDevicePrivateData->fDeviceFrequency;
+		XnInt64 nEstimatedTime = (XnInt64)(nEstimatedTicks / (XnDouble)m_pDevicePrivateData->fDeviceFrequency);
 
 		if (nEstimatedTime < nOSTime - 0.5 * fWrapAroundInMicroseconds)
 			nWraps++;
@@ -193,14 +194,14 @@ XnUInt64 XnDataProcessor::GetTimeStamp(XnUInt32 nDeviceTimeStamp)
 	if (bCheckSanity && (nResultTimeMilliSeconds > (m_TimeStampData.nLastResultTime + XN_SENSOR_TIMESTAMP_SANITY_DIFF*1000)))
 	{
 		bIsSane = FALSE;
-		sprintf(csDumpComment, "%s,Didn't pass sanity. Will try to re-sync.", csDumpComment);
+		xnOSStrAppend(csDumpComment, ",Didn't pass sanity. Will try to re-sync.", nDumpCommentMaxLength);
 	}
 
 	// calc result
 	XnUInt64 nResult = (m_pDevicePrivateData->pSensor->IsHighResTimestamps() ? (XnUInt64)dResultTimeMicroSeconds : nResultTimeMilliSeconds);
 
 	// dump it
-	xnDumpWriteString(m_pDevicePrivateData->TimestampsDump, "%llu,%s,%u,%llu,%s\n", nNow, m_TimeStampData.csStreamName, nDeviceTimeStamp, nResult, csDumpComment);
+	xnDumpFileWriteString(m_pDevicePrivateData->TimestampsDump, "%llu,%s,%u,%llu,%s\n", nNow, m_TimeStampData.csStreamName, nDeviceTimeStamp, nResult, csDumpComment);
 
 	if (bIsSane)
 	{

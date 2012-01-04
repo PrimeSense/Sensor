@@ -115,19 +115,17 @@ XnStatus XnPacked11DepthProcessor::Unpack11to16(const XnUInt8* pcInput, const Xn
 		pnOutput += 8;
 	}
 
-	*pnActualRead = pcInput - pOrigInput;
+	*pnActualRead = (XnUInt32)(pcInput - pOrigInput);
 	pWriteBuffer->UnsafeUpdateSize(nNeededOutput);
 
 	return XN_STATUS_OK;
 }
 
-void XnPacked11DepthProcessor::ProcessFramePacketChunk(const XnSensorProtocolResponseHeader* pHeader, const XnUChar* pData, XnUInt32 nDataOffset, XnUInt32 nDataSize)
+void XnPacked11DepthProcessor::ProcessFramePacketChunk(const XnSensorProtocolResponseHeader* /*pHeader*/, const XnUChar* pData, XnUInt32 /*nDataOffset*/, XnUInt32 nDataSize)
 {
 	XN_PROFILING_START_SECTION("XnPacked11DepthProcessor::ProcessFramePacketChunk")
 
 	XnStatus nRetVal = XN_STATUS_OK;
-
-	XnBuffer* pWriteBuffer = GetWriteBuffer();
 
 	// check if we have data from previous packet
 	if (m_ContinuousBuffer.GetSize() != 0)
@@ -142,7 +140,6 @@ void XnPacked11DepthProcessor::ProcessFramePacketChunk(const XnSensorProtocolRes
 		{
 			// process it
 			XnUInt32 nActualRead = 0;
-			XnUInt32 nOutputSize = pWriteBuffer->GetFreeSpaceInBuffer();
 			Unpack11to16(m_ContinuousBuffer.GetData(), XN_INPUT_ELEMENT_SIZE, &nActualRead);
 			m_ContinuousBuffer.Reset();
 		}

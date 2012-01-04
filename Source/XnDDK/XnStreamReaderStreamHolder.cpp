@@ -46,8 +46,8 @@ XnStatus XnStreamReaderStreamHolder::Init(const XnActualPropertiesHash* pProps)
 
 	if (strcmp(GetStream()->GetType(), XN_STREAM_TYPE_DEPTH) == 0)
 	{
-		XN_VALIDATE_NEW(m_pS2DHelper, XnShiftToDepthStreamHelper, GetStream());
-		nRetVal = m_pS2DHelper->Init();
+		XN_VALIDATE_NEW(m_pS2DHelper, XnShiftToDepthStreamHelper);
+		nRetVal = m_pS2DHelper->Init(GetStream());
 		XN_IS_STATUS_OK(nRetVal);
 	}
 	
@@ -56,8 +56,6 @@ XnStatus XnStreamReaderStreamHolder::Init(const XnActualPropertiesHash* pProps)
 
 XnStatus XnStreamReaderStreamHolder::Free()
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	if (m_pS2DHelper != NULL)
 	{
 		m_pS2DHelper->Free();

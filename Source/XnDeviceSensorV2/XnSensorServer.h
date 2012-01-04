@@ -75,6 +75,7 @@ private:
 	XnSensorsManager m_sensorsManager;
 	XnServerLogger m_logger;
 	XnUInt64 m_nLastSessionActivity;
+	const XnChar* m_strConfigFile;
 };
 
 #endif //__XN_SENSOR_SERVER_H__

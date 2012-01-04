@@ -67,7 +67,7 @@ XN_FORMATS_API XnStatus XnStreamCompressDepth16Z(const XnUInt16* pInput, const X
 		nCurrValue = *pInput;
 
 		nDiffValue = (nLastValue - nCurrValue);
-		nAbsDiffValue = abs(nDiffValue);
+		nAbsDiffValue = (XnUInt16)abs(nDiffValue);
 
 		if (nAbsDiffValue <= 6)
 		{
@@ -75,13 +75,13 @@ XN_FORMATS_API XnStatus XnStreamCompressDepth16Z(const XnUInt16* pInput, const X
 
 			if (cOutStage == 0)
 			{
-				cOutChar = nDiffValue << 4;
+				cOutChar = (XnUInt8)(nDiffValue << 4);
 
 				cOutStage = 1;
 			}
 			else
 			{
-				cOutChar += nDiffValue;
+				cOutChar += (XnUInt8)nDiffValue;
 
 				if (cOutChar == 0x66)
 				{
@@ -139,7 +139,7 @@ XN_FORMATS_API XnStatus XnStreamCompressDepth16Z(const XnUInt16* pInput, const X
 			{
 				nDiffValue += 192;
 
-				*pOutput = nDiffValue;
+				*pOutput = (XnUInt8)nDiffValue;
 				pOutput++;
 			}
 			else
@@ -165,7 +165,7 @@ XN_FORMATS_API XnStatus XnStreamCompressDepth16Z(const XnUInt16* pInput, const X
 		pOutput++;
 	}
 
-	*pnOutputSize = pOutput - pOrigOutput;
+	*pnOutputSize = (XnUInt32)(pOutput - pOrigOutput);
 
 	// All is good...
 	return (XN_STATUS_OK);
@@ -233,7 +233,7 @@ XN_FORMATS_API XnStatus XnStreamCompressDepth16ZWithEmbTable(const XnUInt16* pIn
 		nCurrValue = nEmbTable[*pInput];
 
 		nDiffValue = (nLastValue - nCurrValue);
-		nAbsDiffValue = abs(nDiffValue);
+		nAbsDiffValue = (XnUInt16)abs(nDiffValue);
 
 		if (nAbsDiffValue <= 6)
 		{
@@ -241,13 +241,13 @@ XN_FORMATS_API XnStatus XnStreamCompressDepth16ZWithEmbTable(const XnUInt16* pIn
 
 			if (cOutStage == 0)
 			{
-				cOutChar = nDiffValue << 4;
+				cOutChar = (XnUInt8)(nDiffValue << 4);
 
 				cOutStage = 1;
 			}
 			else
 			{
-				cOutChar += nDiffValue;
+				cOutChar += (XnUInt8)nDiffValue;
 
 				if (cOutChar == 0x66)
 				{
@@ -305,7 +305,7 @@ XN_FORMATS_API XnStatus XnStreamCompressDepth16ZWithEmbTable(const XnUInt16* pIn
 			{
 				nDiffValue += 192;
 
-				*pOutput = nDiffValue;
+				*pOutput = (XnUInt8)nDiffValue;
 				pOutput++;
 			}
 			else
@@ -331,7 +331,7 @@ XN_FORMATS_API XnStatus XnStreamCompressDepth16ZWithEmbTable(const XnUInt16* pIn
 		pOutput++;
 	}
 
-	*pnOutputSize = pOutput - pOrigOutput;
+	*pnOutputSize = (XnUInt32)(pOutput - pOrigOutput);
 
 	// All is good...
 	return (XN_STATUS_OK);
@@ -472,7 +472,7 @@ XN_FORMATS_API XnStatus XnStreamUncompressDepth16Z(const XnUInt8* pInput, const 
 		}			
 	}
 
-	*pnOutputSize = (pOutput - pOrigOutput) * sizeof(XnUInt16);
+	*pnOutputSize = (XnUInt32)((pOutput - pOrigOutput) * sizeof(XnUInt16));
 
 	// All is good...
 	return (XN_STATUS_OK);
@@ -622,7 +622,7 @@ XN_FORMATS_API XnStatus XnStreamUncompressDepth16ZWithEmbTable(const XnUInt8* pI
 		}			
 	}
 
-	*pnOutputSize = (pOutput - pOrigOutput) * sizeof(XnUInt16);
+	*pnOutputSize = (XnUInt32)((pOutput - pOrigOutput) * sizeof(XnUInt16));
 
 	// All is good...
 	return (XN_STATUS_OK);
@@ -660,7 +660,7 @@ XN_FORMATS_API XnStatus XnStreamCompressImage8Z(const XnUInt8* pInput, const XnU
 		nCurrValue = *pInput;
 
 		nDiffValue = (nLastValue - nCurrValue);
-		nAbsDiffValue = abs(nDiffValue);
+		nAbsDiffValue = (XnUInt8)abs(nDiffValue);
 
 		if (nAbsDiffValue <= 6)
 		{
@@ -759,7 +759,7 @@ XN_FORMATS_API XnStatus XnStreamCompressImage8Z(const XnUInt8* pInput, const XnU
 		pOutput++;
 	}
 
-	*pnOutputSize = pOutput - pOrigOutput;
+	*pnOutputSize = (XnUInt32)(pOutput - pOrigOutput);
 
 	// All is good...
 	return (XN_STATUS_OK);
@@ -878,7 +878,7 @@ XN_FORMATS_API XnStatus XnStreamUncompressImage8Z(const XnUInt8* pInput, const X
 		}			
 	}
 
-	*pnOutputSize = (pOutput - pOrigOutput);
+	*pnOutputSize = (XnUInt32)(pOutput - pOrigOutput);
 
 	// All is good...
 	return (XN_STATUS_OK);
@@ -909,7 +909,7 @@ XN_FORMATS_API XnStatus XnStreamCompressConf4(const XnUInt8* pInput, const XnUIn
 		pOutput++;
 	}
 
-	*pnOutputSize = pOutput - pOrigOutput;
+	*pnOutputSize = (XnUInt32)(pOutput - pOrigOutput);
 
 	// All is good...
 	return (XN_STATUS_OK);
@@ -957,18 +957,18 @@ XN_FORMATS_API XnStatus XnStreamUncompressConf4(const XnUInt8* pInput, const XnU
 		pInput+=2;
 	}
 
-	*pnOutputSize = (pOutput - pOrigOutput);
+	*pnOutputSize = (XnUInt32)(pOutput - pOrigOutput);
 
 	// All is good...
 	return (XN_STATUS_OK);
 }
 
-void XnStreamJPEGCompDummyFunction(struct jpeg_compress_struct* pjCompStruct)
+void XnStreamJPEGCompDummyFunction(struct jpeg_compress_struct* /*pjCompStruct*/)
 {
 	// Dummy libjpeg function to wrap internal buffers usage...
 }
 
-boolean XnStreamJPEGCompDummyFailFunction(struct jpeg_compress_struct* pjCompStruct)
+boolean XnStreamJPEGCompDummyFailFunction(struct jpeg_compress_struct* /*pjCompStruct*/)
 {
 	// If we ever got to the point we need to allocate more memory, something is wrong!
 	return (FALSE);
@@ -1043,7 +1043,7 @@ XN_FORMATS_API XnStatus XnStreamCompressImage8J(XnStreamCompJPEGContext* pStream
 
 	jpeg_finish_compress(pjCompStruct);
 
-	*pnOutputSize -= pjCompStruct->dest->free_in_buffer;
+	*pnOutputSize -= (XnUInt32)pjCompStruct->dest->free_in_buffer;
 
 	// All is good...
 	return (XN_STATUS_OK);
@@ -1091,18 +1091,18 @@ XN_FORMATS_API XnStatus XnStreamCompressImage24J(XnStreamCompJPEGContext* pStrea
 
 	jpeg_finish_compress(pjCompStruct);
 
-	*pnOutputSize -= pjCompStruct->dest->free_in_buffer;
+	*pnOutputSize -= (XnUInt32)pjCompStruct->dest->free_in_buffer;
 
 	// All is good...
 	return (XN_STATUS_OK);
 }
 
-void XnStreamJPEGDecompDummyFunction(struct jpeg_decompress_struct* pjDecompStruct)
+void XnStreamJPEGDecompDummyFunction(struct jpeg_decompress_struct* /*pjDecompStruct*/)
 {
 	// Dummy libjpeg function to wrap internal buffers usage...
 }
 
-boolean XnStreamJPEGDecompDummyFailFunction(struct jpeg_decompress_struct* pjDecompStruct)
+boolean XnStreamJPEGDecompDummyFailFunction(struct jpeg_decompress_struct* /*pjDecompStruct*/)
 {
 	// If we ever got to the point we need to allocate more memory, something is wrong!
 	return (FALSE);
@@ -1186,6 +1186,10 @@ XN_FORMATS_API XnStatus XnStreamFreeUncompressImageJ(XnStreamUncompJPEGContext* 
 	return (XN_STATUS_OK);
 }
 
+// to allow the use of setjmp
+#pragma warning(push)
+#pragma warning(disable: 4611)
+
 XN_FORMATS_API XnStatus XnStreamUncompressImageJ(XnStreamUncompJPEGContext* pStreamUncompJPEGContext, const XnUInt8* pInput, const XnUInt32 nInputSize, XnUInt8* pOutput, XnUInt32* pnOutputSize)
 {
 	// Local function variables
@@ -1267,3 +1271,5 @@ XN_FORMATS_API XnStatus XnStreamUncompressImageJ(XnStreamUncompJPEGContext* pStr
 	// All is good...
 	return (XN_STATUS_OK);
 }
+
+#pragma warning(pop)

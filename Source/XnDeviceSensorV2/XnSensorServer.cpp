@@ -43,7 +43,8 @@ XnSensorServer::XnSensorServer(const XnChar* strConfigFile) :
 	m_hSessionsLock(NULL),
 	m_nLastClientID(0),
 	m_nErrorState(XN_STATUS_OK),
-	m_sensorsManager(strConfigFile)
+	m_sensorsManager(strConfigFile),
+	m_strConfigFile(strConfigFile)
 {
 }
 
@@ -82,7 +83,16 @@ XnBool XnSensorServer::IsServerRunning()
 XnStatus XnSensorServer::InitServer()
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-	nRetVal = xnOSCreateNamedMutex(&m_hServerRunningMutex, XN_SENSOR_SERVER_RUNNING_MUTEX_NAME);
+
+	XnBool bEnableMultiUsers = FALSE;
+
+	XnUInt32 nValue;
+	if (XN_STATUS_OK == xnOSReadIntFromINI(m_strConfigFile, XN_SENSOR_SERVER_CONFIG_FILE_SECTION, XN_MODULE_PROPERTY_ENABLE_MULTI_USERS, &nValue))
+	{
+		bEnableMultiUsers = (nValue == TRUE);
+	}
+
+	nRetVal = xnOSCreateNamedMutexEx(&m_hServerRunningMutex, XN_SENSOR_SERVER_RUNNING_MUTEX_NAME, bEnableMultiUsers);
 	XN_IS_STATUS_OK(nRetVal);
 
 	XnAutoMutexLocker serverRunningLock(m_hServerRunningMutex, XN_SENSOR_SERVER_RUNNING_MUTEX_TIMEOUT);
@@ -99,10 +109,10 @@ XnStatus XnSensorServer::InitServer()
 
 	/*Create the Server Running event. 
 	  This is created as a manual-reset event, because only the server resets it when it's shutting down. */
-	nRetVal = xnOSOpenNamedEvent(&m_hServerRunningEvent, XN_SENSOR_SERVER_RUNNING_EVENT_NAME);
+	nRetVal = xnOSOpenNamedEventEx(&m_hServerRunningEvent, XN_SENSOR_SERVER_RUNNING_EVENT_NAME, bEnableMultiUsers);
 	if (nRetVal != XN_STATUS_OK)
 	{
-		nRetVal = xnOSCreateNamedEvent(&m_hServerRunningEvent, XN_SENSOR_SERVER_RUNNING_EVENT_NAME, TRUE);
+		nRetVal = xnOSCreateNamedEventEx(&m_hServerRunningEvent, XN_SENSOR_SERVER_RUNNING_EVENT_NAME, TRUE, bEnableMultiUsers);
 		XN_IS_STATUS_OK(nRetVal);
 	}
 
@@ -151,9 +161,7 @@ XnStatus XnSensorServer::InitServer()
 
 XnStatus XnSensorServer::ServerMainLoop()
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
-	while (TRUE)
+	for (;;)
 	{
 		CheckForNewClients(XN_SENSOR_SERVER_ACCEPT_CONNECTION_TIMEOUT);
 
@@ -177,7 +185,7 @@ void XnSensorServer::CheckForNewClients(XnUInt32 nTimeout)
 
 	// run in loop until we break due to timeout
 	XN_SOCKET_HANDLE hClientSocket;
-	while (TRUE)
+	for (;;)
 	{
 		nRetVal = xnOSAcceptSocket(m_hListenSocket, &hClientSocket, nTimeout);
 		if (nRetVal == XN_STATUS_OS_NETWORK_TIMEOUT)
@@ -276,8 +284,6 @@ XnBool XnSensorServer::ShutdownIfPossible()
 
 void XnSensorServer::Free()
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	if (m_hServerRunningEvent != NULL)
 	{
 		xnOSCloseEvent(&m_hServerRunningEvent);

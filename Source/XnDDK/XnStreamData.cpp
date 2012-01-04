@@ -31,8 +31,6 @@
 //---------------------------------------------------------------------------
 XN_DDK_API XnStatus XnStreamDataCreateNoBuffer(XnStreamData** ppStreamOutput, const XnChar* StreamName)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	XN_VALIDATE_OUTPUT_PTR(ppStreamOutput);
 
 	// allocate struct
@@ -82,8 +80,6 @@ XN_DDK_API XnStatus XnStreamDataCreate(XnStreamData** ppStreamOutput, const XnCh
 
 XN_DDK_API XnStatus XnStreamDataUpdateSize(XnStreamData* pStreamOutput, XnUInt32 nAllocSize)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-
 	XN_VALIDATE_INPUT_PTR(pStreamOutput);
 
 	// allocate new memory

@@ -30,7 +30,9 @@
 XnCmosInfo::XnCmosInfo(XnSensorFirmware* pFirmware, XnDevicePrivateData* pDevicePrivateData) :
 	m_pFirmware(pFirmware),
 	m_pDevicePrivateData(pDevicePrivateData)
-{}
+{
+	xnOSMemSet(m_pCurrCmosBlankingInfo, 0, sizeof(m_pCurrCmosBlankingInfo));
+}
 
 XnCmosInfo::~XnCmosInfo()
 {
@@ -63,7 +65,7 @@ XnStatus XnCmosInfo::SetCmosConfig(XnCMOSType nCmos, XnResolutions nResolution, 
 			data.nRes = nResolution;
 			data.nFPS = nFPS;
 
-			nRetVal = XnHostProtocolAlgorithmParams(m_pDevicePrivateData, XN_HOST_PROTOCOL_ALGORITHM_BLANKING, &data.BlankingInfo, sizeof(XnCmosBlankingInformation), nResolution, nFPS);
+			nRetVal = XnHostProtocolAlgorithmParams(m_pDevicePrivateData, XN_HOST_PROTOCOL_ALGORITHM_BLANKING, &data.BlankingInfo, sizeof(XnCmosBlankingInformation), nResolution, (XnUInt16)nFPS);
 			XN_IS_STATUS_OK(nRetVal);
 
 			// add to list

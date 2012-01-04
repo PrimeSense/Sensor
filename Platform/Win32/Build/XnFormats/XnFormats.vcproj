@@ -50,8 +50,9 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="4"
 				DebugInformationFormat="4"
+				DisableSpecificWarnings="4251;4275;1744"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -132,6 +133,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="4"
+				DisableSpecificWarnings="4251;4275;1744"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -219,6 +221,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
+				DisableSpecificWarnings="4251;4275;1744"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -310,6 +313,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
+				DisableSpecificWarnings="4251;4275;1744"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -403,26 +407,218 @@
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jcapimin.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jcapistd.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jccoefct.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jccolor.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jcdctmgr.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jchuff.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jchuff.h"
@@ -431,22 +627,182 @@
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jcinit.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jcmainct.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jcmarker.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jcmaster.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jcomapi.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jconfig.h"
@@ -459,46 +815,398 @@
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jcparam.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jcphuff.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jcprepct.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jcsample.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jctrans.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jdapimin.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jdapistd.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jdatadst.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jdatasrc.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jdcoefct.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jdcolor.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jdct.h"
@@ -507,10 +1215,74 @@
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jddctmgr.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jdhuff.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jdhuff.h"
@@ -519,42 +1291,362 @@
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jdinput.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jdmainct.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jdmarker.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jdmaster.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jdmerge.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jdphuff.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jdpostct.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jdsample.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jdtrans.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jerror.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jerror.h"
@@ -563,30 +1655,254 @@
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jfdctflt.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jfdctfst.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jfdctint.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jidctflt.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jidctfst.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jidctint.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jidctred.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jinclude.h"
@@ -595,10 +1911,74 @@
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jmemmgr.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jmemnobs.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jmemsys.h"
@@ -619,14 +1999,110 @@
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jquant1.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jquant2.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jutils.c"
 						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Debug|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|x64"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								WarningLevel="3"
+							/>
+						</FileConfiguration>
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\External\LibJPEG\jversion.h"

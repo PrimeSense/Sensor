@@ -33,7 +33,7 @@
 //---------------------------------------------------------------------------
 typedef struct XnLastStreamData
 {
-	XnUInt32 nPosition;
+	XnUInt64 nPosition;
 	XnUInt32 nFrameID;
 	XnUInt64 nTimestamp;
 } XnLastStreamData;
@@ -47,15 +47,15 @@ XnDeviceFileReader::XnDeviceFileReader() :
 	XnStreamReaderDevice(XN_DEVICE_NAME, XN_DEVICE_FILE_MAX_INTERNAL_BUFFER),
 	m_FrameDelay(XN_MODULE_PROPERTY_FRAME_DELAY, FALSE),
 	m_pBCData(NULL),
-	m_nFileVersion(-1),
+	m_nFileVersion(0),
 	m_nReferenceTime(0),
 	m_nReferenceTimestamp(0),
 	m_bFileHasData(FALSE),
 	m_bStreamsCollectionChanged(FALSE),
-	m_pThis(this),
-	m_InstancePointer(XN_FILE_PROPERTY_INSTANCE_POINTER, &m_pThis, sizeof(m_pThis), NULL)
+	m_InstancePointer(XN_FILE_PROPERTY_INSTANCE_POINTER)
 {
 	m_FrameDelay.UpdateSetCallbackToDefault();
+	m_InstancePointer.UpdateGetCallback(GetInstanceCallback, this);
 }
 
 XnDeviceFileReader::~XnDeviceFileReader()
@@ -182,7 +182,7 @@ XnStatus XnDeviceFileReader::ReadInitialState(XnPropertySet *pSet)
 	// now continue reading until we get to first data
 	XnPackedDataType nType;
 	XnBool bStateEnd = FALSE;
-	XnUInt32 nPositionBefore;
+	XnUInt64 nPositionBefore;
 
 	while (!bStateEnd)
 	{
@@ -318,9 +318,9 @@ XnStatus XnDeviceFileReader::HandleStreamRemoved(const XnChar* strName)
 	XN_IS_STATUS_OK(nRetVal);
 
 	XnPackedDataType nType = XN_PACKED_STREAM_REMOVED;
-	XnUInt32 nPositionBefore;
+	XnUInt64 nPositionBefore;
 
-	while (TRUE)
+	for (;;)
 	{
 		nRetVal = GetIOStream()->Tell(&nPositionBefore);
 		XN_IS_STATUS_OK(nRetVal);
@@ -386,7 +386,7 @@ XnStatus XnDeviceFileReader::HandleStreamData(XnStreamData* pDataProps, XnCompre
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	XnUInt32 nPosition;
+	XnUInt64 nPosition;
 	nRetVal = GetIOStream()->Tell(&nPosition);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -550,7 +550,7 @@ void XnDeviceFileReader::FrameDelay(XnUInt64 nTimestamp)
 	}
 }
 
-XnStatus XnDeviceFileReader::WaitForPrimaryStream(XN_EVENT_HANDLE hNewDataEvent, XnStreamDataSet* pSet)
+XnStatus XnDeviceFileReader::WaitForPrimaryStream(XN_EVENT_HANDLE /*hNewDataEvent*/, XnStreamDataSet* pSet)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
@@ -567,7 +567,7 @@ XnStatus XnDeviceFileReader::WaitForPrimaryStream(XN_EVENT_HANDLE hNewDataEvent,
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnDeviceFileReader::WaitForStream(XN_EVENT_HANDLE hNewDataEvent, XnDeviceStream* pStream)
+XnStatus XnDeviceFileReader::WaitForStream(XN_EVENT_HANDLE /*hNewDataEvent*/, XnDeviceStream* pStream)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
@@ -631,7 +631,7 @@ XnStatus XnDeviceFileReader::SeekTo(XnUInt64 nMinTimestamp, XnUInt32 nMinFrameID
 	XnBool bFoundNewData = FALSE;
 
 	// Keep current position.
-	XnUInt32 nStartingPosition;
+	XnUInt64 nStartingPosition;
 	nRetVal = GetIOStream()->Tell(&nStartingPosition);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -645,19 +645,19 @@ XnStatus XnDeviceFileReader::SeekTo(XnUInt64 nMinTimestamp, XnUInt32 nMinFrameID
 	}
 
 	// start seeking forward until point is reached.
-	XnUInt32 nFoundPosition;
+	XnUInt64 nFoundPosition;
 	XnLastStreamDataHash StreamsHash;
 
-	while (TRUE)
+	for (;;)
 	{
-		XnUInt32 nPositionBefore;
+		XnUInt64 nPositionBefore;
 		nRetVal = GetIOStream()->Tell(&nPositionBefore);
 		XN_IS_STATUS_OK(nRetVal);
 
 		nRetVal = GetDataPacker()->ReadNextObject(&nType);
 		XN_IS_STATUS_OK(nRetVal);
 
-		XnUInt32 nPositionAfter;
+		XnUInt64 nPositionAfter;
 		nRetVal = GetIOStream()->Tell(&nPositionAfter);
 		XN_IS_STATUS_OK(nRetVal);
 
@@ -721,7 +721,7 @@ XnStatus XnDeviceFileReader::SeekTo(XnUInt64 nMinTimestamp, XnUInt32 nMinFrameID
 	if (bFoundNewData)
 	{
 		// read everything up to position
-		XnUInt32 nPositionAfter = nStartingPosition;
+		XnUInt64 nPositionAfter = nStartingPosition;
 
 		while (nPositionAfter < nFoundPosition)
 		{
@@ -786,13 +786,13 @@ XnStatus XnDeviceFileReader::SeekFrame(XnUInt32 nFrameID)
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnDeviceFileReader::OnStreamCollectionChanged(const XnChar* StreamName, XnStreamsChangeEventType EventType)
+XnStatus XnDeviceFileReader::OnStreamCollectionChanged(const XnChar* /*StreamName*/, XnStreamsChangeEventType /*EventType*/)
 {
 	m_bStreamsCollectionChanged = TRUE;
 	return XN_STATUS_OK;
 }
 
-void XnDeviceFileReader::StreamCollectionChangedCallback(XnDeviceHandle DeviceHandle, const XnChar* StreamName, XnStreamsChangeEventType EventType, void* pCookie)
+void XnDeviceFileReader::StreamCollectionChangedCallback(XnDeviceHandle /*DeviceHandle*/, const XnChar* StreamName, XnStreamsChangeEventType EventType, void* pCookie)
 {
 	XnDeviceFileReader* pThis = (XnDeviceFileReader*)pCookie;
 	pThis->OnStreamCollectionChanged(StreamName, EventType);
@@ -803,3 +803,15 @@ XnStatus XnDeviceFileReader::ReadNextData()
 	XnBool bDummy;
 	return ReadTillNextData(&bDummy);
 }
+
+XnStatus XN_CALLBACK_TYPE XnDeviceFileReader::GetInstanceCallback(const XnGeneralProperty* /*pSender*/, const XnGeneralBuffer& gbValue, void* pCookie)
+{
+	if (gbValue.nDataSize != sizeof(void*))
+	{
+		return XN_STATUS_DEVICE_PROPERTY_SIZE_DONT_MATCH;
+	}
+
+	*(void**)gbValue.pData = pCookie;
+	return XN_STATUS_OK;
+}
+

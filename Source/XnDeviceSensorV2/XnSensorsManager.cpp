@@ -178,7 +178,7 @@ void XnSensorsManager::CleanUp()
 	}
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensorsManager::StartNewLogCallback(XnIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnSensorsManager::StartNewLogCallback(XnIntProperty* /*pSender*/, XnUInt64 /*nValue*/, void* /*pCookie*/)
 {
 	xnLogVerbose(XN_MASK_SENSOR_SERVER, "Closing current log file...");
 	return xnLogStartNewFile();

@@ -317,11 +317,11 @@ typedef struct XnDevicePrivateData
 	XnUInt16 nFrameSync;
 
 	/** Used to dump timestamps data. */
-	XnDump TimestampsDump;
+	XnDumpFile* TimestampsDump;
 	/** Used to dump bandwidth data. */
-	XnDump BandwidthDump;
+	XnDumpFile* BandwidthDump;
 	/** Used to dump MiniPackets data. */
-	XnDump MiniPacketsDump;
+	XnDumpFile* MiniPacketsDump;
 
 	XnBool bDepthMirror;
 	XnBool bImageMirror;

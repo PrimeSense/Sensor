@@ -34,8 +34,7 @@
 //---------------------------------------------------------------------------
 XnStatus XnActualPropertyFactory::CreateProperty(XnPropertyType nType, const XnChar* strName, XnProperty** ppProperty, XnUInt32 nSize /* = 0 */)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
+
 	switch (nType)
 	{
 	case XN_PROPERTY_TYPE_INTEGER:
@@ -61,8 +60,6 @@ XnStatus XnActualPropertyFactory::CreateProperty(XnPropertyType nType, const XnC
 
 XnStatus XnActualPropertyFactory::FreeProperty(XnProperty* pProperty)
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	if (pProperty->GetType() == XN_PROPERTY_TYPE_GENERAL)
 	{
 		XnActualGeneralProperty* pGenProp = (XnActualGeneralProperty*)pProperty;

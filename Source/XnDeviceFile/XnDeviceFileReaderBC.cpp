@@ -266,6 +266,9 @@ XnStatus BCSetDepthProperties(XnPropertySet* pSet, XnStreamPropertiesV3* pStream
 	nRetVal = XnPropertySetAddStringProperty(pSet, XN_STREAM_NAME_DEPTH, XN_STREAM_PROPERTY_TYPE, XN_STREAM_TYPE_DEPTH);
 	XN_IS_STATUS_OK(nRetVal);
 
+	nRetVal = XnPropertySetAddIntProperty(pSet, XN_STREAM_NAME_DEPTH, XN_STREAM_PROPERTY_STATE, pStreamProperties->DepthFormat != XN_DEPTH_FORMAT_DISABLED);
+	XN_IS_STATUS_OK(nRetVal);
+
 	XnCropping cropping = {0};
 	XnGeneralBuffer gbCropping = XN_PACK_GENERAL_BUFFER(cropping);
 	nRetVal = XnPropertySetAddGeneralProperty(pSet, XN_STREAM_NAME_DEPTH, XN_STREAM_PROPERTY_CROPPING, &gbCropping);
@@ -385,6 +388,9 @@ XnStatus BCSetImageProperties(XnPropertySet* pSet, XnStreamPropertiesV3* pStream
 	nRetVal = XnPropertySetAddStringProperty(pSet, XN_STREAM_NAME_IMAGE, XN_STREAM_PROPERTY_TYPE, XN_STREAM_TYPE_IMAGE);
 	XN_IS_STATUS_OK(nRetVal);
 
+	nRetVal = XnPropertySetAddIntProperty(pSet, XN_STREAM_NAME_IMAGE, XN_STREAM_PROPERTY_STATE, pStreamProperties->ImageFormat != XN_IMAGE_FORMAT_DISABLED);
+	XN_IS_STATUS_OK(nRetVal);
+
 	XnCropping cropping = {0};
 	XnGeneralBuffer gbCropping = XN_PACK_GENERAL_BUFFER(cropping);
 	nRetVal = XnPropertySetAddGeneralProperty(pSet, XN_STREAM_NAME_IMAGE, XN_STREAM_PROPERTY_CROPPING, &gbCropping);
@@ -451,6 +457,9 @@ XnStatus BCSetAudioProperties(XnPropertySet* pSet, XnStreamPropertiesV3* pStream
 	XN_IS_STATUS_OK(nRetVal);
 
 	nRetVal = XnPropertySetAddStringProperty(pSet, XN_STREAM_NAME_AUDIO, XN_STREAM_PROPERTY_TYPE, XN_STREAM_TYPE_AUDIO);
+	XN_IS_STATUS_OK(nRetVal);
+
+	nRetVal = XnPropertySetAddIntProperty(pSet, XN_STREAM_NAME_AUDIO, XN_STREAM_PROPERTY_STATE, pStreamProperties->AudioFormat != XN_AUDIO_FORMAT_DISABLED);
 	XN_IS_STATUS_OK(nRetVal);
 
 	nRetVal = XnPropertySetAddIntProperty(pSet, XN_STREAM_NAME_AUDIO, XN_STREAM_PROPERTY_NUMBER_OF_FRAMES, (XnUInt64)pStreamProperties->nNumOfFrames);
@@ -535,8 +544,6 @@ XnStatus ConvertStreamPropertiesToPropertySet(XnStreamPropertiesV3* pStreamPrope
 
 XnStatus XnDeviceFileReader::BCCalculatePackedBufferSize()
 {
-	XnStatus nRetVal = XN_STATUS_OK;
-	
 	XnStreamPropertiesV3* pStreamProperties = &m_pBCData->StreamProperties;
 	XnPackedStreamProperties* pPackedStreamProperties = &m_pBCData->PackedStreamProperties;
 
@@ -660,8 +667,6 @@ XnStatus XnDeviceFileReader::BCCalculatePackedBufferSize()
 	nBufferSize += sizeof(XnPackedStreamFrameHeaderV3);
 
 	return nBufferSize;
-
-	return (XN_STATUS_OK);
 }
 
 XnStatus XnDeviceFileReader::BCReadInitialState(XnPropertySet* pSet)
@@ -812,7 +817,7 @@ XnStatus XnDeviceFileAdjustFileFrameHeaderV3(const XnDeviceFileFrameHeaderV3* pF
 	return XnIOAdjustStreamFramePropertiesV3(&pFileFrameHeaderV3->FrameProperties, &pFileFrameHeader->FrameProperties);
 }
 
-XnStatus XnDeviceFileReader::BCSeek(XnUInt64 nTimestamp)
+XnStatus XnDeviceFileReader::BCSeek(XnUInt64 /*nTimestamp*/)
 {
 	return (XN_STATUS_IO_DEVICE_FUNCTION_NOT_SUPPORTED);
 }
@@ -919,7 +924,7 @@ XnStatus XnDeviceFileReader::BCSeekFrame(XnUInt32 nFrameID)
 		}
 
 		// Skip the frame data
-		XnUInt32 nPosition;
+		XnUInt64 nPosition;
 		nRetVal = GetIOStream()->Tell(&nPosition);
 		XN_IS_STATUS_OK(nRetVal);
 
@@ -956,10 +961,6 @@ XnStatus XnDeviceFileReader::BCReadFrame(XnBool* pbWrapOccured)
 	// Local function variables
 	XnStatus nRetVal = XN_STATUS_OK;
 	XnDeviceFileFrameHeaderV3 FileFrameHeader;
-	XnUInt64 nCurrTime = 0;
-	XnUInt64 nDiffTime = 0;
-	XnUInt64 nFramesDiffTime = 0;
-	XnUInt32 nSleepTime = 0;
 
 	*pbWrapOccured = FALSE;
 

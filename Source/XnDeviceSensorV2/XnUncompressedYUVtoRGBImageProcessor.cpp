@@ -51,7 +51,7 @@ XnStatus XnUncompressedYUVtoRGBImageProcessor::Init()
 	return (XN_STATUS_OK);
 }
 
-void XnUncompressedYUVtoRGBImageProcessor::ProcessFramePacketChunk(const XnSensorProtocolResponseHeader* pHeader, const XnUChar* pData, XnUInt32 nDataOffset, XnUInt32 nDataSize)
+void XnUncompressedYUVtoRGBImageProcessor::ProcessFramePacketChunk(const XnSensorProtocolResponseHeader* /*pHeader*/, const XnUChar* pData, XnUInt32 /*nDataOffset*/, XnUInt32 nDataSize)
 {
 	XN_PROFILING_START_SECTION("XnUncompressedYUVtoRGBImageProcessor::ProcessFramePacketChunk")
 

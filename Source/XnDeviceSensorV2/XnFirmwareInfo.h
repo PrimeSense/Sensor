@@ -69,6 +69,9 @@ public:
 	XnUInt16 nUSBDelaySetParamStream0Mode;
 	XnUInt16 nUSBDelaySetParamStream1Mode;
 	XnUInt16 nUSBDelaySetParamStream2Mode;
+
+	XnUInt8 nISOAlternativeInterface;
+	XnUInt8 nBulkAlternativeInterface;
 };
 
 #endif //__XN_FIRMWARE_INFO_H__

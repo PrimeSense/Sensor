@@ -44,7 +44,7 @@
 class XnSensorAudioStream : public XnAudioStream, public IXnSensorStream
 {
 public:
-	XnSensorAudioStream(const XnChar* strDeviceName, const XnChar* StreamName, XnSensorObjects* pObjects);
+	XnSensorAudioStream(const XnChar* strDeviceName, const XnChar* StreamName, XnSensorObjects* pObjects, XnBool bAllowOtherUsers);
 	~XnSensorAudioStream() { Free(); }
 
 	//---------------------------------------------------------------------------
@@ -71,9 +71,9 @@ protected:
 	void GetFirmwareStreamConfig(XnResolutions* pnRes, XnUInt32* pnFPS) { *pnRes = XN_RESOLUTION_CUSTOM; *pnFPS = 0; }
 	XnSharedMemoryBufferPool* GetSharedMemoryBuffer() { return NULL; }
 
-	XnStatus WriteImpl(XnStreamData* pStreamData) { return XN_STATUS_DEVICE_UNSUPPORTED_MODE; }
+	XnStatus WriteImpl(XnStreamData* /*pStreamData*/) { return XN_STATUS_DEVICE_UNSUPPORTED_MODE; }
 	XnStatus ReadImpl(XnStreamData* pStreamOutput);
-	XnStatus Mirror(XnStreamData* pStreamOutput) const { return XN_STATUS_OK; }
+	XnStatus Mirror(XnStreamData* /*pStreamOutput*/) const { return XN_STATUS_OK; }
 
 	//---------------------------------------------------------------------------
 	// Setters
@@ -107,6 +107,7 @@ private:
 	XnSensorStreamHelper m_Helper;
 
 	const XnChar* m_strDeviceName;
+	XnBool m_bAllowOtherUsers;
 	XnActualStringProperty m_SharedBufferName;
 	XnActualIntProperty m_LeftChannelVolume;
 	XnActualIntProperty m_RightChannelVolume;

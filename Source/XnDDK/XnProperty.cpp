@@ -61,8 +61,6 @@ XnStatus XnProperty::SetValue(const void* pValue)
 	if (m_LogSeverity != -1)
 	{
 		XnChar strValue[XN_DEVICE_MAX_STRING_LENGTH];
-		XnBool bValueString = FALSE;
-
 		if (ConvertValueToString(strValue, pValue))
 		{
 			xnLogWrite(XN_MASK_DDK, (XnLogSeverity)m_LogSeverity, __FILE__, __LINE__, "Setting %s.%s to %s...", GetModule(), GetName(), strValue);
@@ -72,8 +70,6 @@ XnStatus XnProperty::SetValue(const void* pValue)
 			xnLogWrite(XN_MASK_DDK, (XnLogSeverity)m_LogSeverity, __FILE__, __LINE__, "Setting %s.%s...", GetModule(), GetName());
 		}
 	}
-
-	XnBool bShouldSet = TRUE;
 
 	if (!m_bAlwaysSet && IsActual() && IsEqual(m_pValueHolder, pValue))
 	{
@@ -166,7 +162,7 @@ void XnProperty::UpdateGetCallback(GetFuncPtr pFunc, void* pCookie)
 	m_pGetCallbackCookie = pCookie;
 }
 
-XnBool XnProperty::ConvertValueToString(XnChar* csValue, const void* pValue) const
+XnBool XnProperty::ConvertValueToString(XnChar* /*csValue*/, const void* /*pValue*/) const
 {
 	return FALSE;
 }

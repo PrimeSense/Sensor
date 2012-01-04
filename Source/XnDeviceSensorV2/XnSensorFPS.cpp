@@ -36,7 +36,7 @@
 // Code
 //---------------------------------------------------------------------------
 XnSensorFPS::XnSensorFPS() :
-	m_FramesDump(XN_DUMP_CLOSED)
+	m_FramesDump(NULL)
 {
 	xnFPSInit(&m_InputDepth, XN_SENSOR_FPS_FRAME_COUNT);
 	xnFPSInit(&m_InputImage, XN_SENSOR_FPS_FRAME_COUNT);
@@ -44,7 +44,8 @@ XnSensorFPS::XnSensorFPS() :
 	xnFPSInit(&m_OutputDepth, XN_SENSOR_FPS_FRAME_COUNT);
 	xnFPSInit(&m_OutputImage, XN_SENSOR_FPS_FRAME_COUNT);
 
-	xnDumpInit(&m_FramesDump, XN_MASK_SENSOR_FPS, "TS,Type,FrameID,FrameTS\n", "FramesTimes.csv");
+	m_FramesDump = xnDumpFileOpen(XN_MASK_SENSOR_FPS, "FramesTimes.csv");
+	xnDumpFileWriteString(m_FramesDump, "TS,Type,FrameID,FrameTS\n");
 }
 
 XnSensorFPS::~XnSensorFPS()
@@ -55,7 +56,7 @@ XnSensorFPS::~XnSensorFPS()
 	xnFPSFree(&m_OutputDepth);
 	xnFPSFree(&m_OutputImage);
 
-	xnDumpClose(&m_FramesDump);
+	xnDumpFileClose(m_FramesDump);
 }
 
 void XnSensorFPS::Mark(XnFPSData* pFPS, const XnChar* csName, XnUInt32 nFrameID, XnUInt64 nTS)
@@ -68,7 +69,7 @@ void XnSensorFPS::Mark(XnFPSData* pFPS, const XnChar* csName, XnUInt32 nFrameID,
 
 	xnFPSMarkFrame(pFPS, nNow);
 
-	xnDumpWriteString(m_FramesDump, "%llu,%s,%u,%llu\n", nNow, csName, nFrameID, nTS);
+	xnDumpFileWriteString(m_FramesDump, "%llu,%s,%u,%llu\n", nNow, csName, nFrameID, nTS);
 
 	// get current time in seconds
 	nNow /= 1000000;

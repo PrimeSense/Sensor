@@ -33,14 +33,14 @@
 class XnSharedMemoryBufferPool : public XnBufferPool
 {
 public:
-	XnSharedMemoryBufferPool(XnUInt32 nBufferCount, const XnChar* strDeviceName, const XnChar* strStreamName, XnUInt32 nMaxBufferSize);
+	XnSharedMemoryBufferPool(XnUInt32 nBufferCount, const XnChar* strDeviceName, const XnChar* strStreamName, XnUInt32 nMaxBufferSize, XnBool bAllowOtherUsers);
 	~XnSharedMemoryBufferPool();
 
 	void Free();
 
 	inline const XnChar* GetSharedMemoryName() const { return m_strName; }
 
-	inline XnUInt32 GetBufferOffset(XnBuffer* pBuffer) const { return ((XnUChar*)pBuffer->GetData() - m_pSharedMemoryAddress); }
+	inline XnUInt32 GetBufferOffset(XnBuffer* pBuffer) const { return (XnUInt32)((XnUChar*)pBuffer->GetData() - m_pSharedMemoryAddress); }
 
 protected:
 	virtual XnStatus AllocateBuffers();
@@ -49,6 +49,7 @@ protected:
 private:
 	XnChar m_strName[XN_FILE_MAX_PATH];
 	XnUInt32 m_nMaxBufferSize;
+	XnBool m_bAllowOtherUsers;
 	XN_SHARED_MEMORY_HANDLE m_hSharedMemory;
 	XnUChar* m_pSharedMemoryAddress;
 };

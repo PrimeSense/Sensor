@@ -31,10 +31,6 @@
       <Directory Id="$(var.PlatformProgramFilesFolder)">
         <Directory Id="PrimeSenseFolder" Name="PrimeSense">
           <Directory Id="INSTALLLOCATION" Name="Sensor">
-            <Directory Id="INSTALLLOCATIONBin" Name="Bin$(var.PlatformSuffix)">
-              <Directory Id="INSTALLLOCATIONBinLog" Name="Log"/>
-            </Directory>
-            <Directory Id="INSTALLLOCATIONData" Name="Data"/>
             <Directory Id="INSTALLLOCATIONSAMPLES" Name="Samples">
               <Directory Id="INSTALLLOCATIONSAMPLESBIN" Name="Bin$(var.PlatformSuffix)">
                 <Directory Id="INSTALLLOCATIONSAMPLESBINRELEASE" Name="Release">
@@ -45,6 +41,11 @@
                 </Directory>
               </Directory>
             </Directory>
+            <Directory Id="INSTALLLOCATIONBin" Name="Bin$(var.PlatformSuffix)">
+              <Directory Id="INSTALLLOCATIONBinLog" Name="Log"/>
+            </Directory>
+            <Directory Id="INSTALLLOCATIONData" Name="Data"/>
+            
           </Directory>
         </Directory>
       </Directory>
@@ -64,31 +65,43 @@
     </Directory>
 
     <DirectoryRef Id="INSTALLLOCATIONBinLog">
+      <?if $(var.Platform)="x86"?>
       <Component Id="RemoveLogDir" Guid="6DA284AC-1CA4-49e1-869B-79B8D073A652" KeyPath="yes">
         <RemoveFile Id="RemoveLogFiles" On="uninstall" Name="*.*" />
         <RemoveFolder Id="RemoveLogDir" On="uninstall"/>
+        <RemoveFolder Id="RemoveBinDir" On="uninstall" Directory="INSTALLLOCATIONBin"/>
+        <RemoveFolder Id="RemoveDir" On="uninstall" Directory="INSTALLLOCATION"/>
       </Component>
+      <?else?>
+      <Component Id="RemoveLogDir" Guid="6DA284AC-1CA4-49e1-869B-79B8D073A152" KeyPath="yes">
+        <RemoveFile Id="RemoveLogFiles" On="uninstall" Name="*.*" />
+        <RemoveFolder Id="RemoveLogDir" On="uninstall"/>
+        <RemoveFolder Id="RemoveBinDir" On="uninstall" Directory="INSTALLLOCATIONBin"/>
+        <RemoveFolder Id="RemoveDir" On="uninstall" Directory="INSTALLLOCATION"/>
+      </Component>
+      <?endif?>
     </DirectoryRef>
 
-    <DirectoryRef Id="ApplicationProgramsFolder">
-      <Component Id="ApplicationShortcut" Guid="0EE39B02-8075-4357-8ECB-996C4072D506" >
-        <Shortcut Id="UninstallProduct"
-                Name="Uninstall !(loc.ProductName)"
-                Target="[SystemFolder]msiexec.exe"
-                Arguments="/x [ProductCode]"/>
-        <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
-        <RegistryValue Root="HKCU" Key="Software\PrimeSense\EE" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-      </Component>
-    </DirectoryRef>
-
-    <DirectoryRef Id="PrimeSenseShortcutFolder">
-      <Component Id="RemovePrimeSenseShortcutFolder"  Guid="691128F3-BC80-4f16-BF70-5E2922348B3F">
-        <RemoveFolder Id="PrimeSenseShortcutFolder" On="uninstall"/>
-        <RegistryValue Root="HKCU" Key="Software\PrimeSense\EE" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-      </Component>
-    </DirectoryRef>
-    
+   
     <?if $(var.BinaryOnlyRedist)="False"?>
+    
+    
+    <!-- folder sensor
+    <DirectoryRef Id="INSTALLLOCATION">
+      <Component Id="Sensor" Guid="221D1ACA-1111-441A-ACE5-7562692965EB" KeyPath="yes">
+      </Component>
+    </DirectoryRef>-->
+    
+    <DirectoryRef Id="INSTALLLOCATIONSAMPLESBINRELEASELOG">
+      <Component Id="SAMPLESBINRELEASELOG" Guid="4CC6E5A1-8650-41A6-A626-D0D77579AB0A" KeyPath="yes">
+      </Component>
+    </DirectoryRef>
+ <!--new SAMPLESBINDEBUGLOG-->
+    <DirectoryRef Id="INSTALLLOCATIONSAMPLESBINDEBUGLOG">
+      <Component Id="SAMPLESBINDEBUGLOG" Guid="763EA84B-8CC8-4D13-B237-93114DDD90D8" KeyPath="yes">
+      </Component>
+    </DirectoryRef>
+
     <DirectoryRef Id="INSTALLLOCATIONSAMPLESBINRELEASELOG">
       <Component Id="RemoveReleaseLogDir" Guid="7934C4DA-4CE1-41bb-8EE8-B974706B1C22" KeyPath="yes">
         <RemoveFile Id="RemoveReleaseLogFiles" On="uninstall" Name="*.*" />
@@ -96,6 +109,12 @@
       </Component>
     </DirectoryRef>
 
+    <DirectoryRef Id="INSTALLLOCATION">
+      <Component Id="SensorFolder" Guid="45E8AE32-C0AB-4B1A-84CC-300EAA6F43C2" KeyPath="yes">
+        <RemoveFile Id="SensorFolderFFile" On="uninstall" Name="*.*" />
+        <RemoveFolder Id="SensorFolder" On="uninstall"/>
+      </Component>
+    </DirectoryRef>
     <DirectoryRef Id="INSTALLLOCATIONSAMPLESBINDEBUGLOG">
       <Component Id="RemoveDebugLogDir" Guid="0AC4A0E8-CDE7-43c4-BDFA-FE0176AFFE21" KeyPath="yes">
         <RemoveFile Id="RemoveDebugLogFiles" On="uninstall" Name="*.*" />
@@ -156,6 +175,24 @@
     </DirectoryRef>
     <?endif?>
 
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcut" Guid="*" >
+        <Shortcut Id="UninstallProduct"
+                Name="Uninstall !(loc.ProductName)"
+                Target="[SystemFolder]msiexec.exe"
+                Arguments="/x [ProductCode]"/>
+        <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\PrimeSense\EE" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="PrimeSenseShortcutFolder">
+      <Component Id="RemovePrimeSenseShortcutFolder"  Guid="691128F3-BC80-4f16-BF70-5E2922348B3F">
+        <RemoveFolder Id="PrimeSenseShortcutFolder" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\PrimeSense\EE" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+
     <Property Id="OPENNIINSTALLDIR" Secure="yes">
       <RegistrySearch Id="OpenNIInstallDirReg" Root="HKLM" Key="Software\OPENNI" Name="InstallDir" Type="raw"/>
     </Property>
@@ -164,9 +201,9 @@
       <RegistrySearch Id="OpenNIVersionReg" Root="HKLM" Key="Software\OPENNI" Name="Version" Type="raw"/>
     </Property>
 
-    <Condition Message="Please install OpenNI verion $(var.OpenNIVersion) or higher.">OPENNIVERSION>="$(var.OpenNIVersion)" OR Installed</Condition>
-
-
+    <Binary Id='CheckScript' SourceFile ='checkVersion.vbs'  />
+    <CustomAction Id="CheckOpenNIVersion" BinaryKey='CheckScript' VBScriptCall='CheckVersionNI' Execute="immediate" Return="check" />
+      
     <!-- Register XnDeviceFile-->
     <CustomAction Id="QtExecRegXnDeviceFile" Property="SetRegXnDeviceFileProperty" Execute="immediate"
               Value="&quot;[OPENNIINSTALLDIR]bin$(var.PlatformSuffix)\niReg$(var.PlatformSuffix).exe&quot; &quot;[INSTALLLOCATIONBin]XnDeviceFile$(var.PlatformSuffix).dll&quot;"/>
@@ -208,10 +245,10 @@
 
     <!-- Register the .xns file type -->
     <DirectoryRef Id="TARGETDIR">
-      <Component Id="RegistryEntries" Guid="4BE31B4A-456C-4468-B08F-D1F44DAD9698">
+      <Component Id="RegistryEntries" Guid="*">
 
         <RegistryKey Root="HKLM" Key="Software\PrimeSense\EE" Action="createAndRemoveOnUninstall">
-          <RegistryValue Type="string" Name="InstallDir" Value="[INSTALLLOCATION]" />
+          <RegistryValue Type="string" Name="InstallDir" Value="[INSTALLLOCATION]"  KeyPath="yes"/>
           <RegistryValue Type="string" Name="Version" Value="$(var.VersionNumber)"/>
         </RegistryKey>
 
@@ -233,13 +270,37 @@
 
       </Component>
     </DirectoryRef>
+    
+    <?if $(var.BinaryOnlyRedist)="False"?>
+    <DirectoryRef Id="TARGETDIR" >
+      <Component Id="EnviromentVars" Guid="9270882A-E2CA-4F91-BB6B-87F183A0D3D0" DiskId="1">
 
+        <Environment Id="OPENNIINSTALLPATH"
+                            Action="set"
+                            Part="all"
+                            Name="XN_SENSOR_INSTALL_PATH$(var.PlatformSuffix)"
+                            Permanent="no"
+                            System="yes"
+                            Value="[INSTALLLOCATION]"/>
+
+      </Component>
+
+    </DirectoryRef>
+    <?endif?>
+    
     <Feature Id="EE_NIFeature" Title="!(loc.ProductName)" Level="1">
+      <ComponentRef Id="RemoveLogDir"/>
       <?if $(var.BinaryOnlyRedist)="False"?>
-      <ComponentGroupRef Id="EE_NIFiles" />
-      <ComponentGroupRef Id="EE_Shortcuts" />
       <ComponentRef Id="RemoveReleaseLogDir"/>
       <ComponentRef Id="RemoveDebugLogDir"/>
+      <ComponentGroupRef Id="EE_NIFiles" />
+      <ComponentGroupRef Id="EE_Shortcuts" />
+      <ComponentRef Id="SAMPLESBINDEBUGLOG"/>
+      <ComponentRef Id="SAMPLESBINRELEASELOG"/>
+      
+      <ComponentRef Id="EnviromentVars"/>
+      <!--<ComponentRef Id="Sensor"/>-->
+      <ComponentRef Id="SensorFolder"/>
       <?else?>
       <ComponentGroupRef Id="EE_NIBinaryFiles" />
       <?endif?>
@@ -247,7 +308,7 @@
       <ComponentRef Id="RemovePrimeSenseShortcutFolder"/>
       <ComponentRef Id="ApplicationShortcut"/>
       <ComponentRef Id="RegistryEntries" />
-      <ComponentRef Id="RemoveLogDir"/>
+      
 
     </Feature>
 
@@ -262,7 +323,7 @@
       <Custom Action="SetUnRegXnDeviceFileProperty" Before="RemoveFiles"> REMOVE ~= "ALL" </Custom>
       <Custom Action="QtExecUnRegXnDeviceSensorV2" After="CostFinalize"> REMOVE ~= "ALL" </Custom>
       <Cusom Action="SetUnRegXnDeviceSensorV2Property" Before="RemoveFiles"> REMOVE ~= "ALL" </Custom>-->
-
+      <Custom Action="CheckOpenNIVersion" Before="LaunchConditions">Not Installed</Custom>
       <Custom Action='QtExecRegXnDeviceFile' After='CostFinalize'>NOT Installed </Custom>
       <Custom Action='SetRegXnDeviceFileProperty' After='PublishProduct'>NOT Installed </Custom>
       <Custom Action='QtExecRegXnDeviceSensorV2' After='CostFinalize'>NOT Installed </Custom>

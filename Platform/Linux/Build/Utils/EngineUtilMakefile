@@ -1,0 +1,24 @@
+#############################################################################
+# Primesense Experience Engine util template makefile.
+# This file should not be made, but only included from other makefiles.
+#
+# Project makefile should define the following BEFORE including this file:
+# SRC_FILES - a list of all source files
+# LIB_NAME - output name
+# INC_DIRS - a list of additional include directories
+# LIB_DIRS - a list of additional library directories
+# USED_LIBS - a list of libraries to link with
+# DEFINES - [Optional] additional preprocessor defines
+# CFLAGS - [Optional] additional flags for the compiler
+# LDFLAGS - [Optional] additional flags for the linker
+#############################################################################
+
+INC_DIRS += \
+	=/usr/include/ni \
+	../../../../../Include \
+	../../../../../Source \
+	../../../../../Source/XnCommon
+
+BIN_DIR = ../../../Bin
+
+include ../../Common/CommonCppMakefile

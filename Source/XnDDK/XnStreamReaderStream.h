@@ -45,9 +45,9 @@ public:
 	void Reset();
 
 protected:
-	XnStatus WriteImpl(XnStreamData* pStreamData) { return XN_STATUS_IO_DEVICE_FUNCTION_NOT_SUPPORTED; }
+	XnStatus WriteImpl(XnStreamData* /*pStreamData*/) { return XN_STATUS_IO_DEVICE_FUNCTION_NOT_SUPPORTED; }
 	XnStatus ReadImpl(XnStreamData* pStreamOutput);
-	XnStatus Mirror(XnStreamData* pStreamData) const { return XN_STATUS_OK; }
+	XnStatus Mirror(XnStreamData* /*pStreamData*/) const { return XN_STATUS_OK; }
 
 	XnStatus CalcRequiredSize(XnUInt32* pnRequiredSize) const;
 

@@ -1,5 +1,5 @@
-PrimeSense Sensor Module for OpenNI (Version 5.0.4.3 Stable version - Sep 18th 2011)
-------------------------------------------------------------------------------------
+PrimeSense Sensor Module for OpenNI (Version 5.1.0.41 version - Dec 28th 2011)
+------------------------------------------------------------------------------
 
 Website: http://www.primesense.com
 Forum: http://groups.google.com/group/openni-dev
@@ -7,10 +7,13 @@ Wiki: http://wiki.openni.org
 
 Binaries are available at:
 http://www.openni.org/Downloads/OpenNIModules.aspx
-(The "OpenNI Compliant Hardware Binaries / Stable" section)
+(The "OpenNI Compliant Hardware Binaries" section)
 
 Sources are available at:
 https://github.com/PrimeSense/Sensor
+or
+https://github.com/PrimeSense/Sensor/tree/unstable
+for the unstable branch
 
 Release Notes:
 --------------
@@ -19,7 +22,7 @@ Release Notes:
   (A good hint for this error is that you encounter an "illegal instructions" messages)
 * By default, the linux kernel mounts unknown USB devices with write permissions to root only, and read-only permissions to other users.
   When not running as root, this prevents communicating with the device. To fix this issue:
-  - Navigate to Platform/Linux-x86/Build
+  - Navigate to Platform/Linux/Build
   - run 'make install-usb-rules'
   - if the device was connected, unplug and reconnect it.
   This part is done automatically by the install script, but you will need to do it manually if you choose not to use the automated install.
@@ -76,11 +79,11 @@ Linux:
 		   From: http://www.openni.org/Downloads/OpenNIModules.aspx
 		   
 	Building Sensor:
-		1) Go into the directory: "Platform/Linux-x86/CreateRedist".
+		1) Go into the directory: "Platform/Linux/CreateRedist".
 		   Run the script: "./RedistMaker".
-		   This will compile everything and create a redist package in the "Platform/Linux-x86/Redist" directory.
-		   It will also create a distribution in the "Platform/Linux-x86/CreateRedist/Final" directory.
-		2) Go into the directory: "Platform/Linux-x86/Redist".
+		   This will compile everything and create a redist package in the "Platform/Linux/Redist" directory.
+		   It will also create a distribution in the "Platform/Linux/CreateRedist/Final" directory.
+		2) Go into the directory: "Platform/Linux/Redist".
 		   Run the script: "sudo ./install.sh" (needs to run as root)
 
   		   The install script copies key files to the following location:
@@ -90,10 +93,34 @@ Linux:
 		       USB rules into: /etc/udev/rules.d 
 		       Logs will be created in: /var/log/primesense
 			
-		To build the package manually, you can run "make" in the "Platform\Linux-x86\Build" directory.
+		To build the package manually, you can run "make" in the "Platform\Linux\Build" directory.
 		
-		Important: Please note that even though the directory is called Linux-x86, you can also use it to compile it for 64-bit targets and pretty much any other linux based environment.	
+		Important: Please note that even though the directory is called Linux, you can also use it to compile it for 64-bit targets and pretty much any other linux based environment.	
 
+	Building Sensor using a cross-compiler:
+		1) Make sure to define two environment variables:
+		   - <platform>_CXX - the name of the cross g++ for platform <platform>
+		   - <platform>_STAGING - a path to the staging dir (a directory which simulates the target root filesystem).
+		   Note that <platform> should be upper cased.
+		   For example, if wanting to compile for ARM from a x86 machine, ARM_CXX and ARM_STAGING should be defined.
+		2) Go into the directory: "Platform/Linux/CreateRedist".
+		   Run: "./RedistMaker <platform>" (for example: "./RedistMake Arm").
+		   This will compile everything and create a redist package in the "Platform/Linux/Redist" directory.
+		   It will also create a distribution in the "Platform/Linux/CreateRedist/Final" directory.
+		3) To install OpenNI files on the target file system:
+		   Go into the directory: "Platform/Linux/Redist".
+		   Run the script: "./install.sh -c $<platform>_STAGING" (for example: "./install.sh -c $ARM_STAGING").
+
+  		   The install script copies key files to the following location:
+		       Libs into: STAGING/usr/lib
+		       Bins into: STAGING/usr/bin
+		       Config files into: STAGING/usr/etc/primesense
+		       USB rules into: STAGING/etc/udev/rules.d 
+		       Logs will be created in: STAGING/var/log/primesense
+			
+		To build the package manually, you can run "make PLATFORM=<platform>" in the "Platform\Linux\Build" directory.
+		If you wish to build the Mono wrappers, also run "make PLATFORM=<platform> mono_wrapper" and "make PLATFORM=<platform> mono_samples".
+		
 MacOSX:
 	Requirements:
 		1) Xcode 3.2.6
@@ -104,11 +131,11 @@ MacOSX:
 		   From: http://www.openni.org/Downloads/OpenNIModules.aspx
 		   	   
 	Building Sensor:
-		1) Go into the directory: "Platform/Linux-x86/CreateRedist".
+		1) Go into the directory: "Platform/Linux/CreateRedist".
 		   Run the script: "./RedistMaker".
-		   This will compile everything and create a redist package in the "Platform/Linux-x86/Redist" directory.
-		   It will also create a distribution in the "Platform/Linux-x86/CreateRedist/Final" directory.
-		2) Go into the directory: "Platform/Linux-x86/Redist".
+		   This will compile everything and create a redist package in the "Platform/Linux/Redist" directory.
+		   It will also create a distribution in the "Platform/Linux/CreateRedist/Final" directory.
+		2) Go into the directory: "Platform/Linux/Redist".
 		   Run the script: "sudo ./install.sh" (needs to run as root)
 
   		   The install script copies key files to the following location:
@@ -118,4 +145,4 @@ MacOSX:
 		       USB rules into: /etc/udev/rules.d 
 		       Logs will be created in: /var/log/primesense
 			
-		To build the package manually, you can run "make" in the "Platform\Linux-x86\Build" directory.
+		To build the package manually, you can run "make" in the "Platform\Linux\Build" directory.

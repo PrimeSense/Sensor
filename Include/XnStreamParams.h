@@ -342,10 +342,14 @@
 #define XN_MODULE_PROPERTY_ERROR_STATE				"ErrorState"
 /** Boolean */
 #define XN_MODULE_PROPERTY_ENABLE_MULTI_PROCESS		"EnableMultiProcess"
+/** Boolean */
+#define XN_MODULE_PROPERTY_ENABLE_MULTI_USERS		"EnableMultiUsers"
 /** String */
 #define XN_MODULE_PROPERTY_PHYSICAL_DEVICE_NAME		"PhysicalDeviceName"
 /** String */
 #define XN_MODULE_PROPERTY_VENDOR_SPECIFIC_DATA		"VendorSpecificData"
+/** Boolean */
+#define XN_MODULE_PROPERTY_AUDIO_SUPPORTED			"AudioSupported"
 
 
 //---------------------------------------------------------------------------
@@ -405,6 +409,8 @@ typedef enum
 	XN_SENSOR_FW_VER_5_2 = 8,
 	XN_SENSOR_FW_VER_5_3 = 9,
 	XN_SENSOR_FW_VER_5_4 = 10,
+	XN_SENSOR_FW_VER_5_5 = 11,
+	XN_SENSOR_FW_VER_5_6 = 12,
 } XnFWVer;
 
 typedef enum
@@ -453,6 +459,7 @@ typedef enum
 	XN_IO_IMAGE_FORMAT_JPEG_MONO = 4,
 	XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422 = 5,
 	XN_IO_IMAGE_FORMAT_UNCOMPRESSED_BAYER = 6,
+	XN_IO_IMAGE_FORMAT_UNCOMPRESSED_GRAY8 = 7,
 } XnIOImageFormats;
 
 typedef enum

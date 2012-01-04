@@ -219,7 +219,7 @@ XnStatus XnStreamDeviceStreamHolder::ChooseCodec()
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnStreamDeviceStreamHolder::CodecPropertyChangedCallback(const XnProperty* pSender, void* pCookie)
+XnStatus XnStreamDeviceStreamHolder::CodecPropertyChangedCallback(const XnProperty* /*pSender*/, void* pCookie)
 {
 	XnStreamDeviceStreamHolder* pThis = (XnStreamDeviceStreamHolder*)pCookie;
 	return pThis->ChooseCodec();

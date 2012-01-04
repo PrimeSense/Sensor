@@ -50,7 +50,7 @@ public:
 		m_pStreamInterface->Close(m_pCookie);
 		return (XN_STATUS_OK);
 	}
-	XnStatus WriteData(const XnUChar* pData, XnUInt32 nDataSize)
+	XnStatus WriteData(const XnUChar* /*pData*/, XnUInt32 /*nDataSize*/)
 	{
 		return XN_STATUS_NOT_IMPLEMENTED;
 	}

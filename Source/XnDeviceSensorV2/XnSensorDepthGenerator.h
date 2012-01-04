@@ -31,6 +31,10 @@
 //---------------------------------------------------------------------------
 // Types
 //---------------------------------------------------------------------------
+// disable the "inherits via dominance" warning. This is exactly what we want.
+#pragma warning (push)
+#pragma warning (disable: 4250)
+
 class XnSensorDepthGenerator : 
 	public XnSensorMapGenerator, 
 	virtual public xn::ModuleDepthGenerator,
@@ -100,5 +104,6 @@ public:
 	virtual XnSensorGenerator* CreateGenerator(xn::Context& context, xn::Device& sensor, XnDeviceBase* pSensor, const XnChar* strStreamName);
 };
 
+#pragma warning (pop)
 
 #endif // __XN_SENSOR_DEPTH_GENERATOR_H__

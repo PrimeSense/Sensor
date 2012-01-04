@@ -21,10 +21,10 @@
 ****************************************************************************/
 #include "XnShiftToDepthStreamHelper.h"
 
-XnShiftToDepthStreamHelper::XnShiftToDepthStreamHelper(XnDeviceModule* pModule) :
+XnShiftToDepthStreamHelper::XnShiftToDepthStreamHelper() :
 	m_ShiftToDepthTable(XN_STREAM_PROPERTY_S2D_TABLE, NULL, 0, NULL),
 	m_DepthToShiftTable(XN_STREAM_PROPERTY_D2S_TABLE, NULL, 0, NULL),
-	m_pModule(pModule),
+	m_pModule(NULL),
 	m_bPropertiesAdded(FALSE)
 {
 	m_ShiftToDepthTable.UpdateGetCallback(GetShiftToDepthTableCallback, this);
@@ -37,9 +37,12 @@ XnShiftToDepthStreamHelper::~XnShiftToDepthStreamHelper()
 	XnShiftToDepthStreamHelper::Free();
 }
 
-XnStatus XnShiftToDepthStreamHelper::Init()
+XnStatus XnShiftToDepthStreamHelper::Init(XnDeviceModule* pModule)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
+
+	XN_VALIDATE_INPUT_PTR(pModule);
+	m_pModule = pModule;
 	
 	// old depth streams did not have S2D tables as actual properties. Add these properties
 	XnBool bDoesExist = FALSE;
@@ -269,25 +272,25 @@ XnStatus XnShiftToDepthStreamHelper::GetDepthToShiftTableImpl(const XnGeneralBuf
 	return XN_STATUS_OK;
 }
 
-XnStatus XN_CALLBACK_TYPE XnShiftToDepthStreamHelper::GetShiftToDepthTableCallback(const XnActualGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnShiftToDepthStreamHelper::GetShiftToDepthTableCallback(const XnActualGeneralProperty* /*pSender*/, const XnGeneralBuffer& gbValue, void* pCookie)
 {
 	XnShiftToDepthStreamHelper* pStream = (XnShiftToDepthStreamHelper*)pCookie;
 	return pStream->GetShiftToDepthTableImpl(gbValue);	
 }
 
-XnStatus XN_CALLBACK_TYPE XnShiftToDepthStreamHelper::GetDepthToShiftTableCallback(const XnActualGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnShiftToDepthStreamHelper::GetDepthToShiftTableCallback(const XnActualGeneralProperty* /*pSender*/, const XnGeneralBuffer& gbValue, void* pCookie)
 {
 	XnShiftToDepthStreamHelper* pStream = (XnShiftToDepthStreamHelper*)pCookie;
 	return pStream->GetDepthToShiftTableImpl(gbValue);	
 }
 
-XnStatus XN_CALLBACK_TYPE XnShiftToDepthStreamHelper::ShiftToDepthPropertyValueChangedCallback(const XnProperty* pSender, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnShiftToDepthStreamHelper::ShiftToDepthPropertyValueChangedCallback(const XnProperty* /*pSender*/, void* pCookie)
 {
 	XnShiftToDepthStreamHelper* pStream = (XnShiftToDepthStreamHelper*)pCookie;
 	return pStream->OnShiftToDepthPropertyValueChanged();
 }
 
-XnStatus XN_CALLBACK_TYPE XnShiftToDepthStreamHelper::DeviceS2DTablesSizeChangedCallback(const XnProperty* pSender, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnShiftToDepthStreamHelper::DeviceS2DTablesSizeChangedCallback(const XnProperty* /*pSender*/, void* pCookie)
 {
 	XnShiftToDepthStreamHelper* pStream = (XnShiftToDepthStreamHelper*)pCookie;
 	return pStream->OnDeviceS2DTablesSizeChanged();

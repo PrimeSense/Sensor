@@ -1,1 +1,0 @@
-make CROSS_PLATFORM=1 TARGET_SYS_ROOT=/root/Intel/IntelCE-1.1120/i686-linux-elf

@@ -36,7 +36,7 @@
 // Types
 //---------------------------------------------------------------------------
 struct XnFileBCData;
-XN_DECLARE_DEFAULT_HASH(XnUInt32, XnValue, XnUIntHash);
+XN_DECLARE_DEFAULT_HASH(XnUInt64, XnValue, XnUIntHash);
 
 class XnDeviceFileReader : public XnStreamReaderDevice
 {
@@ -78,6 +78,7 @@ private:
 	XnStatus OnStreamCollectionChanged(const XnChar* StreamName, XnStreamsChangeEventType EventType);
 
 	static void XN_CALLBACK_TYPE StreamCollectionChangedCallback(XnDeviceHandle DeviceHandle, const XnChar* StreamName, XnStreamsChangeEventType EventType, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE GetInstanceCallback(const XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie);
 
 	// Some BC functions
 	XnStatus BCSeek(XnUInt64 nTimestamp);
@@ -98,8 +99,7 @@ private:
 	XnFileBCData* m_pBCData;
 	XnUIntHash m_PositionsToIgnore;
 
-	XnDeviceFileReader* m_pThis;
-	XnActualGeneralProperty m_InstancePointer;
+	XnGeneralProperty m_InstancePointer;
 };
 
 #endif //__XN_DEVICE_FILE_READER_H__

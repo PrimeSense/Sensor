@@ -59,7 +59,7 @@ private:
 	static XnStatus XN_CALLBACK_TYPE DeleteChannelChangedCallback(const XnProperty* pSender, void* pCookie);
 
 	/** Used to dump Audio In data. */
-	XnDump m_AudioInDump;
+	XnDumpFile* m_AudioInDump;
 	XnBool m_bDeleteChannel;
 	XnSensorAudioStream* m_pStream;
 	XnSensorStreamHelper* m_pHelper;

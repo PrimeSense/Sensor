@@ -56,6 +56,7 @@ public:
 
 protected:
 	XnStatus AddSupportedModes(XnCmosPreset* aPresets, XnUInt32 nCount);
+	XnStatus ValidateSupportedMode(const XnCmosPreset& preset);
 
 	//---------------------------------------------------------------------------
 	// Properties Getters

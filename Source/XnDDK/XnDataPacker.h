@@ -35,6 +35,8 @@
 //---------------------------------------------------------------------------
 // Types
 //---------------------------------------------------------------------------
+typedef XnUInt32 XnPackedDataType;
+
 typedef enum
 {
 	XN_PACKED_PROPERTY_SET = 1,
@@ -47,7 +49,7 @@ typedef enum
 	XN_PACKED_STREAM_DATA = 8,
 	XN_PACKED_END = 9,
 	XN_PACKED_CUSTOM_MESSAGE = 2000,
-} XnPackedDataType;
+} XnPredefinedPackedDataType;
 
 struct XnPackedDataHeader; // Forward declaration
 

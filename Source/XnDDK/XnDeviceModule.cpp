@@ -541,7 +541,7 @@ XnStatus XnDeviceModule::SetLockState(XnBool bLocked)
 	return (nRetVal);
 }
 
-XnStatus XnDeviceModule::SetLockStateCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+XnStatus XnDeviceModule::SetLockStateCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnDeviceModule* pThis = (XnDeviceModule*)pCookie;
 	return pThis->SetLockState(nValue != FALSE);
