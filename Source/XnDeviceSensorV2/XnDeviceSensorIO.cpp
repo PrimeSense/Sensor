@@ -398,6 +398,10 @@ XnStatus XnSensorIO::EnumerateSensors(XnConnectionString* aConnectionStrings, Xn
 		// search for a v6.0 device
 		nRetVal = Enumerate(XN_SENSOR_6_0_PRODUCT_ID, devicesSet);
 		XN_IS_STATUS_OK(nRetVal);	
+
+		// search for a v5.0 device
+		nRetVal = Enumerate(XN_SENSOR_5_0_PRODUCT_ID, devicesSet);
+		XN_IS_STATUS_OK(nRetVal);
 	}
 #else
 	XnStringsHash devicesSet;
