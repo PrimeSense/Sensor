@@ -30,7 +30,6 @@
 #include "XnSensorFixedParams.h"
 #include <XnDDK/XnDeviceStream.h>
 #include <XnDDK/XnDeviceModuleHolder.h>
-#include "XnSharedMemoryBufferPool.h"
 
 //---------------------------------------------------------------------------
 // Types
@@ -81,7 +80,7 @@ public:
 
 	inline XnSensorFirmware* GetFirmware() const { return m_pObjects->pFirmware; }
 	inline XnFWVer GetFirmwareVersion() const { return GetFirmware()->GetInfo()->nFWVer; }
-	inline XnSensorFixedParams* GetFixedParams() const { return m_pObjects->pFixedParams; }
+	inline XnSensorFixedParams* GetFixedParams() const { return m_pObjects->pFirmware->GetFixedParams(); }
 	inline XnDevicePrivateData* GetPrivateData() const { return m_pObjects->pDevicePrivateData; }
 	inline XnSensorFPS* GetFPS() const { return m_pObjects->pFPS; }
 	inline XnCmosInfo* GetCmosInfo() const { return m_pObjects->pCmosInfo; }
@@ -99,7 +98,29 @@ private:
 	XnDeviceStream* m_pStream;
 	XnSensorObjects* m_pObjects;
 
-	XnHash m_FirmwareProperties;
+	class XnSensorStreamHelperCookie
+	{
+	public:
+		XnSensorStreamHelperCookie() {}
+		XnSensorStreamHelperCookie(XnActualIntProperty* pStreamProp, XnActualIntProperty* pFirmwareProp, XnBool bAllowWhileOpen, XnSensorStreamHelper::ConvertCallback pStreamToFirmwareFunc) :
+			pStreamProp(pStreamProp), pFirmwareProp(pFirmwareProp), bAllowWhileOpen(bAllowWhileOpen), pStreamToFirmwareFunc(pStreamToFirmwareFunc), bProcessorProp(FALSE)
+		{}
+
+		XnActualIntProperty* pStreamProp;
+		XnActualIntProperty* pFirmwareProp;
+		XnBool bAllowWhileOpen;
+		XnSensorStreamHelper::ConvertCallback pStreamToFirmwareFunc;
+		XnBool bProcessorProp;
+
+		struct
+		{
+			XnBool bShouldOpen;
+			XnBool bChooseProcessor;
+		} CurrentTransaction;
+	};
+
+	typedef XnHashT<XnActualIntProperty*, XnSensorStreamHelperCookie> FirmareProperties;
+	FirmareProperties m_FirmwareProperties;
 };
 
 class XnSensorStreamHolder : public XnDeviceModuleHolder
@@ -110,7 +131,6 @@ public:
 	{}
 
 	inline XnDeviceStream* GetStream() { return (XnDeviceStream*)GetModule(); }
-	inline XnSharedMemoryBufferPool* GetSharedBufferPool() { return m_pHelper->GetSensorStream()->GetSharedMemoryBuffer(); }
 
 	XnStatus Configure() { return m_pHelper->Configure(); }
 	XnStatus FinalOpen() { return m_pHelper->FinalOpen(); }

@@ -441,28 +441,33 @@ XnStatus XnExportedSensorImageGenerator::IsSupportedForDevice(xn::Context& conte
 	nRetVal = sensorInfo.GetInstance(sensor);
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnBool bShouldBeCreated = (!sensor.IsValid());
+	XnUInt64 nImageSupported = FALSE;
 
-	if (bShouldBeCreated)
+	if (sensor.IsValid())
 	{
-		nRetVal = context.CreateProductionTree(sensorInfo, sensor);
+		nRetVal = sensor.GetIntProperty(XN_MODULE_PROPERTY_IMAGE_SUPPORTED, nImageSupported);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+	else
+	{
+		// Don't create sensor through OpenNI. This will cause it to soft-reset.
+		// instead, "talk" directly to the sensor class
+		XnSensor lowLevelSensor(FALSE);
+		XnDeviceConfig config;
+		config.DeviceMode = XN_DEVICE_MODE_READ;
+		config.cpConnectionString = sensorInfo.GetCreationInfo();
+		config.SharingMode = XN_DEVICE_EXCLUSIVE;
+		config.pInitialValues = NULL;
+		nRetVal = lowLevelSensor.Init(&config);
+		XN_IS_STATUS_OK(nRetVal);
+
+		nRetVal = lowLevelSensor.GetProperty(XN_MODULE_NAME_DEVICE, XN_MODULE_PROPERTY_IMAGE_SUPPORTED, &nImageSupported);
 		XN_IS_STATUS_OK(nRetVal);
 	}
 
-	// This is an ugly patch to find out if this sensor has an image CMOS. It will be fixed
-	// in future firmwares so we can just ask.
-	XnCmosBlankingUnits units;
-	units.nCmosID = XN_CMOS_TYPE_IMAGE;
-	nRetVal = sensor.GetGeneralProperty(XN_MODULE_PROPERTY_CMOS_BLANKING_UNITS, sizeof(units), &units);
-	if (nRetVal != XN_STATUS_OK || units.nUnits == 0)
+	if (nImageSupported != TRUE)
 	{
-		// Failed. this means no image CMOS
 		*pbSupported = FALSE;
-	}
-
-	if (bShouldBeCreated)
-	{
-		sensor.Release();
 	}
 
 	return (XN_STATUS_OK);

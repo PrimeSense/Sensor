@@ -42,7 +42,7 @@ XnStatus XnMultiPropChangedHandler::AddProperty(const XnChar* strName)
 	XnStatus nRetVal = XN_STATUS_OK;
 
 	XnCallbackHandle hCallback;
-	nRetVal = m_pNode->GetSensor()->RegisterToPropertyChange(m_strModule, strName, PropertyChangedCallback, this, &hCallback);
+	nRetVal = m_pNode->GetSensor()->RegisterToPropertyChange(m_strModule, strName, PropertyChangedCallback, this, hCallback);
 	XN_IS_STATUS_OK(nRetVal);
 
 	nRetVal = m_Registered.Set(strName, hCallback);
@@ -74,9 +74,9 @@ XnStatus XnMultiPropChangedHandler::AddProperties(const XnChar** strNames)
 
 void XnMultiPropChangedHandler::Unregister()
 {
-	for (XnPropertyHandleHash::Iterator it = m_Registered.begin(); it != m_Registered.end(); ++it)
+	for (XnPropertyHandleHash::Iterator it = m_Registered.Begin(); it != m_Registered.End(); ++it)
 	{
-		m_pNode->GetSensor()->UnregisterFromPropertyChange(m_strModule, it.Key(), it.Value());
+		m_pNode->GetSensor()->UnregisterFromPropertyChange(m_strModule, it->Key(), it->Value());
 	}
 }
 

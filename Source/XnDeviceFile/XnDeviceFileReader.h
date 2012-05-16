@@ -28,7 +28,7 @@
 #include "XnDeviceFile.h"
 #include <XnDDK/XnStreamReaderDevice.h>
 #include <XnIOFileStream.h>
-#include <XnHash.h>
+#include <XnHashT.h>
 
 #define XN_FILE_PROPERTY_INSTANCE_POINTER	"InstancePointer"
 
@@ -36,7 +36,7 @@
 // Types
 //---------------------------------------------------------------------------
 struct XnFileBCData;
-XN_DECLARE_DEFAULT_HASH(XnUInt64, XnValue, XnUIntHash);
+typedef XnHashT<XnUInt64, XnValue> XnUIntHash;
 
 class XnDeviceFileReader : public XnStreamReaderDevice
 {
@@ -77,7 +77,7 @@ private:
 
 	XnStatus OnStreamCollectionChanged(const XnChar* StreamName, XnStreamsChangeEventType EventType);
 
-	static void XN_CALLBACK_TYPE StreamCollectionChangedCallback(XnDeviceHandle DeviceHandle, const XnChar* StreamName, XnStreamsChangeEventType EventType, void* pCookie);
+	static void XN_CALLBACK_TYPE StreamCollectionChangedCallback(const XnStreamCollectionChangedEventArgs& args, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE GetInstanceCallback(const XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie);
 
 	// Some BC functions

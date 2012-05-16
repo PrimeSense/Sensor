@@ -169,9 +169,9 @@ XnStatus XnServerSession::SendInitialState()
 
 XnStatus XnServerSession::FindStreamByServerName(const XnChar* strName, SessionStream** ppStream)
 {
-	for (SessionStreamsHash::Iterator it = m_streamsHash.begin(); it != m_streamsHash.end(); ++it)
+	for (SessionStreamsHash::Iterator it = m_streamsHash.Begin(); it != m_streamsHash.End(); ++it)
 	{
-		SessionStream* pStream = &it.Value();
+		SessionStream* pStream = &it->Value();
 		if (strcmp(pStream->strStreamName, strName) == 0)
 		{
 			*ppStream = pStream;
@@ -206,6 +206,8 @@ XnStatus XnServerSession::HandleOpenSensor()
 	// if an error occurred, send it to the client
 	if (nActionResult != XN_STATUS_OK)
 	{
+		xnLogWarning(XN_MASK_SENSOR_SERVER, "Client %u failed to open sensor '%s': %s", m_nID, strConnectionString, xnGetStatusString(nActionResult));
+
 		nRetVal = SendReply(XN_SENSOR_SERVER_MESSAGE_GENERAL_OP_RESPOND, nActionResult);
 		XN_IS_STATUS_OK(nRetVal);
 	}
@@ -220,7 +222,7 @@ XnStatus XnServerSession::OpenSensorImpl(const XnChar* strConnectionString)
 	nRetVal = m_pSensorsManager->GetSensor(strConnectionString, &m_pSensor);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = m_pSensor->PropChangedEvent().Register(PropertyChangedCallback, this, &m_hProprtyChangeCallback);
+	nRetVal = m_pSensor->PropChangedEvent().Register(PropertyChangedCallback, this, m_hProprtyChangeCallback);
 	XN_IS_STATUS_OK(nRetVal);
 	
 	return (XN_STATUS_OK);
@@ -239,12 +241,12 @@ XnStatus XnServerSession::CloseSensorImpl()
 
 	// release all streams
 	XnAutoCSLocker locker(m_hStreamsLock);
-	SessionStreamsHash::Iterator it = m_streamsHash.begin();
-	while (it != m_streamsHash.end())
+	SessionStreamsHash::Iterator it = m_streamsHash.Begin();
+	while (it != m_streamsHash.End())
 	{
 		SessionStreamsHash::Iterator curr = it;
 		++it;
-		const XnChar* strName = curr.Key();
+		const XnChar* strName = curr->Key();
 		if (strcmp(strName, XN_MODULE_NAME_DEVICE) != 0)
 		{
 			RemoveStreamImpl(strName);
@@ -278,6 +280,10 @@ XnStatus XnServerSession::HandleSetIntProperty()
 	XN_IS_STATUS_OK(nRetVal);
 
 	XnStatus nActionResult = SetIntPropertyImpl(strModule, strProp, nValue);
+	if (nActionResult != XN_STATUS_OK)
+	{
+		xnLogWarning(XN_MASK_SENSOR_SERVER, "Client %u failed to set property '%s.%s': %s", m_nID, strModule, strProp, xnGetStatusString(nActionResult));
+	}
 	
 	nRetVal = SendReply(XN_SENSOR_SERVER_MESSAGE_GENERAL_OP_RESPOND, nActionResult);
 	XN_IS_STATUS_OK(nRetVal);
@@ -291,7 +297,7 @@ XnStatus XnServerSession::SetIntPropertyImpl(const XnChar* strModule, const XnCh
 	
 	xnLogVerbose(XN_MASK_SENSOR_SERVER, "Client %u requested to set %s.%s", m_nID, strModule, strProp);
 
-	SessionStream* pStream;
+	SessionStream* pStream = NULL;
 	nRetVal = m_streamsHash.Get(strModule, pStream);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -313,6 +319,10 @@ XnStatus XnServerSession::HandleSetRealProperty()
 	XN_IS_STATUS_OK(nRetVal);
 
 	XnStatus nActionResult = SetRealPropertyImpl(strModule, strProp, dValue);
+	if (nActionResult != XN_STATUS_OK)
+	{
+		xnLogWarning(XN_MASK_SENSOR_SERVER, "Client %u failed to set property '%s.%s': %s", m_nID, strModule, strProp, xnGetStatusString(nActionResult));
+	}
 
 	nRetVal = SendReply(XN_SENSOR_SERVER_MESSAGE_GENERAL_OP_RESPOND, nActionResult);
 	XN_IS_STATUS_OK(nRetVal);
@@ -326,7 +336,7 @@ XnStatus XnServerSession::SetRealPropertyImpl(const XnChar* strModule, const XnC
 
 	xnLogVerbose(XN_MASK_SENSOR_SERVER, "Client %u requested to set %s.%s", m_nID, strModule, strProp);
 
-	SessionStream* pStream;
+	SessionStream* pStream = NULL;
 	nRetVal = m_streamsHash.Get(strModule, pStream);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -348,7 +358,11 @@ XnStatus XnServerSession::HandleSetStringProperty()
 	XN_IS_STATUS_OK(nRetVal);
 
 	XnStatus nActionResult = SetStringPropertyImpl(strModule, strProp, strValue);
-	
+	if (nActionResult != XN_STATUS_OK)
+	{
+		xnLogWarning(XN_MASK_SENSOR_SERVER, "Client %u failed to set property '%s.%s': %s", m_nID, strModule, strProp, xnGetStatusString(nActionResult));
+	}
+
 	nRetVal = SendReply(XN_SENSOR_SERVER_MESSAGE_GENERAL_OP_RESPOND, nActionResult);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -361,7 +375,7 @@ XnStatus XnServerSession::SetStringPropertyImpl(const XnChar* strModule, const X
 	
 	xnLogVerbose(XN_MASK_SENSOR_SERVER, "Client %u requested to set %s.%s", m_nID, strModule, strProp);
 
-	SessionStream* pStream;
+	SessionStream* pStream = NULL;
 	nRetVal = m_streamsHash.Get(strModule, pStream);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -383,6 +397,10 @@ XnStatus XnServerSession::HandleSetGeneralProperty()
 	XN_IS_STATUS_OK(nRetVal);
 
 	XnStatus nActionResult = SetGeneralPropertyImpl(strModule, strProp, gbValue);
+	if (nActionResult != XN_STATUS_OK)
+	{
+		xnLogWarning(XN_MASK_SENSOR_SERVER, "Client %u failed to set property '%s.%s': %s", m_nID, strModule, strProp, xnGetStatusString(nActionResult));
+	}
 
 	nRetVal = SendReply(XN_SENSOR_SERVER_MESSAGE_GENERAL_OP_RESPOND, nActionResult);
 	XN_IS_STATUS_OK(nRetVal);
@@ -396,7 +414,7 @@ XnStatus XnServerSession::SetGeneralPropertyImpl(const XnChar* strModule, const 
 	
 	xnLogVerbose(XN_MASK_SENSOR_SERVER, "Client %u requested to set %s.%s", m_nID, strModule, strProp);
 
-	SessionStream* pStream;
+	SessionStream* pStream = NULL;
 	nRetVal = m_streamsHash.Get(strModule, pStream);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -423,6 +441,10 @@ XnStatus XnServerSession::HandleGetIntProperty()
 	// get
 	XnUInt64 nValue;
 	XnStatus nActionResult = GetIntPropertyImpl(request.strModuleName, request.strPropertyName, &nValue);
+	if (nActionResult != XN_STATUS_OK)
+	{
+		xnLogWarning(XN_MASK_SENSOR_SERVER, "Client %u failed to get property '%s.%s': %s", m_nID, request.strModuleName, request.strPropertyName, xnGetStatusString(nActionResult));
+	}
 
 	nRetVal = SendReply(XN_SENSOR_SERVER_MESSAGE_GET_INT_PROPERTY, nActionResult, sizeof(nValue), &nValue);
 	XN_IS_STATUS_OK(nRetVal);
@@ -434,7 +456,7 @@ XnStatus XnServerSession::GetIntPropertyImpl(const XnChar* strModule, const XnCh
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	SessionStream* pStream;
+	SessionStream* pStream = NULL;
 	nRetVal = m_streamsHash.Get(strModule, pStream);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -461,6 +483,10 @@ XnStatus XnServerSession::HandleGetRealProperty()
 	// get
 	XnDouble dValue;
 	XnStatus nActionResult = GetRealPropertyImpl(request.strModuleName, request.strPropertyName, &dValue);
+	if (nActionResult != XN_STATUS_OK)
+	{
+		xnLogWarning(XN_MASK_SENSOR_SERVER, "Client %u failed to get property '%s.%s': %s", m_nID, request.strModuleName, request.strPropertyName, xnGetStatusString(nActionResult));
+	}
 
 	nRetVal = SendReply(XN_SENSOR_SERVER_MESSAGE_GET_REAL_PROPERTY, nActionResult, sizeof(dValue), &dValue);
 	XN_IS_STATUS_OK(nRetVal);
@@ -472,7 +498,7 @@ XnStatus XnServerSession::GetRealPropertyImpl(const XnChar* strModule, const XnC
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	SessionStream* pStream;
+	SessionStream* pStream = NULL;
 	nRetVal = m_streamsHash.Get(strModule, pStream);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -499,6 +525,10 @@ XnStatus XnServerSession::HandleGetStringProperty()
 	// get
 	XnChar strValue[XN_DEVICE_MAX_STRING_LENGTH];
 	XnStatus nActionResult = GetStringPropertyImpl(request.strModuleName, request.strPropertyName, strValue);
+	if (nActionResult != XN_STATUS_OK)
+	{
+		xnLogWarning(XN_MASK_SENSOR_SERVER, "Client %u failed to get property '%s.%s': %s", m_nID, request.strModuleName, request.strPropertyName, xnGetStatusString(nActionResult));
+	}
 
 	nRetVal = SendReply(XN_SENSOR_SERVER_MESSAGE_GET_STRING_PROPERTY, nActionResult, sizeof(strValue), strValue);
 	XN_IS_STATUS_OK(nRetVal);
@@ -510,7 +540,7 @@ XnStatus XnServerSession::GetStringPropertyImpl(const XnChar* strModule, const X
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	SessionStream* pStream;
+	SessionStream* pStream = NULL;
 	nRetVal = m_streamsHash.Get(strModule, pStream);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -540,6 +570,10 @@ XnStatus XnServerSession::HandleGetGeneralProperty()
 	// get
 	XnGeneralBuffer gbValue = XnGeneralBufferPack(pData, pRequest->nSize);
 	XnStatus nActionResult = GetGeneralPropertyImpl(pRequest->strModuleName, pRequest->strPropertyName, gbValue);
+	if (nActionResult != XN_STATUS_OK)
+	{
+		xnLogWarning(XN_MASK_SENSOR_SERVER, "Client %u failed to get property '%s.%s': %s", m_nID, pRequest->strModuleName, pRequest->strPropertyName, xnGetStatusString(nActionResult));
+	}
 
 	nRetVal = SendReply(XN_SENSOR_SERVER_MESSAGE_GET_GENERAL_PROPERTY, nActionResult, pRequest->nSize, pData);
 	XN_IS_STATUS_OK(nRetVal);
@@ -551,7 +585,7 @@ XnStatus XnServerSession::GetGeneralPropertyImpl(const XnChar* strModule, const 
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	SessionStream* pStream;
+	SessionStream* pStream = NULL;
 	nRetVal = m_streamsHash.Get(strModule, pStream);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -578,6 +612,10 @@ XnStatus XnServerSession::HandleConfigFromINIFile()
 
 	// load
 	XnStatus nActionResult = ConfigFromINIFileImpl(message.strFileName, message.strSectionName);
+	if (nActionResult != XN_STATUS_OK)
+	{
+		xnLogWarning(XN_MASK_SENSOR_SERVER, "Client %u failed to config sensor from file '%s': %s", m_nID, message.strFileName, xnGetStatusString(nActionResult));
+	}
 
 	nRetVal = SendReply(XN_SENSOR_SERVER_MESSAGE_GENERAL_OP_RESPOND, nActionResult);
 	XN_IS_STATUS_OK(nRetVal);
@@ -601,6 +639,10 @@ XnStatus XnServerSession::HandleBatchConfig()
 	XN_IS_STATUS_OK(nRetVal);
 
 	XnStatus nActionResult = BatchConfigImpl(&props);
+	if (nActionResult != XN_STATUS_OK)
+	{
+		xnLogWarning(XN_MASK_SENSOR_SERVER, "Client %u failed to batch config: %s", m_nID, xnGetStatusString(nActionResult));
+	}
 
 	nRetVal = SendReply(XN_SENSOR_SERVER_MESSAGE_GENERAL_OP_RESPOND, nActionResult);
 	XN_IS_STATUS_OK(nRetVal);
@@ -615,13 +657,13 @@ XnStatus XnServerSession::BatchConfigImpl(const XnPropertySet* pProps)
 	xnLogVerbose(XN_MASK_SENSOR_SERVER, "Client %u requested a batch config", m_nID);
 
 	XN_PROPERTY_SET_CREATE_ON_STACK(serverProps);
-	for (XnPropertySetData::Iterator it = pProps->pData->begin(); it != pProps->pData->end(); ++it)
+	for (XnPropertySetData::Iterator it = pProps->pData->Begin(); it != pProps->pData->End(); ++it)
 	{
-		SessionStream* pStream;
-		nRetVal = m_streamsHash.Get(it.Key(), pStream);
+		SessionStream* pStream = NULL;
+		nRetVal = m_streamsHash.Get(it->Key(), pStream);
 		XN_IS_STATUS_OK(nRetVal);
 
-		nRetVal = XnPropertySetCloneModule(pProps, &serverProps, it.Key(), pStream->strStreamName);
+		nRetVal = XnPropertySetCloneModule(pProps, &serverProps, it->Key(), pStream->strStreamName);
 		XN_IS_STATUS_OK(nRetVal);
 	}
 
@@ -644,12 +686,16 @@ XnStatus XnServerSession::HandleNewStream()
 	XN_IS_STATUS_OK(nRetVal);
 
 	XnPropertySet* pInitialValues = &props;
-	if (props.pData->begin() == props.pData->end())
+	if (props.pData->Begin() == props.pData->End())
 	{
 		pInitialValues = NULL;
 	}
 
 	XnStatus nActionResult = NewStreamImpl(strType, strName, pInitialValues);
+	if (nActionResult != XN_STATUS_OK)
+	{
+		xnLogWarning(XN_MASK_SENSOR_SERVER, "Client %u failed to create stream of type '%s': %s", m_nID, strType, xnGetStatusString(nActionResult));
+	}
 
 	nRetVal = SendReply(XN_SENSOR_SERVER_MESSAGE_GENERAL_OP_RESPOND, nActionResult);
 	XN_IS_STATUS_OK(nRetVal);
@@ -721,6 +767,10 @@ XnStatus XnServerSession::HandleRemoveStream()
 
 	xnLogVerbose(XN_MASK_SENSOR_SERVER, "Client %u requested to remove stream %s", m_nID, strName);
 	XnStatus nActionResult = RemoveStreamImpl(strName);
+	if (nActionResult != XN_STATUS_OK)
+	{
+		xnLogWarning(XN_MASK_SENSOR_SERVER, "Client %u failed to remove stream '%s': %s", m_nID, strName, xnGetStatusString(nActionResult));
+	}
 
 	nRetVal = SendReply(XN_SENSOR_SERVER_MESSAGE_GENERAL_OP_RESPOND, nActionResult);
 	XN_IS_STATUS_OK(nRetVal);
@@ -732,7 +782,7 @@ XnStatus XnServerSession::RemoveStreamImpl(const XnChar* strName)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	SessionStream* pStream;
+	SessionStream* pStream = NULL;
 	nRetVal = m_streamsHash.Get(strName, pStream);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -782,6 +832,10 @@ XnStatus XnServerSession::HandleOpenStream()
 	XN_IS_STATUS_OK(nRetVal);
 
 	XnStatus nActionResult = OpenStreamImpl(strStreamName);
+	if (nActionResult != XN_STATUS_OK)
+	{
+		xnLogWarning(XN_MASK_SENSOR_SERVER, "Client %u failed to open stream '%s': %s", m_nID, strStreamName, xnGetStatusString(nActionResult));
+	}
 
 	nRetVal = SendReply(XN_SENSOR_SERVER_MESSAGE_GENERAL_OP_RESPOND, nActionResult);
 	XN_IS_STATUS_OK(nRetVal);
@@ -794,13 +848,13 @@ XnStatus XnServerSession::OpenStreamImpl(const XnChar* strName)
 	XnStatus nRetVal = XN_STATUS_OK;
 	
 	xnLogVerbose(XN_MASK_SENSOR_SERVER, "Client %u requested to open stream %s", m_nID, strName);
-	SessionStream* pStream;
+	SessionStream* pStream = NULL;
 	nRetVal = m_streamsHash.Get(strName, pStream);
 	XN_IS_STATUS_OK(nRetVal);
 
 	if (!pStream->bIsOpen)
 	{
-		nRetVal = m_pSensor->OpenStream(pStream->strStreamName, StreamNewDataCallback, pStream, &pStream->hNewDataCallback);
+		nRetVal = m_pSensor->OpenStream(pStream->strStreamName, StreamNewDataCallback, pStream, pStream->hNewDataCallback);
 		XN_IS_STATUS_OK(nRetVal);
 		pStream->bIsOpen = TRUE;
 	}
@@ -820,6 +874,10 @@ XnStatus XnServerSession::HandleCloseStream()
 	XN_IS_STATUS_OK(nRetVal);
 
 	XnStatus nActionResult = CloseStreamImpl(strStreamName);
+	if (nActionResult != XN_STATUS_OK)
+	{
+		xnLogWarning(XN_MASK_SENSOR_SERVER, "Client %u failed to close stream '%s': %s", m_nID, strStreamName, xnGetStatusString(nActionResult));
+	}
 
 	nRetVal = SendReply(XN_SENSOR_SERVER_MESSAGE_GENERAL_OP_RESPOND, nActionResult);
 	XN_IS_STATUS_OK(nRetVal);
@@ -832,7 +890,7 @@ XnStatus XnServerSession::CloseStreamImpl(const XnChar* strName)
 	XnStatus nRetVal = XN_STATUS_OK;
 
 	xnLogVerbose(XN_MASK_SENSOR_SERVER, "Client %u requested to close stream %s", m_nID, strName);
-	SessionStream* pStream;
+	SessionStream* pStream = NULL;
 	nRetVal = m_streamsHash.Get(strName, pStream);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -866,6 +924,8 @@ XnStatus XnServerSession::HandleReadStream()
 	}
 	else
 	{
+		xnLogWarning(XN_MASK_SENSOR_SERVER, "Client %u failed to read stream '%s': %s", m_nID, strStreamName, xnGetStatusString(nActionResult));
+
 		nRetVal = SendReply(XN_SENSOR_SERVER_MESSAGE_GENERAL_OP_RESPOND, nActionResult);
 		XN_IS_STATUS_OK(nRetVal);
 	}
@@ -877,7 +937,7 @@ XnStatus XnServerSession::ReadStreamImpl(const XnChar* strName, XnSensorServerRe
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	SessionStream* pStream;
+	SessionStream* pStream = NULL;
 	nRetVal = m_streamsHash.Get(strName, pStream);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -1103,7 +1163,7 @@ XnStatus XnServerSession::RemoveSessionModule(const XnChar* clientName)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	SessionStream* pStream;
+	SessionStream* pStream = NULL;
 	nRetVal = m_streamsHash.Get(clientName, pStream);
 	if (nRetVal == XN_STATUS_OK)
 	{
@@ -1192,10 +1252,10 @@ void XN_CALLBACK_TYPE XnServerSession::PropertyChangedCallback(const XnProperty*
 	pThis->OnPropertyChanged(pProp);
 }
 
-void XN_CALLBACK_TYPE XnServerSession::StreamNewDataCallback(const XnChar* /*strName*/, XnUInt64 nTimestamp, XnUInt32 nFrameID, void* pCookie)
+void XN_CALLBACK_TYPE XnServerSession::StreamNewDataCallback(const XnServerSensorInvoker::NewStreamDataEventArgs& args, void* pCookie)
 {
 	SessionStream* pStream = (SessionStream*)pCookie;
-	pStream->pSession->OnNewData(pStream, nTimestamp, nFrameID);
+	pStream->pSession->OnNewData(pStream, args.nTimestamp, args.nFrameID);
 }
 
 XN_THREAD_PROC XnServerSession::ServeThreadCallback(XN_THREAD_PARAM pThreadParam)

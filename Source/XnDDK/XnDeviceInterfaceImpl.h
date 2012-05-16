@@ -53,7 +53,11 @@ XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(Create)(XnDeviceHandle* pDeviceHandl
 {
 	IXnDevice* pDevice = XN_NEW(XN_DEVICE_BASE_DERIVATIVE);
 	XnStatus nRetVal = pDevice->Init(pDeviceConfig);
-	XN_IS_STATUS_OK(nRetVal);
+	if (nRetVal != XN_STATUS_OK)
+	{
+		XN_DELETE(pDevice);
+		return (nRetVal);
+	}
 
 	*pDeviceHandle = pDevice->GetDeviceHandle();
 
@@ -126,10 +130,10 @@ XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(DoesModuleExist)(const XnDeviceHandl
 	return pDevice->DoesModuleExist(ModuleName, pbDoesExist);
 }
 
-XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(RegisterToStreamsChange)(const XnDeviceHandle DeviceHandle, XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(RegisterToStreamsChange)(const XnDeviceHandle DeviceHandle, XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 {
 	IXnDevice* pDevice = IXnDevice::GetFromDeviceHandle(DeviceHandle);
-	return pDevice->RegisterToStreamsChange(Handler, pCookie, phCallback);
+	return pDevice->RegisterToStreamsChange(Handler, pCookie, hCallback);
 }
 
 XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(UnregisterFromStreamsChange)(const XnDeviceHandle DeviceHandle, XnCallbackHandle hCallback)
@@ -149,10 +153,10 @@ XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(DestroyStreamData)(XnStreamData** pp
 	return XN_DEVICE_BASE_DERIVATIVE::DestroyStreamData(ppStreamData);
 }
 
-XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(RegisterToNewStreamData)(const XnDeviceHandle DeviceHandle, XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(RegisterToNewStreamData)(const XnDeviceHandle DeviceHandle, XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 {
 	IXnDevice* pDevice = IXnDevice::GetFromDeviceHandle(DeviceHandle);
-	return pDevice->RegisterToNewStreamData(Handler, pCookie, phCallback);
+	return pDevice->RegisterToNewStreamData(Handler, pCookie, hCallback);
 }
 
 XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(UnregisterFromNewStreamData)(const XnDeviceHandle DeviceHandle, XnCallbackHandle hCallback)
@@ -293,10 +297,10 @@ XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(GetAllProperties)(const XnDeviceHand
 	return pDevice->GetAllProperties(pPropertySet, bNoStreams, strModule);
 }
 
-XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(RegisterToPropertyChange)(const XnDeviceHandle DeviceHandle, const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(RegisterToPropertyChange)(const XnDeviceHandle DeviceHandle, const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 {
 	IXnDevice* pDevice = IXnDevice::GetFromDeviceHandle(DeviceHandle);
-	return pDevice->RegisterToPropertyChange(Module, PropertyName, Handler, pCookie, phCallback);
+	return pDevice->RegisterToPropertyChange(Module, PropertyName, Handler, pCookie, hCallback);
 }
 
 XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(UnregisterFromPropertyChange)(const XnDeviceHandle DeviceHandle, const XnChar* Module, const XnChar* PropertyName, XnCallbackHandle hCallback)

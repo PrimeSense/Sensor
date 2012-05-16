@@ -294,9 +294,9 @@ public:
 
 	XnStatus FindStreamOfType(const XnChar* strType, XnVStream& stream);
 
-	XnStatus RegisterForPropertyChangedEvent(const XnChar* strModule, const XnChar* strProperty, XnVModulePropertyChangedHandler* pHandler, XnCallbackHandle* phCallback);
-	XnStatus RegisterForNewDataFromStreamEvent(XnVNewDataFromStreamHandler* pHandler, XnCallbackHandle* phCallback);
-	XnStatus RegisterForStreamCollectionChangedEvent(XnVStreamCollectionChangedHandler* pHandler, XnCallbackHandle* phCallback);
+	XnStatus RegisterForPropertyChangedEvent(const XnChar* strModule, const XnChar* strProperty, XnVModulePropertyChangedHandler* pHandler, XnCallbackHandle& hCallback);
+	XnStatus RegisterForNewDataFromStreamEvent(XnVNewDataFromStreamHandler* pHandler, XnCallbackHandle& hCallback);
+	XnStatus RegisterForStreamCollectionChangedEvent(XnVStreamCollectionChangedHandler* pHandler, XnCallbackHandle& hCallback);
 
 	XnStatus UnregisterFromPropertyChangedEvent(const XnChar* strModule, const XnChar* strProperty, XnCallbackHandle hCallback);
 	XnStatus UnregisterFromNewDataFromStreamEvent(XnCallbackHandle hCallback);
@@ -456,9 +456,9 @@ private:
 
 	static XnBool IsXnVDeviceStreamProp(const XnChar* strProperty);
 
-	static void XN_CALLBACK_TYPE OnStreamsChangedCallback(XnDeviceHandle pDeviceHandle, const XnChar* StreamName, XnStreamsChangeEventType EventType, void* pCookie);
+	static void XN_CALLBACK_TYPE OnStreamsChangedCallback(const XnStreamCollectionChangedEventArgs& args, void* pCookie);
 	static void XN_CALLBACK_TYPE OnPropertyChangedCallback(XnDeviceHandle pDeviceHandle, const XnChar* ModuleName, const XnChar* PropertyName, void* pCookie);
-	static void XN_CALLBACK_TYPE OnNewStreamDataCallback(XnDeviceHandle pDeviceHandle, const XnChar* StreamName, void* pCookie);
+	static void XN_CALLBACK_TYPE OnNewStreamDataCallback(const XnNewStreamDataEventArgs& args, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE OnXnVDevicePropertyChanged(const XnProperty* pSender, void* pCookie);
 
 	XnDeviceHandle m_DeviceHandle;
@@ -686,7 +686,7 @@ private:
 	XN_3_6_API XnStatus InitS2DTables36() const;
 	XN_3_6_API XnStatus GetProperty36(const XnChar* strModule, const XnChar* strProperty, XnDouble& fValue) const;
 	static void XN_CALLBACK_TYPE OnS2DTableChanged36(XnDeviceHandle pDeviceHandle, const XnChar* ModuleName, const XnChar* PropertyName, void* pCookie);
-	static void XN_CALLBACK_TYPE OnNewStreamDataCallback36(XnDeviceHandle pDeviceHandle, const XnChar* StreamName, void* pCookie);
+	static void XN_CALLBACK_TYPE OnNewStreamDataCallback36(const XnNewStreamDataEventArgs& args, void* pCookie);
 };
 
 #pragma warning (pop)

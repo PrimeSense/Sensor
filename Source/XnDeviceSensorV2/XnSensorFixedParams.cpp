@@ -28,10 +28,22 @@
 //---------------------------------------------------------------------------
 // Code
 //---------------------------------------------------------------------------
-XnSensorFixedParams::XnSensorFixedParams(XnSensorFirmware* pFirmware, XnDevicePrivateData* pDevicePrivateData) :
-	m_pFirmware(pFirmware),
-	m_pDevicePrivateData(pDevicePrivateData)
+XnSensorFixedParams::XnSensorFixedParams(XnDevicePrivateData* pDevicePrivateData) :
+	m_pDevicePrivateData(pDevicePrivateData),
+	m_nSensorDepthCMOSI2CBus(0),
+	m_nSensorDepthCMOSI2CSlaveAddress(0),
+	m_nSensorImageCMOSI2CBus(0),
+	m_nSensorImageCMOSI2CSlaveAddress(0),
+	m_nZeroPlaneDistance(0),
+	m_dZeroPlanePixelSize(0),
+	m_dEmitterDCmosDistance(0),
+	m_dDCmosRCmosDistance(0),
+	m_nImageCmosType(0)
 {
+	m_strSensorSerial[0] = '\0';
+	m_deviceInfo.strDeviceName[0] = '\0';
+	m_deviceInfo.strVendorData[0] = '\0';
+	m_strPlatformString[0] = '\0';
 }
 
 XnStatus XnSensorFixedParams::Init()
@@ -66,8 +78,20 @@ XnStatus XnSensorFixedParams::Init()
 	m_dZeroPlanePixelSize = FixedParams.fReferencePixelSize;
 	m_dEmitterDCmosDistance = FixedParams.fDCmosEmitterDistance;
 	m_dDCmosRCmosDistance = FixedParams.fDCmosRCmosDistance;
-	
 
+	m_nSensorDepthCMOSI2CBus = (XnUInt16)FixedParams.nDepthCmosI2CBus;
+	m_nSensorDepthCMOSI2CSlaveAddress = (XnUInt16)FixedParams.nDepthCmosI2CAddress;
+	m_nSensorImageCMOSI2CBus = (XnUInt16)FixedParams.nImageCmosI2CBus;
+	m_nSensorImageCMOSI2CSlaveAddress = (XnUInt16)FixedParams.nImageCmosI2CAddress;
+	
+	m_nImageCmosType = (XnUInt32)FixedParams.nImageCmosType;
+
+	nRetVal = XnHostProtocolAlgorithmParams(m_pDevicePrivateData, XN_HOST_PROTOCOL_ALGORITHM_DEVICE_INFO, 
+		&m_deviceInfo, sizeof(m_deviceInfo), (XnResolutions)0, 0);
+	XN_IS_STATUS_OK(nRetVal);
+
+	nRetVal = XnHostProtocolGetPlatformString(m_pDevicePrivateData, m_strPlatformString);
+	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);
 }

@@ -26,7 +26,7 @@
 #include "XnExportedSensorDevice.h"
 #include <XnOpenNI.h>
 #include "XnSensorGenerator.h"
-#include <XnCommon/XnCommon.h>
+#include <XnCommon.h>
 
 //---------------------------------------------------------------------------
 // XnExportedSensorGenerator class

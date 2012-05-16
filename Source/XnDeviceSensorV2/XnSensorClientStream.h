@@ -69,6 +69,23 @@ private:
 };
 
 //---------------------------------------------------------------------------
+// Client Depth Stream
+//---------------------------------------------------------------------------
+class XnSensorClientDepthStream : public XnSensorClientFrameStream
+{
+public:
+	XnSensorClientDepthStream(XnSensorClient* pClient, const XnChar* strType, const XnChar* strName);
+	~XnSensorClientDepthStream();
+
+protected:
+	XnStatus ReadImpl(XnStreamData* pStreamOutput);
+	virtual XnStatus GetProperty(const XnChar* strName, const XnGeneralBuffer& gbValue) const;
+
+private:
+	XnUInt16* m_pLastFrameShiftsMapOffset;
+};
+
+//---------------------------------------------------------------------------
 // Client Audio Stream
 //---------------------------------------------------------------------------
 class XnSensorClientAudioStream : public XnSensorClientStream

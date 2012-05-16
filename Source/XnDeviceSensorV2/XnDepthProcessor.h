@@ -47,7 +47,7 @@
 class XnDepthProcessor : public XnFrameStreamProcessor
 {
 public:
-	XnDepthProcessor(XnSensorDepthStream* pStream, XnSensorStreamHelper* pHelper);
+	XnDepthProcessor(XnSensorDepthStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager);
 	virtual ~XnDepthProcessor();
 
 	XnStatus Init();
@@ -73,14 +73,38 @@ protected:
 		return m_pShiftToDepthTable[nShift];
 	}
 
-	void WriteShifts(XnUInt16* pShifts, XnUInt32 nCount);
-	void UnsafeWriteShifts(XnUInt16* pShifts, XnUInt32 nCount);
-	XnUInt32 CalculateExpectedSize();
+	inline XnUInt32 GetExpectedSize()
+	{
+		return m_nExpectedFrameSize;
+	}
+
+	inline XnDepthPixel* GetDepthOutputBuffer()
+	{
+		return (XnDepthPixel*)GetWriteBuffer()->GetUnsafeWritePointer();
+	}
+
+	inline XnUInt16* GetShiftsOutputBuffer()
+	{
+		return (XnUInt16*)(GetWriteBuffer()->GetUnsafeWritePointer() + GetExpectedSize());
+	}
+
+	inline XnBool CheckDepthBufferForOverflow(XnUInt32 nWriteSize)
+	{
+		// Check there is enough room for current depth pixels + the entire shift map
+		return CheckWriteBufferForOverflow(nWriteSize + GetExpectedSize());
+	}
+
+	inline XnUInt32 GetFreeSpaceInDepthBuffer()
+	{
+		return GetWriteBuffer()->GetFreeSpaceInBuffer() - GetExpectedSize();
+	}
 
 private:
 	void PadPixels(XnUInt32 nPixels);
+	XnUInt32 CalculateExpectedSize();
 
 	XnUInt32 m_nPaddingPixelsOnEnd;
+	XnUInt32 m_nExpectedFrameSize;
 	XnBool m_bShiftToDepthAllocated;
 	XnDepthPixel* m_pShiftToDepthTable;
 };

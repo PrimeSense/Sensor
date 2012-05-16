@@ -26,7 +26,7 @@
 #include <XnOpenNI.h>
 #include <XnOS.h>
 #include <XnPsVersion.h>
-#include <XnCommon/XnCommon.h>
+#include <XnCommon.h>
 #include <math.h>
 
 //---------------------------------------------------------------------------
@@ -103,7 +103,7 @@ void XnSensorDepthGenerator::GetFieldOfView(XnFieldOfView& FOV)
 
 XnStatus XnSensorDepthGenerator::RegisterToFieldOfViewChange(XnModuleStateChangedHandler handler, void* pCookie, XnCallbackHandle& hCallback)
 {
-	return m_fovChangedEvent.Register(handler, pCookie, &hCallback);
+	return m_fovChangedEvent.Register(handler, pCookie, hCallback);
 }
 
 void XnSensorDepthGenerator::UnregisterFromFieldOfViewChange(XnCallbackHandle hCallback)

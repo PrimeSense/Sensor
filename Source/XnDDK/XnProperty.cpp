@@ -34,9 +34,12 @@
 XnProperty::XnProperty(XnPropertyType Type, void* pValueHolder, const XnChar* strName, const XnChar* strModule) :
 	m_Type(Type),
 	m_pSetCallback(NULL),
+	m_pSetCallbackCookie(NULL),
 	m_pGetCallback(NULL),
+	m_pGetCallbackCookie(NULL),
 	m_pValueHolder(pValueHolder),
-	m_LogSeverity(XN_LOG_INFO)
+	m_LogSeverity(XN_LOG_INFO),
+	m_bAlwaysSet(FALSE)
 {
 	UpdateName(strModule, strName);
 }
@@ -165,4 +168,24 @@ void XnProperty::UpdateGetCallback(GetFuncPtr pFunc, void* pCookie)
 XnBool XnProperty::ConvertValueToString(XnChar* /*csValue*/, const void* /*pValue*/) const
 {
 	return FALSE;
+}
+
+XnStatus XnProperty::ChangeEvent::Raise(const XnProperty* pSender)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+	XnAutoCSLocker locker(m_hLock);
+	ApplyListChanges();
+
+	for (CallbackPtrList::ConstIterator it = m_callbacks.Begin(); it != m_callbacks.End(); ++it)
+	{
+		TCallback* pCallback = *it;
+		nRetVal = pCallback->pFunc(pSender, pCallback->pCookie);
+		if (nRetVal != XN_STATUS_OK)
+		{
+			break;
+		}
+	}
+
+	ApplyListChanges();
+	return (nRetVal);
 }

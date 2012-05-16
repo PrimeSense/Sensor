@@ -27,6 +27,7 @@
 //---------------------------------------------------------------------------
 #include <XnPlatform.h>
 #include <XnUSB.h>
+#include <XnArray.h>
 #include <XnStreamParams.h>
 #include <XnDevice.h>
 #include "XnFirmwareInfo.h"
@@ -94,11 +95,18 @@ public:
 	const XnChar* GetDevicePath();
 
 private:
+	static void XN_CALLBACK_TYPE OnConnectivityEvent(XnUSBEventArgs* pArgs, void* pCookie);
+
 	XN_SENSOR_HANDLE* m_pSensorHandle;
 	XnBool m_bMiscSupported;
 	XnSensorUsbInterface m_interface;
 	XnChar m_strDeviceName[XN_DEVICE_MAX_STRING_LENGTH];
 	XnBool m_bIsLowBandwidth;
+	XnArray<XnRegistrationHandle> m_aRegistrationHandles;
+	XnUSBEventCallbackFunctionPtr m_pCallbackPtr; 
+	void* m_pCallbackData;
+	static XnUInt16 ms_supportedProducts[];
+	static XnUInt32 ms_supportedProductsCount;
 };
 
 #endif //__XN_DEVICE_SENSOR_I_O_H__

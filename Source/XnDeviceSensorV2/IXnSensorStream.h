@@ -27,7 +27,6 @@
 //---------------------------------------------------------------------------
 #include <XnStatus.h>
 #include <XnStreamParams.h>
-#include "XnSharedMemoryBufferPool.h"
 
 //---------------------------------------------------------------------------
 // Forward Declarations
@@ -48,7 +47,6 @@ public:
 	virtual XnStatus CloseStreamImpl() = 0;
 	virtual XnStatus CreateDataProcessor(XnDataProcessor** ppProcessor) = 0;
 	virtual XnStatus MapPropertiesToFirmware() = 0;
-	virtual XnSharedMemoryBufferPool* GetSharedMemoryBuffer() = 0;
 };
 
 #endif //__I_XN_SENSOR_STREAM_H__

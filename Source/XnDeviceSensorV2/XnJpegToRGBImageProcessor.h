@@ -35,7 +35,7 @@
 class XnJpegToRGBImageProcessor : public XnImageProcessor
 {
 public:
-	XnJpegToRGBImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper);
+	XnJpegToRGBImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager);
 	~XnJpegToRGBImageProcessor();
 
 	XnStatus Init();

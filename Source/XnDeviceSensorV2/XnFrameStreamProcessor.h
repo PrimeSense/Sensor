@@ -46,7 +46,7 @@ public:
 	* @param	nTypeSOF			[in]	The packet type that signifies start-of-frame.
 	* @param	nTypeEOF			[in]	The packet type that signifies end-of-frame.
 	*/
-	XnFrameStreamProcessor(XnFrameStream* pStream, XnSensorStreamHelper* pHelper, XnUInt16 nTypeSOF, XnUInt16 nTypeEOF);
+	XnFrameStreamProcessor(XnFrameStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager, XnUInt16 nTypeSOF, XnUInt16 nTypeEOF);
 
 	/** 
 	* Destroys a frame-based stream processor
@@ -173,6 +173,7 @@ private:
 	XnBool m_bFrameCorrupted;
 	XnBool m_bAllowDoubleSOF;
 	XnUInt16 m_nLastSOFPacketID;
+	XnUInt64 m_nFirstPacketTimestamp;
 };
 
 #endif //__XN_FRAME_STREAM_PROCESSOR_H__

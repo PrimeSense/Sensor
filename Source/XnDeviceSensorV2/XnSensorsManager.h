@@ -26,7 +26,7 @@
 // Includes
 //---------------------------------------------------------------------------
 #include "XnServerSensorInvoker.h"
-#include <XnStringsHash.h>
+#include <XnStringsHashT.h>
 
 //---------------------------------------------------------------------------
 // Types
@@ -46,7 +46,7 @@ public:
 	void ReleaseSensor(XnServerSensorInvoker* pInvoker);
 
 	void CleanUp();
-	inline XnBool HasOpenSensors() { return m_sensors.begin() != m_sensors.end(); }
+	inline XnBool HasOpenSensors() { return m_sensors.Begin() != m_sensors.End(); }
 
 private:
 	typedef struct
@@ -56,14 +56,16 @@ private:
 		XnUInt32 nRefCount;
 	} ReferencedSensor;
 
-	XN_DECLARE_STRINGS_HASH(ReferencedSensor, XnSensorsHash);
+	typedef XnStringsHashT<ReferencedSensor> XnSensorsHash;
 
 	static XnStatus XN_CALLBACK_TYPE StartNewLogCallback(XnIntProperty* pSender, XnUInt64 nValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE GetLogCallback(const XnStringProperty* pSender, XnChar* csValue, void* pCookie);
 
 	XnChar m_strGlobalConfigFile[XN_FILE_MAX_PATH];
 	XN_CRITICAL_SECTION_HANDLE m_hLock;
 	XnSensorsHash m_sensors;
 	XnActualIntProperty m_noClientTimeout;
+	XnStringProperty m_logFile;
 	XnIntProperty m_startNewLog;
 	XnUInt64 nNoClientsTime;
 };

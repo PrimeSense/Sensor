@@ -34,7 +34,7 @@
 class XnPacked11DepthProcessor : public XnDepthProcessor
 {
 public:
-	XnPacked11DepthProcessor(XnSensorDepthStream* pStream, XnSensorStreamHelper* pHelper);
+	XnPacked11DepthProcessor(XnSensorDepthStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager);
 	virtual ~XnPacked11DepthProcessor();
 
 	XnStatus Init();

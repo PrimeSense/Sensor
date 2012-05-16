@@ -30,7 +30,7 @@
 #include <XnIONetworkStream.h>
 #include "XnSensorClientServer.h"
 #include "XnServerLogger.h"
-#include <XnStringsHash.h>
+#include <XnStringsHashT.h>
 
 //---------------------------------------------------------------------------
 // Types
@@ -59,7 +59,7 @@ private:
 		XnCallbackHandle hNewDataCallback;
 	} SessionStream;
 
-	XN_DECLARE_STRINGS_HASH(SessionStream, SessionStreamsHash);
+	typedef XnStringsHashT<SessionStream> SessionStreamsHash;
 
 	// Functions
 	XnStatus SendReply(XnSensorServerCustomMessages Type, XnStatus nRC, XnUInt32 nDataSize = 0, void* pAdditionalData = NULL);
@@ -113,7 +113,7 @@ private:
 	XnStatus ServeThread();
 
 	static void XN_CALLBACK_TYPE PropertyChangedCallback(const XnProperty* pProp, void* pCookie);
-	static void XN_CALLBACK_TYPE StreamNewDataCallback(const XnChar* strName, XnUInt64 nTimestamp, XnUInt32 nFrameID, void* pCookie);
+	static void XN_CALLBACK_TYPE StreamNewDataCallback(const XnServerSensorInvoker::NewStreamDataEventArgs& args, void* pCookie);
 	static XN_THREAD_PROC ServeThreadCallback(XN_THREAD_PARAM pThreadParam);
 
 	// Members

@@ -26,7 +26,7 @@
 // Includes
 //---------------------------------------------------------------------------
 #include <XnOpenNI.h>
-#include <XnStringsHash.h>
+#include <XnStringsHashT.h>
 #include "XnSensorProductionNode.h"
 #include <XnDevice.h>
 
@@ -50,7 +50,7 @@ protected:
 private:
 	static void XN_CALLBACK_TYPE PropertyChangedCallback(XnDeviceHandle pDeviceHandle, const XnChar* ModuleName, const XnChar* PropertyName, void* pCookie);
 
-	XN_DECLARE_STRINGS_HASH(XnCallbackHandle, XnPropertyHandleHash);
+	typedef XnStringsHashT<XnCallbackHandle> XnPropertyHandleHash;
 
 	XnPropertyHandleHash m_Registered;
 	XnSensorProductionNode* m_pNode;

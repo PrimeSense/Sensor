@@ -39,8 +39,8 @@
 // Code
 //---------------------------------------------------------------------------
 
-XnIRProcessor::XnIRProcessor(XnSensorIRStream* pStream, XnSensorStreamHelper* pHelper) :
-	XnFrameStreamProcessor(pStream, pHelper, XN_SENSOR_PROTOCOL_RESPONSE_IMAGE_START, XN_SENSOR_PROTOCOL_RESPONSE_IMAGE_END),
+XnIRProcessor::XnIRProcessor(XnSensorIRStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager) :
+	XnFrameStreamProcessor(pStream, pHelper, pBufferManager, XN_SENSOR_PROTOCOL_RESPONSE_IMAGE_START, XN_SENSOR_PROTOCOL_RESPONSE_IMAGE_END),
 	m_nRefTimestamp(0)
 {
 }
@@ -268,7 +268,7 @@ void XnIRProcessor::OnEndOfFrame(const XnSensorProtocolResponseHeader* pHeader)
 	XN_PROFILING_END_SECTION
 }
 
-XnUInt64 XnIRProcessor::GetTimeStamp(XnUInt32 nDeviceTimeStamp)
+XnUInt64 XnIRProcessor::CreateTimestampFromDevice(XnUInt32 nDeviceTimeStamp)
 {
 	XnUInt64 nNow;
 	xnOSGetHighResTimeStamp(&nNow);
@@ -286,7 +286,7 @@ XnUInt64 XnIRProcessor::GetTimeStamp(XnUInt32 nDeviceTimeStamp)
 	}
 	else
 	{
-		XnUInt64 nResult = XnFrameStreamProcessor::GetTimeStamp(nDeviceTimeStamp);
+		XnUInt64 nResult = XnFrameStreamProcessor::CreateTimestampFromDevice(nDeviceTimeStamp);
 
 		// keep it as ref so that if depth is turned off, we'll continue from there
 		m_nRefTimestamp = nNow - nResult;

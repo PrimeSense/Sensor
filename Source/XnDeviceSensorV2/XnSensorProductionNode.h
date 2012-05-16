@@ -27,7 +27,7 @@
 //---------------------------------------------------------------------------
 #include <XnModuleCppInterface.h>
 #include "XnSensor.h"
-#include <XnHash.h>
+#include <XnHashT.h>
 #include "XnSensorClient.h"
 
 class XnMultiPropChangedHandler; // forward declaration
@@ -94,7 +94,7 @@ protected:
 	static void XN_CALLBACK_TYPE StringPropertyChangedCallback(XnDeviceHandle pDeviceHandle, const XnChar* ModuleName, const XnChar* PropertyName, void* pCookie);
 	static void XN_CALLBACK_TYPE GeneralPropertyChangedCallback(XnDeviceHandle pDeviceHandle, const XnChar* ModuleName, const XnChar* PropertyName, void* pCookie);
 
-	XN_DECLARE_DEFAULT_HASH(XnMultiPropChangedHandler*, XnMultiPropChangedHandler*, XnMultiPropChangedHandlerHash);
+	typedef XnHashT<XnMultiPropChangedHandler*, XnMultiPropChangedHandler*> XnMultiPropChangedHandlerHash;
 
 	xn::Context m_Context;
 	XnDeviceBase* m_pSensor;

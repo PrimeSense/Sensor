@@ -31,8 +31,8 @@
 // Code
 //---------------------------------------------------------------------------
 
-XnBayerImageProcessor::XnBayerImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper) :
-	XnImageProcessor(pStream, pHelper)
+XnBayerImageProcessor::XnBayerImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager) :
+	XnImageProcessor(pStream, pHelper, pBufferManager)
 {
 }
 

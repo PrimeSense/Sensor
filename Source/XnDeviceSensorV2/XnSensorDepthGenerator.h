@@ -27,6 +27,7 @@
 //---------------------------------------------------------------------------
 #include "XnSensorMapGenerator.h"
 #include "XnExportedSensorGenerator.h"
+#include <XnEventT.h>
 
 //---------------------------------------------------------------------------
 // Types
@@ -89,8 +90,7 @@ private:
 
 	static void XN_CALLBACK_TYPE RealWorldTranslationPropChanged(void* pCookie);
 
-	XN_DECLARE_EVENT_0ARG(PropChangeEvent, PropChangeEventInterface);
-	PropChangeEvent m_fovChangedEvent;
+	XnEventNoArgs m_fovChangedEvent;
 
 	XnCallbackHandle m_hRWPropCallback;
 

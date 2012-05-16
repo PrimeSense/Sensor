@@ -41,9 +41,9 @@ XnSensorProductionNode::XnSensorProductionNode(xn::Context& context, const XnCha
 XnSensorProductionNode::~XnSensorProductionNode()
 {
 	// free all memory allocated for registration, even if client did not unregister from it
-	for (XnMultiPropChangedHandlerHash::Iterator it = m_AllHandlers.begin(); it != m_AllHandlers.end(); ++it)
+	for (XnMultiPropChangedHandlerHash::Iterator it = m_AllHandlers.Begin(); it != m_AllHandlers.End(); ++it)
 	{
-		XN_DELETE(it.Key());
+		XN_DELETE(it->Key());
 	}
 }
 
@@ -140,7 +140,7 @@ XnStatus XnSensorProductionNode::NotifyExState(XnNodeNotifications* pNotificatio
 	nRetVal = m_pSensor->GetAllProperties(&props, FALSE, GetModuleName());
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnActualPropertiesHash* pPropsHash = props.pData->begin().Value();
+	XnActualPropertiesHash* pPropsHash = props.pData->Begin()->Value();
 
 	// filter properties (remove the ones already exposed as OpenNI interfaces)
 	FilterProperties(pPropsHash);
@@ -156,9 +156,9 @@ XnStatus XnSensorProductionNode::NotifyExState(XnNodeNotifications* pNotificatio
 	XnUInt32 nGeneralProps = 0;
 
 	// enumerate over properties
-	for (XnActualPropertiesHash::Iterator it = pPropsHash->begin(); it != pPropsHash->end(); ++it)
+	for (XnActualPropertiesHash::Iterator it = pPropsHash->Begin(); it != pPropsHash->End(); ++it)
 	{
-		XnProperty* pProp = it.Value();
+		XnProperty* pProp = it->Value();
 
 		switch (pProp->GetType())
 		{

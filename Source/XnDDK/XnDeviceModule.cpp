@@ -71,7 +71,7 @@ XnStatus XnDeviceModule::AddProperty(XnProperty* pProperty)
 	XnStatus nRetVal = XN_STATUS_OK;
 	
 	// make sure another property with this name doesn't exist
-	XnPropertiesHash::Iterator it = m_Properties.end();
+	XnPropertiesHash::Iterator it = m_Properties.End();
 	if (XN_STATUS_NO_MATCH != m_Properties.Find(pProperty->GetName(), it))
 		return XN_STATUS_DEVICE_PROPERTY_ALREADY_EXISTS;
 
@@ -102,7 +102,7 @@ XnStatus XnDeviceModule::DoesPropertyExist(const XnChar* strName, XnBool* pbDoes
 
 	*pbDoesExist = FALSE;
 
-	XnPropertiesHash::ConstIterator it = m_Properties.end();
+	XnPropertiesHash::ConstIterator it = m_Properties.End();
 	nRetVal = m_Properties.Find(strName, it);
 	if (nRetVal != XN_STATUS_NO_MATCH && nRetVal != XN_STATUS_OK)
 	{
@@ -328,7 +328,7 @@ XnStatus XnDeviceModule::UnsafeUpdateProperty(const XnChar* strName, const XnGen
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnDeviceModule::RegisterForOnPropertyValueChanged(const XnChar* strName, XnProperty::OnValueChangedHandler pFunc, void* pCookie, XnCallbackHandle* pHandle)
+XnStatus XnDeviceModule::RegisterForOnPropertyValueChanged(const XnChar* strName, XnProperty::OnValueChangedHandler pFunc, void* pCookie, XnCallbackHandle& hCallback)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
@@ -336,7 +336,7 @@ XnStatus XnDeviceModule::RegisterForOnPropertyValueChanged(const XnChar* strName
 	nRetVal = GetProperty(strName, &pProp);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = pProp->OnChangeEvent().Register(pFunc, pCookie, pHandle);
+	nRetVal = pProp->OnChangeEvent().Register(pFunc, pCookie, hCallback);
 	XN_IS_STATUS_OK(nRetVal);
 	
 	return (XN_STATUS_OK);
@@ -385,9 +385,9 @@ XnStatus XnDeviceModule::GetAllProperties(XnPropertySet* pSet) const
 	XN_IS_STATUS_OK(nRetVal);
 
 	// now add all properties
-	for (XnPropertiesHash::ConstIterator it = m_Properties.begin(); it != m_Properties.end(); ++it)
+	for (XnPropertiesHash::ConstIterator it = m_Properties.Begin(); it != m_Properties.End(); ++it)
 	{
-		XnProperty* pProperty = it.Value();
+		XnProperty* pProperty = it->Value();
 
 		if (pProperty->IsActual())
 		{
@@ -410,9 +410,9 @@ XnStatus XnDeviceModule::LoadConfigFromFile(const XnChar* csINIFilePath, const X
 
 	xnLogVerbose(XN_MASK_DDK, "Configuring module '%s' from section '%s' in file '%s'...", GetName(), strSectionName, csINIFilePath);
 
-	for (XnPropertiesHash::Iterator it = m_Properties.begin(); it != m_Properties.end(); ++it)
+	for (XnPropertiesHash::Iterator it = m_Properties.Begin(); it != m_Properties.End(); ++it)
 	{
-		XnProperty* pProp = it.Value();
+		XnProperty* pProp = it->Value();
 
 		// only read writable properties
 		if (!pProp->IsReadOnly())
@@ -431,9 +431,9 @@ XnStatus XnDeviceModule::BatchConfig(const XnActualPropertiesHash& props)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	for (XnActualPropertiesHash::ConstIterator it = props.begin(); it != props.end(); ++it)
+	for (XnActualPropertiesHash::ConstIterator it = props.Begin(); it != props.End(); ++it)
 	{
-		XnProperty* pRequestProp = it.Value();
+		XnProperty* pRequestProp = it->Value();
 		switch (pRequestProp->GetType())
 		{
 		case XN_PROPERTY_TYPE_INTEGER:
@@ -476,9 +476,9 @@ XnStatus XnDeviceModule::UnsafeBatchConfig(const XnActualPropertiesHash& props)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	for (XnActualPropertiesHash::ConstIterator it = props.begin(); it != props.end(); ++it)
+	for (XnActualPropertiesHash::ConstIterator it = props.Begin(); it != props.End(); ++it)
 	{
-		XnProperty* pRequestProp = it.Value();
+		XnProperty* pRequestProp = it->Value();
 		switch (pRequestProp->GetType())
 		{
 		case XN_PROPERTY_TYPE_INTEGER:

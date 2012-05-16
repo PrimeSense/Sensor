@@ -27,7 +27,7 @@
 //---------------------------------------------------------------------------
 #include <XnPlatform.h>
 #include <XnCore/XnBuffer.h>
-#include <XnEvent.h>
+#include <XnEventT.h>
 #include "XnBufferPool.h"
 
 //---------------------------------------------------------------------------
@@ -59,8 +59,14 @@ public:
 
 	inline XnUInt32 GetLastFrameID() const { return m_nStableFrameID; }
 
-	XN_DECLARE_EVENT_2ARG(NewFrameEvent, NewFrameEventInterface, XnFrameBufferManager*, pTripleBuffer, XnUInt64, nTimestamp);
-	NewFrameEventInterface& OnNewFrameEvent() { return m_NewFrameEvent; }
+	typedef struct NewFrameEventArgs
+	{
+		XnFrameBufferManager* pTripleBuffer;
+		XnUInt64 nTimestamp;
+	} NewFrameEventArgs;
+
+	typedef XnEventT<NewFrameEventArgs> NewFrameEvent;
+	NewFrameEvent::TInterface& OnNewFrameEvent() { return m_NewFrameEvent; }
 
 private:
 	XnBufferPool* m_pBufferPool;

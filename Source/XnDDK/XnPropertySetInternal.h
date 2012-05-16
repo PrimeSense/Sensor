@@ -25,7 +25,7 @@
 #include <XnPropertySet.h>
 #include "XnActualPropertiesHash.h"
 
-XN_DECLARE_STRINGS_HASH_DECL(XN_DDK_CPP_API, XnActualPropertiesHash*, XnPropertySetDataInternal)
+typedef XnStringsHashT<XnActualPropertiesHash*> XnPropertySetDataInternal;
 
 class XnPropertySetData;
 

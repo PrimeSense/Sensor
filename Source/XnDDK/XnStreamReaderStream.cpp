@@ -47,7 +47,8 @@ XnStatus XnStreamReaderStream::Init()
 	XN_IS_STATUS_OK(nRetVal);
 
 	// register for size change (so we can realloc stream data)
-	nRetVal = RequiredSizeProperty().OnChangeEvent().Register(RequiredSizeChangedCallback, this);
+	XnCallbackHandle hCallback;
+	nRetVal = RequiredSizeProperty().OnChangeEvent().Register(RequiredSizeChangedCallback, this, hCallback);
 	XN_IS_STATUS_OK(nRetVal);
 
 	// and create stream data

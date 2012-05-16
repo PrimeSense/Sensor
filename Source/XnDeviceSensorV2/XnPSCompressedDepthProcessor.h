@@ -34,7 +34,7 @@
 class XnPSCompressedDepthProcessor : public XnDepthProcessor
 {
 public:
-	XnPSCompressedDepthProcessor(XnSensorDepthStream* pStream, XnSensorStreamHelper* pHelper);
+	XnPSCompressedDepthProcessor(XnSensorDepthStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager);
 	virtual ~XnPSCompressedDepthProcessor();
 
 	XnStatus Init();
@@ -51,7 +51,7 @@ protected:
 	// Internal Functions
 	//---------------------------------------------------------------------------
 	XnStatus UncompressDepthPS(const XnUInt8* pInput, const XnUInt32 nInputSize,
-		XnUInt16* pOutput, XnUInt32* pnOutputSize,
+		XnUInt16* pDepthOutput, XnUInt16* pShiftOutput, XnUInt32* pnOutputSize,
 		XnUInt32* pnActualRead, XnBool bLastPart);
 
 private:

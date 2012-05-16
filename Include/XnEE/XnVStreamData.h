@@ -27,7 +27,7 @@
 //---------------------------------------------------------------------------
 #include "XnVEventHandlers.h"
 #include "XnVStream.h"
-#include <XnList.h>
+#include <XnListT.h>
 
 //---------------------------------------------------------------------------
 // Types
@@ -82,7 +82,7 @@ private:
 		XnCallbackHandle hCallback;
 	} XnWatchedProperty;
 
-	XN_DECLARE_LIST_DECL(XN_EE_CORE_API, XnWatchedProperty, XnWatchedPropertiesList)
+	typedef XnListT<XnWatchedProperty> XnWatchedPropertiesList;
 
 	XnBool m_bIsLive;
 	XnBool m_bWaitForDataUpdate;

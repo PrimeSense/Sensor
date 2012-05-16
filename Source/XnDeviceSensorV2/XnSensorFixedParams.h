@@ -25,7 +25,15 @@
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
-#include "XnSensorFirmware.h"
+#include <XnStreamParams.h>
+#include "XnDeviceSensor.h"
+
+//---------------------------------------------------------------------------
+// Forward Declarations
+//---------------------------------------------------------------------------
+class XnSensorFirmware;
+struct XnDevicePrivateData;
+typedef struct XnDevicePrivateData XnDevicePrivateData;
 
 //---------------------------------------------------------------------------
 // XnSensorFixedParams class
@@ -33,10 +41,14 @@
 class XnSensorFixedParams
 {
 public:
-	XnSensorFixedParams(XnSensorFirmware* pFirmware, XnDevicePrivateData* pDevicePrivateData);
+	XnSensorFixedParams(XnDevicePrivateData* pDevicePrivateData);
 
 	XnStatus Init();
 
+	inline XnUInt16 GetDepthCmosI2CBus() const { return m_nSensorDepthCMOSI2CBus; }
+	inline XnUInt16 GetDepthCmosI2CSlaveAddress() const { return m_nSensorDepthCMOSI2CSlaveAddress; }
+	inline XnUInt16 GetImageCmosI2CBus() const { return m_nSensorImageCMOSI2CBus; }
+	inline XnUInt16 GetImageCmosI2CSlaveAddress() const { return m_nSensorImageCMOSI2CSlaveAddress; }
 
 	inline XnDepthPixel GetZeroPlaneDistance() const { return m_nZeroPlaneDistance; }
 	inline XnDouble GetZeroPlanePixelSize() const { return m_dZeroPlanePixelSize; }
@@ -45,17 +57,30 @@ public:
 
 	inline const XnChar* GetSensorSerial() const { return m_strSensorSerial; }
 
+	inline XnUInt32 GetImageCmosType() const { return m_nImageCmosType; }
+
+	inline const XnChar* GetDeviceName() const { return m_deviceInfo.strDeviceName; }
+	inline const XnChar* GetVendorData() const { return m_deviceInfo.strVendorData; }
+	inline const XnChar* GetPlatformString() const { return m_strPlatformString; }
+
 private:
-	XnSensorFirmware* m_pFirmware;
 	XnDevicePrivateData* m_pDevicePrivateData;
 
+	XnUInt16 m_nSensorDepthCMOSI2CBus;
+	XnUInt16 m_nSensorDepthCMOSI2CSlaveAddress;
+	XnUInt16 m_nSensorImageCMOSI2CBus;
+	XnUInt16 m_nSensorImageCMOSI2CSlaveAddress;
 
 	XnDepthPixel m_nZeroPlaneDistance;
 	XnDouble m_dZeroPlanePixelSize;
 	XnDouble m_dEmitterDCmosDistance;
 	XnDouble m_dDCmosRCmosDistance;
 
+	XnUInt32 m_nImageCmosType;
+
 	XnChar m_strSensorSerial[XN_DEVICE_MAX_STRING_LENGTH];
+	XnDeviceInformation m_deviceInfo;
+	XnChar m_strPlatformString[XN_DEVICE_MAX_STRING_LENGTH];
 };
 
 #endif //__XN_SENSOR_FIXED_PARAMS_H__

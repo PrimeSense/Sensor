@@ -86,7 +86,7 @@ private:
 		XnCallbackHandle m_hCallback;
 	};
 
-	static void XN_CALLBACK_TYPE OnDeviceNewStreamData(XnDeviceHandle pDeviceHandle, const XnChar* StreamName, void* pCookie);
+	static void XN_CALLBACK_TYPE OnDeviceNewStreamData(const XnNewStreamDataEventArgs& args, void* pCookie);
 };
 
 #pragma warning (pop)

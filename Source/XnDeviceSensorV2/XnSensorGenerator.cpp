@@ -101,7 +101,7 @@ XnStatus XnSensorGenerator::RegisterToNewDataAvailable(XnModuleStateChangedHandl
 	NewDataCallback* pNewDataCallback;
 	XN_VALIDATE_NEW(pNewDataCallback, NewDataCallback, this, handler, pCookie);
 	hCallback = pNewDataCallback;
-	nRetVal = m_pSensor->RegisterToNewStreamData(&OnDeviceNewStreamData, pNewDataCallback, &(pNewDataCallback->m_hCallback));
+	nRetVal = m_pSensor->RegisterToNewStreamData(&OnDeviceNewStreamData, pNewDataCallback, pNewDataCallback->m_hCallback);
 	if (nRetVal != XN_STATUS_OK)
 	{
 		XN_DELETE(pNewDataCallback);
@@ -187,10 +187,10 @@ void XnSensorGenerator::FilterProperties(XnActualPropertiesHash* pHash)
 	pHash->Remove(XN_STREAM_PROPERTY_STATE);
 }
 
-void XN_CALLBACK_TYPE XnSensorGenerator::OnDeviceNewStreamData(XnDeviceHandle /*pDeviceHandle*/, const XnChar* StreamName, void* pCookie)
+void XN_CALLBACK_TYPE XnSensorGenerator::OnDeviceNewStreamData(const XnNewStreamDataEventArgs& args, void* pCookie)
 {
 	NewDataCallback *pNewDataCBParams = (NewDataCallback*)pCookie;
-	if (strcmp(pNewDataCBParams->m_pGenerator->m_strInstanceName, StreamName) == 0)
+	if (strcmp(pNewDataCBParams->m_pGenerator->m_strInstanceName, args.strStreamName) == 0)
 	{
 		pNewDataCBParams->m_handler(pNewDataCBParams->m_pCookie);
 	}

@@ -34,7 +34,7 @@
 class XnBayerImageProcessor : public XnImageProcessor
 {
 public:
-	XnBayerImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper);
+	XnBayerImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager);
 	~XnBayerImageProcessor();
 
 	XnStatus Init();

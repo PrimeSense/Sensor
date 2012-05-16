@@ -34,9 +34,9 @@ XnActualPropertiesHash::XnActualPropertiesHash(const XnChar* strName)
 XnActualPropertiesHash::~XnActualPropertiesHash()
 {
 	// free all properties
-	for (Iterator it = begin(); it != end(); ++it)
+	for (Iterator it = Begin(); it != End(); ++it)
 	{
-		XN_DELETE(it.Value());
+		XN_DELETE(it->Value());
 	}
 }
 
@@ -44,7 +44,7 @@ XnStatus XnActualPropertiesHash::Add(const XnChar* strName, XnUInt64 nValue)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	Iterator it = end();
+	Iterator it = End();
 	if (XN_STATUS_OK == Find(strName, it))
 	{
 		return XN_STATUS_DEVICE_PROPERTY_ALREADY_EXISTS;
@@ -69,7 +69,7 @@ XnStatus XnActualPropertiesHash::Add(const XnChar* strName, XnDouble dValue)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	Iterator it = end();
+	Iterator it = End();
 	if (XN_STATUS_OK == Find(strName, it))
 	{
 		return XN_STATUS_DEVICE_PROPERTY_ALREADY_EXISTS;
@@ -94,7 +94,7 @@ XnStatus XnActualPropertiesHash::Add(const XnChar* strName, const XnChar* strVal
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	Iterator it = end();
+	Iterator it = End();
 	if (XN_STATUS_OK == Find(strName, it))
 	{
 		return XN_STATUS_DEVICE_PROPERTY_ALREADY_EXISTS;
@@ -119,7 +119,7 @@ XnStatus XnActualPropertiesHash::Add(const XnChar* strName, const XnGeneralBuffe
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	Iterator it = end();
+	Iterator it = End();
 	if (XN_STATUS_OK == Find(strName, it))
 	{
 		return XN_STATUS_DEVICE_PROPERTY_ALREADY_EXISTS;
@@ -154,23 +154,18 @@ XnStatus XnActualPropertiesHash::Remove(const XnChar* strName)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	XnProperty* pProp = NULL;
-	nRetVal = m_Hash.Remove(strName, pProp);
+	ConstIterator it;
+	nRetVal = Find(strName, it);
 	XN_IS_STATUS_OK(nRetVal);
 
-	if (pProp != NULL)
-	{
-		XN_DELETE(pProp);
-	}
-	
-	return (XN_STATUS_OK);
+	return Remove(it);
 }
 
 XnStatus XnActualPropertiesHash::Remove(ConstIterator where)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	XnProperty* pProp = where.Value();
+	XnProperty* pProp = where->Value();
 
 	nRetVal = m_Hash.Remove(where);
 	XN_IS_STATUS_OK(nRetVal);
@@ -184,7 +179,7 @@ XnStatus XnActualPropertiesHash::Clear()
 {
 	while (!IsEmpty())
 	{
-		Remove(begin());
+		Remove(Begin());
 	}
 
 	return XN_STATUS_OK;
@@ -197,40 +192,40 @@ XnStatus XnActualPropertiesHash::CopyFrom(const XnActualPropertiesHash& other)
 	Clear();
 	strncpy(m_strName, other.m_strName, XN_DEVICE_MAX_STRING_LENGTH);
 
-	for (ConstIterator it = other.begin(); it != other.end(); ++it)
+	for (ConstIterator it = other.Begin(); it != other.End(); ++it)
 	{
-		switch (it.Value()->GetType())
+		switch (it->Value()->GetType())
 		{
 		case XN_PROPERTY_TYPE_INTEGER:
 			{
-				XnActualIntProperty* pProp = (XnActualIntProperty*)it.Value();
+				XnActualIntProperty* pProp = (XnActualIntProperty*)it->Value();
 				nRetVal = Add(pProp->GetName(), pProp->GetValue());
 				XN_IS_STATUS_OK(nRetVal);
 				break;
 			}
 		case XN_PROPERTY_TYPE_REAL:
 			{
-				XnActualRealProperty* pProp = (XnActualRealProperty*)it.Value();
+				XnActualRealProperty* pProp = (XnActualRealProperty*)it->Value();
 				nRetVal = Add(pProp->GetName(), pProp->GetValue());
 				XN_IS_STATUS_OK(nRetVal);
 				break;
 			}
 		case XN_PROPERTY_TYPE_STRING:
 			{
-				XnActualStringProperty* pProp = (XnActualStringProperty*)it.Value();
+				XnActualStringProperty* pProp = (XnActualStringProperty*)it->Value();
 				nRetVal = Add(pProp->GetName(), pProp->GetValue());
 				XN_IS_STATUS_OK(nRetVal);
 				break;
 			}
 		case XN_PROPERTY_TYPE_GENERAL:
 			{
-				XnActualGeneralProperty* pProp = (XnActualGeneralProperty*)it.Value();
+				XnActualGeneralProperty* pProp = (XnActualGeneralProperty*)it->Value();
 				nRetVal = Add(pProp->GetName(), pProp->GetValue());
 				XN_IS_STATUS_OK(nRetVal);
 				break;
 			}
 		default:
-			XN_LOG_WARNING_RETURN(XN_STATUS_ERROR, XN_MASK_DDK, "Unknown property type: %d\n", it.Value()->GetType());
+			XN_LOG_WARNING_RETURN(XN_STATUS_ERROR, XN_MASK_DDK, "Unknown property type: %d\n", it->Value()->GetType());
 		}
 	}
 

@@ -96,9 +96,22 @@ typedef enum XnStreamsChangeEventType
 	XN_DEVICE_STREAM_DELETED,
 } XnStreamsChangeEventType;
 
-typedef void (XN_CALLBACK_TYPE* XnDeviceOnStreamsChangedEventHandler)(XnDeviceHandle pDeviceHandle, const XnChar* StreamName, XnStreamsChangeEventType EventType, void* pCookie);
+typedef struct XnStreamCollectionChangedEventArgs
+{
+	XnDeviceHandle deviceHandle; 
+	const XnChar* strStreamName; 
+	XnStreamsChangeEventType eventType;
+} XnStreamCollectionChangedEventArgs;
+
+typedef struct XnNewStreamDataEventArgs
+{
+	XnDeviceHandle deviceHandle;
+	const XnChar* strStreamName;
+} XnNewStreamDataEventArgs;
+
+typedef void (XN_CALLBACK_TYPE* XnDeviceOnStreamsChangedEventHandler)(const XnStreamCollectionChangedEventArgs& args, void* pCookie);
 typedef void (XN_CALLBACK_TYPE* XnDeviceOnPropertyChangedEventHandler)(XnDeviceHandle pDeviceHandle, const XnChar* ModuleName, const XnChar* PropertyName, void* pCookie);
-typedef void (XN_CALLBACK_TYPE* XnDeviceOnNewStreamDataEventHandler)(XnDeviceHandle pDeviceHandle, const XnChar* StreamName, void* pCookie);
+typedef void (XN_CALLBACK_TYPE* XnDeviceOnNewStreamDataEventHandler)(const XnNewStreamDataEventArgs& args, void* pCookie);
 
 //---------------------------------------------------------------------------
 // Exported Functions Declaration. Every Device Must Implement Them All!

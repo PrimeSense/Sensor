@@ -36,12 +36,10 @@
 //---------------------------------------------------------------------------
 // XnSensorIRStream class
 //---------------------------------------------------------------------------
-XnSensorIRStream::XnSensorIRStream(const XnChar* strDeviceName, const XnChar* StreamName, XnSensorObjects* pObjects, XnUInt32 nBufferCount, XnBool bAllowOtherUsers) : 
+XnSensorIRStream::XnSensorIRStream(const XnChar* StreamName, XnSensorObjects* pObjects) : 
 	XnIRStream(StreamName, FALSE),
 	m_Helper(pObjects),
 	m_InputFormat(XN_STREAM_PROPERTY_INPUT_FORMAT, 0),
-	m_BufferPool(nBufferCount, strDeviceName, StreamName, XN_IR_MAX_BUFFER_SIZE, bAllowOtherUsers),
-	m_SharedBufferName(XN_STREAM_PROPERTY_SHARED_BUFFER_NAME, m_BufferPool.GetSharedMemoryName()),
 	m_FirmwareCropSizeX("FirmwareCropSizeX", 0, StreamName),
 	m_FirmwareCropSizeY("FirmwareCropSizeY", 0, StreamName),
 	m_FirmwareCropOffsetX("FirmwareCropOffsetX", 0, StreamName),
@@ -56,15 +54,15 @@ XnStatus XnSensorIRStream::Init()
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	nRetVal = SetBufferPool(&m_BufferPool);
-	XN_IS_STATUS_OK(nRetVal);
+// 	nRetVal = SetBufferPool(&m_BufferPool);
+// 	XN_IS_STATUS_OK(nRetVal);
 
 	// init base
 	nRetVal = XnIRStream::Init();
 	XN_IS_STATUS_OK(nRetVal);
 
 	// add properties
-	XN_VALIDATE_ADD_PROPERTIES(this, &m_InputFormat, &m_SharedBufferName, &m_ActualRead);
+	XN_VALIDATE_ADD_PROPERTIES(this, &m_InputFormat, &m_ActualRead);
 
 	// set base properties default values
 	nRetVal = ResolutionProperty().UnsafeUpdateValue(XN_IR_STREAM_DEFAULT_RESOLUTION);
@@ -81,36 +79,10 @@ XnStatus XnSensorIRStream::Init()
 	XN_IS_STATUS_OK(nRetVal);
 
 	// register supported modes
-	XnCmosPreset aSupportedModes[] = 
-	{
-		{ 0, XN_RESOLUTION_QVGA, 30 },
-		{ 0, XN_RESOLUTION_QVGA, 60 },
-		{ 0, XN_RESOLUTION_VGA, 30 },
-		{ 0, XN_RESOLUTION_SXGA, 30 },
-	};
-	nRetVal = AddSupportedModes(aSupportedModes, sizeof(aSupportedModes)/sizeof(aSupportedModes[0]));
+	XnCmosPreset* pSupportedModes = m_Helper.GetPrivateData()->FWInfo.irModes.GetData();
+	XnUInt8 nSupportedModes = m_Helper.GetPrivateData()->FWInfo.irModes.GetSize();
+	nRetVal = AddSupportedModes(pSupportedModes, nSupportedModes);
 	XN_IS_STATUS_OK(nRetVal);
-
-	if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_1)
-	{
-		XnCmosPreset aSupportedModesSXGA[] = 
-		{
-			{ 0, XN_RESOLUTION_SXGA, 30 },
-		};
-		nRetVal = AddSupportedModes(aSupportedModesSXGA, sizeof(aSupportedModesSXGA)/sizeof(aSupportedModesSXGA[0]));
-		XN_IS_STATUS_OK(nRetVal);
-	}
-
-	if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_2)
-	{
-		XnCmosPreset aSupportedModes25[] = 
-		{
-			{ 0, XN_RESOLUTION_QVGA, 25 },
-			{ 0, XN_RESOLUTION_VGA, 25 },
-		};
-		nRetVal = AddSupportedModes(aSupportedModes25, sizeof(aSupportedModes25)/sizeof(aSupportedModes25[0]));
-		XN_IS_STATUS_OK(nRetVal);
-	}
 
 	// data processor
 	nRetVal = m_Helper.RegisterDataProcessorProperty(ResolutionProperty());
@@ -118,7 +90,7 @@ XnStatus XnSensorIRStream::Init()
 
 	// register for mirror
 	XnCallbackHandle hCallbackDummy;
-	nRetVal = IsMirroredProperty().OnChangeEvent().Register(IsMirroredChangedCallback, this, &hCallbackDummy);
+	nRetVal = IsMirroredProperty().OnChangeEvent().Register(IsMirroredChangedCallback, this, hCallbackDummy);
 	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);
@@ -446,8 +418,14 @@ XnStatus XnSensorIRStream::CropImpl(XnStreamData* pStreamOutput, const XnCroppin
 
 XnStatus XnSensorIRStream::CreateDataProcessor(XnDataProcessor** ppProcessor)
 {
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	XnFrameBufferManager* pBufferManager;
+	nRetVal = GetTripleBuffer(&pBufferManager);
+	XN_IS_STATUS_OK(nRetVal);
+
 	XnDataProcessor* pNew;
-	XN_VALIDATE_NEW_AND_INIT(pNew, XnIRProcessor, this, &m_Helper);
+	XN_VALIDATE_NEW_AND_INIT(pNew, XnIRProcessor, this, &m_Helper, pBufferManager);
 
 	*ppProcessor = pNew;
 

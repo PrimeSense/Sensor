@@ -27,7 +27,8 @@
 //---------------------------------------------------------------------------
 // Code
 //---------------------------------------------------------------------------
-XnSimpleBufferPool::XnSimpleBufferPool(XnUInt32 nBufferCount) : XnBufferPool(nBufferCount)
+XnSimpleBufferPool::XnSimpleBufferPool(XnUInt32 nBufferCount) : 
+	m_nBufferCount(nBufferCount)
 {}
 
 XnSimpleBufferPool::~XnSimpleBufferPool()
@@ -35,33 +36,24 @@ XnSimpleBufferPool::~XnSimpleBufferPool()
 	FreeAll(TRUE);
 }
 
-XnStatus XnSimpleBufferPool::AllocateBuffers()
+XnStatus XnSimpleBufferPool::AllocateBuffers(XnUInt32 nSize)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	// first free old ones
-	FreeAll(FALSE);
-
 	// now allocate new
 	for (XnUInt32 i = 0; i < m_nBufferCount; ++i)
 	{
-		XnBufferInPool* pBufferInPool;
-		XN_VALIDATE_NEW(pBufferInPool, XnBufferInPool);
-		nRetVal = pBufferInPool->Allocate(m_nBufferSize);
+		void* pBuffer;
+		XN_VALIDATE_ALIGNED_CALLOC(pBuffer, XnUChar, nSize, XN_DEFAULT_MEM_ALIGN);
+		nRetVal = AddNewBuffer(pBuffer, nSize);
 		XN_IS_STATUS_OK(nRetVal);
-		pBufferInPool->m_nID = i;
-
-		// add it to all list
-		m_AllBuffers.AddLast(pBufferInPool);
-		// and to free list
-		m_FreeBuffers.AddLast(pBufferInPool);
 	}
 	
 	return (XN_STATUS_OK);
 }
 
-void XnSimpleBufferPool::DestroyBuffer(XnBufferInPool* pBuffer)
+void XnSimpleBufferPool::DestroyBuffer(void* pBuffer)
 {
-	XN_DELETE(pBuffer);
+	xnOSFreeAligned(pBuffer);
 }
 

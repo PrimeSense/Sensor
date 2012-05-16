@@ -23,12 +23,12 @@
 #define __XN_STREAM_DATA_SET_INTERNAL_H__
 
 #include "XnStreamDataSet.h"
-#include <XnStringsHash.h>
+#include <XnStringsHashT.h>
 
 //---------------------------------------------------------------------------
 // Types
 //---------------------------------------------------------------------------
-XN_DECLARE_STRINGS_HASH(XnStreamData*, XnStreamDataHash)
+typedef XnStringsHashT<XnStreamData*> XnStreamDataHash;
 
 struct XnStreamDataSet
 {

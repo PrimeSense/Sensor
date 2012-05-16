@@ -1,7 +1,7 @@
 <root>
   <PROJECT>EngineWin32</PROJECT>
   <PLATFORM>WIN32</PLATFORM>
-  <VERSION_NUMBER>5.1.0</VERSION_NUMBER>
+  <VERSION_NUMBER>5.1.2</VERSION_NUMBER>
   <WORK_DIR>..\..\..\</WORK_DIR>
   <PROJECT_SLN>\Platform\Win32\Build\EngineWin32.sln</PROJECT_SLN>
   <SAMPLES_SLN>\Platform\Win32\Redist\Samples\Build\All_2008.sln</SAMPLES_SLN>

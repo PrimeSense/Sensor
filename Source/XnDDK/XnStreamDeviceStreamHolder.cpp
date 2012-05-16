@@ -56,7 +56,8 @@ XnStatus XnStreamDeviceStreamHolder::Init(const XnActualPropertiesHash* pProps)
 	nRetVal = m_CodecProperties.Set(&m_Compression, &m_Compression);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = m_Compression.OnChangeEvent().Register(CodecPropertyChangedCallback, this, NULL);
+	XnCallbackHandle hDummy;
+	nRetVal = m_Compression.OnChangeEvent().Register(CodecPropertyChangedCallback, this, hDummy);
 	XN_IS_STATUS_OK(nRetVal);
 
 	nRetVal = ChooseCodec();
@@ -191,24 +192,33 @@ XnStatus XnStreamDeviceStreamHolder::ChooseCodec()
 	}
 
 	// register to new props
-	for (XnPropertiesList::Iterator it = CodecProps.begin(); it != CodecProps.end(); ++it)
+	for (XnPropertiesList::Iterator it = CodecProps.Begin(); it != CodecProps.End(); ++it)
 	{
 		XnProperty* pProp = *it;
 
-		XnPropertiesHash::Iterator hashIt = m_CodecProperties.end();
+		XnPropertiesHash::Iterator hashIt = m_CodecProperties.End();
 		nRetVal = m_CodecProperties.Find(pProp, hashIt);
 		if (nRetVal == XN_STATUS_NO_MATCH)
 		{
 			XnCallbackHandle hCallbackDummy;
-			nRetVal = pProp->OnChangeEvent().Register(CodecPropertyChangedCallback, this, &hCallbackDummy);
-			XN_IS_STATUS_OK(nRetVal);
+			nRetVal = pProp->OnChangeEvent().Register(CodecPropertyChangedCallback, this, hCallbackDummy);
+			if (nRetVal != XN_STATUS_OK)
+			{
+				XN_DELETE(pCodec);
+				return (nRetVal);
+			}
 
 			nRetVal = m_CodecProperties.Set(pProp, NULL);
-			XN_IS_STATUS_OK(nRetVal);
+			if (nRetVal != XN_STATUS_OK)
+			{
+				XN_DELETE(pCodec);
+				return (nRetVal);
+			}
 		}
-		else
+		else if (nRetVal != XN_STATUS_OK)
 		{
-			XN_IS_STATUS_OK(nRetVal);
+			XN_DELETE(pCodec);
+			return (nRetVal);
 		}
 	}
 

@@ -34,11 +34,12 @@
 //---------------------------------------------------------------------------
 // Code
 //---------------------------------------------------------------------------
-XnDepthProcessor::XnDepthProcessor(XnSensorDepthStream* pStream, XnSensorStreamHelper* pHelper) :
-	XnFrameStreamProcessor(pStream, pHelper, XN_SENSOR_PROTOCOL_RESPONSE_DEPTH_START, XN_SENSOR_PROTOCOL_RESPONSE_DEPTH_END),
+XnDepthProcessor::XnDepthProcessor(XnSensorDepthStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager) :
+	XnFrameStreamProcessor(pStream, pHelper, pBufferManager, XN_SENSOR_PROTOCOL_RESPONSE_DEPTH_START, XN_SENSOR_PROTOCOL_RESPONSE_DEPTH_END),
 	m_pShiftToDepthTable(pStream->GetShiftToDepthTable()),
 	m_nPaddingPixelsOnEnd(0),
-	m_bShiftToDepthAllocated(FALSE)
+	m_bShiftToDepthAllocated(FALSE),
+	m_nExpectedFrameSize(0)
 {
 }
 
@@ -86,6 +87,8 @@ void XnDepthProcessor::OnStartOfFrame(const XnSensorProtocolResponseHeader* pHea
 	// call base
 	XnFrameStreamProcessor::OnStartOfFrame(pHeader);
 
+	m_nExpectedFrameSize = CalculateExpectedSize();
+
 	if (m_pDevicePrivateData->FWInfo.nFWVer >= XN_SENSOR_FW_VER_5_1 && pHeader->nTimeStamp != 0)
 	{
 		// PATCH: starting with v5.1, the timestamp field of the SOF packet, is the number of pixels
@@ -121,12 +124,14 @@ void XnDepthProcessor::OnEndOfFrame(const XnSensorProtocolResponseHeader* pHeade
 		m_nPaddingPixelsOnEnd = 0 ;
 	}
 
-	XnUInt32 nExpectedSize = CalculateExpectedSize();
-	if (GetWriteBuffer()->GetSize() != nExpectedSize)
+	if (GetWriteBuffer()->GetSize() != GetExpectedSize())
 	{
-		xnLogWarning(XN_MASK_SENSOR_READ, "Read: Depth buffer is corrupt. Size is %u (!= %u)", GetWriteBuffer()->GetSize(), nExpectedSize);
+		xnLogWarning(XN_MASK_SENSOR_READ, "Read: Depth buffer is corrupt. Size is %u (!= %u)", GetWriteBuffer()->GetSize(), GetExpectedSize());
 		FrameIsCorrupted();
 	}
+
+	// now add the size of the shifts map (appended at the end)
+	GetWriteBuffer()->UnsafeUpdateSize(GetWriteBuffer()->GetSize());
 
 	// call base
 	XnFrameStreamProcessor::OnEndOfFrame(pHeader);
@@ -142,12 +147,15 @@ void XnDepthProcessor::PadPixels(XnUInt32 nPixels)
 		return;
 	}
 
-	XnDepthPixel* pWrite = (XnDepthPixel*)pWriteBuffer->GetUnsafeWritePointer();
+	XnDepthPixel* pDepth = GetDepthOutputBuffer();
+	XnDepthPixel* pShift = GetShiftsOutputBuffer();
 
 	// place the no-depth value
-	for (XnUInt32 i = 0; i < nPixels; ++i, ++pWrite)
-		*pWrite = GetStream()->GetNoDepthValue();
-
+	for (XnUInt32 i = 0; i < nPixels; ++i, ++pDepth, ++pShift)
+    {
+		*pDepth = GetStream()->GetNoDepthValue();
+		*pShift = 0;
+    }
 	pWriteBuffer->UnsafeUpdateSize(nPixels * sizeof(XnDepthPixel));
 }
 
@@ -156,33 +164,4 @@ void XnDepthProcessor::OnFrameReady(XnUInt32 nFrameID, XnUInt64 nFrameTS)
 	XnFrameStreamProcessor::OnFrameReady(nFrameID, nFrameTS);
 
 	m_pDevicePrivateData->pSensor->GetFPSCalculator()->MarkInputDepth(nFrameID, nFrameTS);
-}
-
-void XnDepthProcessor::WriteShifts(XnUInt16* pShifts, XnUInt32 nCount)
-{
-	XnUInt32 nOutputSize = nCount * sizeof(XnDepthPixel);
-
-	// make sure we have enough room
-	if (CheckWriteBufferForOverflow(nOutputSize))
-	{
-		UnsafeWriteShifts(pShifts, nCount);
-	}
-}
-
-void XnDepthProcessor::UnsafeWriteShifts(XnUInt16* pShifts, XnUInt32 nCount)
-{
-	XnBuffer* pWriteBuffer = GetWriteBuffer();
-
-	XnDepthPixel* pWriteBuf = (XnDepthPixel*)pWriteBuffer->GetUnsafeWritePointer();
-	XnUInt16* pRaw = pShifts;
-	XnUInt16* pRawEnd = pShifts + nCount;
-
-	while (pRaw != pRawEnd)
-	{
-		*pWriteBuf = m_pShiftToDepthTable[*pRaw];
-		++pRaw;
-		++pWriteBuf;
-	}
-
-	pWriteBuffer->UnsafeUpdateSize(nCount * sizeof(XnDepthPixel));
 }

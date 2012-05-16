@@ -166,6 +166,53 @@ XnStatus XnSensorClientFrameStream::CreateStreamData(XnStreamData** ppStreamData
 }
 
 //---------------------------------------------------------------------------
+// Client Depth Stream
+//---------------------------------------------------------------------------
+XnSensorClientDepthStream::XnSensorClientDepthStream(XnSensorClient* pClient, const XnChar* strType, const XnChar* strName) :
+	XnSensorClientFrameStream(pClient, strType, strName)
+{}
+
+XnSensorClientDepthStream::~XnSensorClientDepthStream()
+{}
+
+
+XnStatus XnSensorClientDepthStream::ReadImpl(XnStreamData* pStreamOutput)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+	
+	nRetVal = XnSensorClientFrameStream::ReadImpl(pStreamOutput);
+	XN_IS_STATUS_OK(nRetVal);
+
+	m_pLastFrameShiftsMapOffset = (XnUInt16*)(((XnUInt8*)pStreamOutput->pData) + pStreamOutput->nDataSize);
+
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensorClientDepthStream::GetProperty(const XnChar* strName, const XnGeneralBuffer& gbValue) const
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+	
+	if (strcmp(strName, XN_STREAM_PROPERTY_SHIFTS_MAP) == 0)
+	{
+		// shifts-map is at the end of the depth map
+		if (gbValue.nDataSize != sizeof(m_pLastFrameShiftsMapOffset))	
+		{
+			return XN_STATUS_DEVICE_PROPERTY_SIZE_DONT_MATCH;
+		}
+
+		const XnUInt16** ppShiftsMap = (const XnUInt16**)gbValue.pData;
+		*ppShiftsMap = m_pLastFrameShiftsMapOffset;
+	}
+	else
+	{
+		nRetVal = XnSensorClientFrameStream::GetProperty(strName, gbValue);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+
+	return (XN_STATUS_OK);
+}
+
+//---------------------------------------------------------------------------
 // Client Audio Stream
 //---------------------------------------------------------------------------
 XnSensorClientAudioStream::XnSensorClientAudioStream(XnSensorClient* pClient, const XnChar* strType, const XnChar* strName) :
@@ -281,3 +328,4 @@ XnStatus XnSensorClientAudioStream::ReadImpl(XnStreamData* pStreamOutput)
 
 	return (XN_STATUS_OK);
 }
+

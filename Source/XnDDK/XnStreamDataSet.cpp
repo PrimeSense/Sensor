@@ -56,9 +56,9 @@ XN_DDK_API XnStatus XnStreamDataSetDestroy(XnStreamDataSet** ppStreamOutputSet)
 	XnStreamDataSet* pSet = (*ppStreamOutputSet);
 	if (pSet != NULL)
 	{
-		for (XnStreamDataHash::Iterator it = pSet->pHash->begin(); it != pSet->pHash->end(); ++it)
+		for (XnStreamDataHash::Iterator it = pSet->pHash->Begin(); it != pSet->pHash->End(); ++it)
 		{
-			XnStreamData* pStreamData = it.Value();
+			XnStreamData* pStreamData = it->Value();
 			XnStreamDataDestroy(&pStreamData);
 		}
 
@@ -78,7 +78,7 @@ XN_DDK_API XnStatus XnStreamDataSetAdd(XnStreamDataSet* pStreamOutputSet, XnStre
 	XN_VALIDATE_INPUT_PTR(pStreamOutput);
 
 	// make sure another object of this stream is not already in set
-	XnStreamDataHash::Iterator it = pStreamOutputSet->pHash->end();
+	XnStreamDataHash::Iterator it = pStreamOutputSet->pHash->End();
 	if (XN_STATUS_NO_MATCH != pStreamOutputSet->pHash->Find(pStreamOutput->StreamName, it))
 		return XN_STATUS_STREAM_OUTPUT_SET_ALREADY_IN_SET;
 
@@ -90,9 +90,9 @@ XN_DDK_API XnStatus XnStreamDataSetRemove(XnStreamDataSet* pStreamOutputSet, XnS
 	XN_VALIDATE_INPUT_PTR(pStreamOutputSet);
 	XN_VALIDATE_INPUT_PTR(pStreamOutput);
 
-	for (XnStreamDataHash::Iterator it = pStreamOutputSet->pHash->begin(); it != pStreamOutputSet->pHash->end(); ++it)
+	for (XnStreamDataHash::Iterator it = pStreamOutputSet->pHash->Begin(); it != pStreamOutputSet->pHash->End(); ++it)
 	{
-		if (pStreamOutput == it.Value())
+		if (pStreamOutput == it->Value())
 		{
 			pStreamOutputSet->pHash->Remove(it);
 			break;
@@ -145,9 +145,9 @@ XN_DDK_API XnStatus XnStreamDataSetCopyToArray(const XnStreamDataSet* pStreamOut
 
 	// now copy
 	XnUInt32 nIndex = 0;
-	for (XnStreamDataHash::Iterator it = pStreamOutputSet->pHash->begin(); it != pStreamOutputSet->pHash->end(); ++it)
+	for (XnStreamDataHash::Iterator it = pStreamOutputSet->pHash->Begin(); it != pStreamOutputSet->pHash->End(); ++it)
 	{
-		apStreamOutputs[nIndex] = it.Value();
+		apStreamOutputs[nIndex] = it->Value();
 		nIndex++;
 	}
 

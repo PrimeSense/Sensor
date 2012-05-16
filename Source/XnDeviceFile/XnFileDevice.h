@@ -28,13 +28,14 @@
 #include <XnModuleCppInterface.h>
 #include <XnDDK/XnDataPacker.h>
 #include <XnCppWrapper.h>
-#include <XnStringsHash.h>
+#include <XnStringsHashT.h>
 #include <XnFormats/XnNiCodec.h>
 #include <XnDDK/XnActualPropertiesHash.h>
 #include "XnDeviceFileReaderBC.h"
 #include "XnNiInputStream.h"
 #include "XnDeviceFile.h"
 #include <XnDDK/XnShiftToDepth.h>
+#include <XnEventT.h>
 
 //---------------------------------------------------------------------------
 // Types
@@ -121,7 +122,7 @@ private:
 		XnBool bIRisRGB;
 	} XnNodeInfo;
 
-	XN_DECLARE_STRINGS_HASH(XnNodeInfo, XnNodeInfoMap);
+	typedef XnStringsHashT<XnNodeInfo> XnNodeInfoMap;
 	XnNodeInfoMap m_nodeInfoMap;
 	XnNodeInfoMap m_ignoreNewNodes;
 
@@ -135,11 +136,10 @@ private:
 
 	XnUInt64 m_nCurrTimestamp;
 
-	XN_DECLARE_DEFAULT_HASH(XnUInt32, XnValue, XnUIntHash);
+	typedef XnHashT<XnUInt32, XnValue> XnUIntHash;
 	XnUIntHash m_PositionsToIgnore; // used for seeking
 
-	XN_DECLARE_EVENT_0ARG(XnEOFEvent, IXnEOFEvent);
-	XnEOFEvent m_eofEvent;
+	XnEventNoArgs m_eofEvent;
 	XnBool m_bEOF;
 
 	XnShiftToDepthTables m_ShiftToDepth;

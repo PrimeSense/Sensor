@@ -28,10 +28,11 @@
 // Code
 //---------------------------------------------------------------------------
 
-XnAudioProcessor::XnAudioProcessor(XnSensorAudioStream* pStream, XnSensorStreamHelper* pHelper, XnUInt32 nInputPacketSize) :
+XnAudioProcessor::XnAudioProcessor(XnSensorAudioStream* pStream, XnSensorStreamHelper* pHelper, XnDeviceAudioBuffer* pBuffer, XnUInt32 nInputPacketSize) :
 	XnWholePacketProcessor(pHelper->GetPrivateData(), pStream->GetType(), nInputPacketSize),
 	m_pStream(pStream),
 	m_pHelper(pHelper),
+	m_pBuffer(pBuffer),
 	m_AudioInDump(NULL)
 {
 	m_AudioInDump = xnDumpFileOpen(XN_DUMP_AUDIO_IN, "AudioIn.pcm");
@@ -50,7 +51,7 @@ XnStatus XnAudioProcessor::Init()
 	nRetVal = XnWholePacketProcessor::Init();
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = GetStream()->NumberOfChannelsProperty().OnChangeEvent().Register(DeleteChannelChangedCallback, this, &m_hNumChannelsCallback);
+	nRetVal = GetStream()->NumberOfChannelsProperty().OnChangeEvent().Register(DeleteChannelChangedCallback, this, m_hNumChannelsCallback);
 	XN_IS_STATUS_OK(nRetVal);
 
 	CalcDeleteChannel();
@@ -60,10 +61,10 @@ XnStatus XnAudioProcessor::Init()
 
 void XnAudioProcessor::ProcessWholePacket(const XnSensorProtocolResponseHeader* pHeader, const XnUChar* pData)
 {
-	xnOSEnterCriticalSection(&m_pDevicePrivateData->hAudioBufferCriticalSection);
+	xnOSEnterCriticalSection(&m_pBuffer->hLock);
 
 	// take write packet
-	XnUChar* pWritePacket = m_pDevicePrivateData->pAudioBuffer + (m_pDevicePrivateData->nAudioWriteIndex * m_pDevicePrivateData->nAudioPacketSize);
+	XnUChar* pWritePacket = m_pBuffer->pAudioBuffer + (m_pBuffer->nAudioWriteIndex * m_pBuffer->nAudioPacketSize);
 
 	if (m_bDeleteChannel)
 	{
@@ -87,7 +88,14 @@ void XnAudioProcessor::ProcessWholePacket(const XnSensorProtocolResponseHeader* 
 	}
 
 	// mark timestamp
-	m_pDevicePrivateData->pAudioPacketsTimestamps[m_pDevicePrivateData->nAudioWriteIndex] = GetTimeStamp(pHeader->nTimeStamp);
+	if (ShouldUseHostTimestamps())
+	{
+		m_pBuffer->pAudioPacketsTimestamps[m_pBuffer->nAudioWriteIndex] = GetHostTimestamp();
+	}
+	else
+	{
+		m_pBuffer->pAudioPacketsTimestamps[m_pBuffer->nAudioWriteIndex] = CreateTimestampFromDevice(pHeader->nTimeStamp);
+	}
 
 	if (m_nLastPacketID % 10 == 0)
 	{
@@ -101,21 +109,21 @@ void XnAudioProcessor::ProcessWholePacket(const XnSensorProtocolResponseHeader* 
 	}
 
 	// move write index forward
-	m_pDevicePrivateData->nAudioWriteIndex = (m_pDevicePrivateData->nAudioWriteIndex + 1) % m_pDevicePrivateData->nAudioBufferNumOfPackets;
+	m_pBuffer->nAudioWriteIndex = (m_pBuffer->nAudioWriteIndex + 1) % m_pBuffer->nAudioBufferNumOfPackets;
 
 	// if write index got to read index (end of buffer), move read index forward (and loose a packet)
-	if (m_pDevicePrivateData->nAudioWriteIndex == m_pDevicePrivateData->nAudioReadIndex)
+	if (m_pBuffer->nAudioWriteIndex == m_pBuffer->nAudioReadIndex)
 	{
-		m_pDevicePrivateData->nAudioReadIndex = (m_pDevicePrivateData->nAudioReadIndex + 1) % m_pDevicePrivateData->nAudioBufferNumOfPackets;
+		m_pBuffer->nAudioReadIndex = (m_pBuffer->nAudioReadIndex + 1) % m_pBuffer->nAudioBufferNumOfPackets;
 	}
 
-	xnOSLeaveCriticalSection(&m_pDevicePrivateData->hAudioBufferCriticalSection);
+	xnOSLeaveCriticalSection(&m_pBuffer->hLock);
 
 	xnDumpFileWriteBuffer(m_AudioInDump, pData, pHeader->nBufSize);
 
-	if (m_pDevicePrivateData->pAudioCallback != NULL)
+	if (m_pBuffer->pAudioCallback != NULL)
 	{
-		m_pDevicePrivateData->pAudioCallback(m_pDevicePrivateData->pAudioCallbackCookie);
+		m_pBuffer->pAudioCallback(m_pBuffer->pAudioCallbackCookie);
 	}
 }
 

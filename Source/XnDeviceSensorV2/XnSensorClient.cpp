@@ -783,6 +783,10 @@ XnStatus XnSensorClient::CreateStreamModule(const XnChar* StreamType, const XnCh
 	{
 		XN_VALIDATE_NEW(pStream, XnSensorClientAudioStream, this, StreamType, StreamName);
 	}
+	else if (strcmp(StreamType, XN_STREAM_TYPE_DEPTH) == 0)
+	{
+		XN_VALIDATE_NEW(pStream, XnSensorClientDepthStream, this, StreamType, StreamName);
+	}
 	else
 	{
 		XN_VALIDATE_NEW(pStream, XnSensorClientFrameStream, this, StreamType, StreamName);

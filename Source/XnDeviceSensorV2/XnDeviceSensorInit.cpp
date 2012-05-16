@@ -61,9 +61,6 @@ XnStatus XnDeviceSensorInit(XnDevicePrivateData* pDevicePrivateData)
 
 	BayerUpdateGamma(1.0);
 
-	nRetVal = xnOSCreateCriticalSection(&pDevicePrivateData->hAudioBufferCriticalSection);
-	XN_IS_STATUS_OK(nRetVal);
-
 	return (XN_STATUS_OK);
 }
 
@@ -246,6 +243,12 @@ XnStatus XnDeviceSensorConfigureVersion(XnDevicePrivateData* pDevicePrivateData)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
+	// GetVersion is exactly the same in all versions, except a change that was made in version 5.1.
+	// so, we'll start with that, and if doesn't work we'll try previous protocols
+	XnHostProtocolUsbCore usb = XN_USB_CORE_JANGO;
+	nRetVal = XnHostProtocolInitFWParams(pDevicePrivateData, 5, 1, 0, usb);
+	XN_IS_STATUS_OK(nRetVal);
+
 	nRetVal = XnHostProtocolGetVersion(pDevicePrivateData, pDevicePrivateData->Version);
 	
 	// Strange bug: sometimes, when sending first command to device, no reply is received, so try again
@@ -255,13 +258,30 @@ XnStatus XnDeviceSensorConfigureVersion(XnDevicePrivateData* pDevicePrivateData)
 		nRetVal = XnHostProtocolGetVersion(pDevicePrivateData, pDevicePrivateData->Version);
 	}
 	
+	// if command failed for any reason, try again with older protocol
 	if (nRetVal != XN_STATUS_OK)
 	{
-		return nRetVal;
+		nRetVal = XnHostProtocolInitFWParams(pDevicePrivateData, 5, 0, 0, usb);
+		XN_IS_STATUS_OK(nRetVal);
+
+		nRetVal = XnHostProtocolGetVersion(pDevicePrivateData, pDevicePrivateData->Version);
 	}
 
-	// Sensor HW Version is always 1.0 now...
-	pDevicePrivateData->SensorInfo.nSensorVer = XN_SENSOR_VER_2_0;
+	// if it still fails, give up
+	XN_IS_STATUS_OK(nRetVal);
+
+	// check which usb core is used (don't check error code. If this fails, assume JANGO
+	if (XN_STATUS_OK != XnHostProtocolGetUsbCoreType(pDevicePrivateData, usb))
+	{
+		usb = XN_USB_CORE_JANGO;
+	}
+
+	// Now that we have the actual version, configure protocol accordingly
+	nRetVal = XnHostProtocolInitFWParams(pDevicePrivateData, pDevicePrivateData->Version.nMajor, pDevicePrivateData->Version.nMinor, pDevicePrivateData->Version.nBuild, usb);
+	XN_IS_STATUS_OK(nRetVal);
+
+	pDevicePrivateData->HWInfo.nHWVer = pDevicePrivateData->Version.HWVer;
+	pDevicePrivateData->ChipInfo.nChipVer = pDevicePrivateData->Version.ChipVer;
 
 	return (XN_STATUS_OK);
 }

@@ -130,9 +130,9 @@ XN_DEVICE_INTERFACE_FUNCTION(DoesModuleExist,(const XnDeviceHandle DeviceHandle,
 * @param	DeviceHandle	[in]	The requested device handle.
 * @param	Handler			[in]	A pointer to the function that will handle the event.
 * @param	pCookie			[in]	User cookie that will be passed as an argument to the event handler.
-* @param	phCallback		[out]	A handle for unregister.
+* @param	hCallback		[out]	A handle for unregister.
 */
-XN_DEVICE_INTERFACE_FUNCTION(RegisterToStreamsChange,(const XnDeviceHandle DeviceHandle, XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback))
+XN_DEVICE_INTERFACE_FUNCTION(RegisterToStreamsChange,(const XnDeviceHandle DeviceHandle, XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback))
 
 /**
 * Unregisters from the event of streams change (stream created / destroyed)
@@ -165,9 +165,9 @@ XN_DEVICE_INTERFACE_FUNCTION(DestroyStreamData,(XnStreamData** ppStreamData))
 * @param	DeviceHandle	[in]	The requested device handle.
 * @param	Handler			[in]	A pointer to the function that will handle the event.
 * @param	pCookie			[in]	User cookie that will be passed as an argument to the event handler.
-* @param	phCallback		[out]	A handle for unregister.
+* @param	hCallback		[out]	A handle for unregister.
 */
-XN_DEVICE_INTERFACE_FUNCTION(RegisterToNewStreamData,(const XnDeviceHandle DeviceHandle, XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback))
+XN_DEVICE_INTERFACE_FUNCTION(RegisterToNewStreamData,(const XnDeviceHandle DeviceHandle, XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback))
 
 /**
 * Unregisters from the event of new data from a stream.
@@ -385,9 +385,9 @@ XN_DEVICE_INTERFACE_FUNCTION(GetAllProperties,(const XnDeviceHandle DeviceHandle
 * @param	PropertyName	[in]	Name of the property to register to.
 * @param	Handler			[in]	A pointer to the function that will handle the event.
 * @param	pCookie			[in]	User cookie that will be passed as an argument to the event handler.
-* @param	phCallback		[out]	A handle for unregister.
+* @param	hCallback		[out]	A handle for unregister.
 */
-XN_DEVICE_INTERFACE_FUNCTION(RegisterToPropertyChange,(const XnDeviceHandle DeviceHandle, const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback))
+XN_DEVICE_INTERFACE_FUNCTION(RegisterToPropertyChange,(const XnDeviceHandle DeviceHandle, const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback))
 
 /**
 * Unregisters an event handler from the Property Changed event.

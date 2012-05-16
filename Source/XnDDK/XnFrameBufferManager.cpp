@@ -51,9 +51,6 @@ XnStatus XnFrameBufferManager::Init(XnUInt32 nBufferSize)
 	nRetVal = xnOSCreateCriticalSection(&m_hLock);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = m_pBufferPool->Init(nBufferSize);
-	XN_IS_STATUS_OK(nRetVal);
-
 	nRetVal = Reallocate(nBufferSize);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -86,11 +83,13 @@ XnStatus XnFrameBufferManager::Reallocate(XnUInt32 nBufferSize)
 	if (m_pWorkingBuffer != NULL)
 	{
 		m_pBufferPool->DecRef(m_pWorkingBuffer);
+		m_pWorkingBuffer = NULL;
 	}
 
 	if (m_pStableBuffer != NULL)
 	{
 		m_pBufferPool->DecRef(m_pStableBuffer);
+		m_pStableBuffer = NULL;
 	}
 
 	// and take one
@@ -144,6 +143,8 @@ void XnFrameBufferManager::MarkWriteBufferAsStable(XnUInt64 nTimestamp, XnUInt32
 		m_pStableBuffer = pPrevStable;
 		m_pBufferPool->AddRef(m_pStableBuffer);
 		m_pBufferPool->Unlock();
+
+		XN_ASSERT(FALSE);
 		return;
 	}
 
@@ -154,7 +155,10 @@ void XnFrameBufferManager::MarkWriteBufferAsStable(XnUInt64 nTimestamp, XnUInt32
 	m_pWorkingBuffer->Reset();
 
 	// notify stream that new data is available
-	m_NewFrameEvent.Raise(this, m_nStableTimestamp);
+	NewFrameEventArgs args;
+	args.pTripleBuffer = this;
+	args.nTimestamp = m_nStableTimestamp;
+	m_NewFrameEvent.Raise(args);
 }
 
 void XnFrameBufferManager::ReadLastStableBuffer(XnBuffer** ppBuffer, XnUInt64* pnTimestamp, XnUInt32* pnFrameID)

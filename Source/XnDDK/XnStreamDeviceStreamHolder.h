@@ -27,7 +27,7 @@
 //---------------------------------------------------------------------------
 #include "XnDeviceModuleHolder.h"
 #include "XnDeviceStream.h"
-#include <XnHash.h>
+#include <XnHashT.h>
 #include <XnFormats/XnCodec.h>
 
 //---------------------------------------------------------------------------
@@ -58,7 +58,7 @@ private:
 	XnActualIntProperty m_Compression;
 	XnCodec* m_pCodec;
 
-	XN_DECLARE_DEFAULT_HASH(XnProperty*, XnValue, XnPropertiesHash)
+	typedef XnHashT<XnProperty*, XnValue> XnPropertiesHash;
 	XnPropertiesHash m_CodecProperties;
 };
 

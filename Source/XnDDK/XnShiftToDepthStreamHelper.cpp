@@ -95,13 +95,15 @@ XnStatus XnShiftToDepthStreamHelper::InitShiftToDepth()
 
 	XnUInt32 nPropCount = sizeof(propNames) / sizeof(const XnChar*);
 
+	XnCallbackHandle hDummy;
+
 	XnProperty* pProperty = NULL;
 	for (XnUInt32 i = 0; i < nPropCount; ++i)
 	{
 		nRetVal = m_pModule->GetProperty(propNames[i], &pProperty);
 		XN_IS_STATUS_OK(nRetVal);
 
-		nRetVal = pProperty->OnChangeEvent().Register(ShiftToDepthPropertyValueChangedCallback, this);
+		nRetVal = pProperty->OnChangeEvent().Register(ShiftToDepthPropertyValueChangedCallback, this, hDummy);
 		XN_IS_STATUS_OK(nRetVal);
 	}
 
@@ -109,13 +111,13 @@ XnStatus XnShiftToDepthStreamHelper::InitShiftToDepth()
 	nRetVal = m_pModule->GetProperty(XN_STREAM_PROPERTY_MAX_SHIFT, &pProperty);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = pProperty->OnChangeEvent().Register(DeviceS2DTablesSizeChangedCallback, this);
+	nRetVal = pProperty->OnChangeEvent().Register(DeviceS2DTablesSizeChangedCallback, this, hDummy);
 	XN_IS_STATUS_OK(nRetVal);
 
 	nRetVal = m_pModule->GetProperty(XN_STREAM_PROPERTY_DEVICE_MAX_DEPTH, &pProperty);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = pProperty->OnChangeEvent().Register(DeviceS2DTablesSizeChangedCallback, this);
+	nRetVal = pProperty->OnChangeEvent().Register(DeviceS2DTablesSizeChangedCallback, this, hDummy);
 	XN_IS_STATUS_OK(nRetVal);
 
 	// now init the tables

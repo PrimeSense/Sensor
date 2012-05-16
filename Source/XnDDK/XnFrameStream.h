@@ -39,12 +39,11 @@ public:
 	XnFrameStream(const XnChar* csType, const XnChar* csName);
 	~XnFrameStream() { Free(); }
 
-	XnStatus SetBufferPool(XnBufferPool* pBufferPool);
-
 	//---------------------------------------------------------------------------
 	// Getters
 	//---------------------------------------------------------------------------
 	inline XnUInt32 GetFPS() const { return (XnUInt32)m_FPS.GetValue(); }
+	inline XnBufferPool* GetBufferPool() { return m_pBufferPool; }
 
 	//---------------------------------------------------------------------------
 	// Overridden Methods
@@ -54,16 +53,16 @@ public:
 	XnStatus CreateStreamData(XnStreamData** ppStreamData);
 	XnStatus Read(XnStreamData* pStreamOutput);
 
-	//---------------------------------------------------------------------------
-	// Getters
-	//---------------------------------------------------------------------------
-	inline XnFrameBufferManager* GetTripleBuffer() { return m_pBufferManager; }
-
 protected:
 	//---------------------------------------------------------------------------
 	// Properties Getters
 	//---------------------------------------------------------------------------
 	inline XnActualIntProperty& FPSProperty() { return m_FPS; }
+
+	//---------------------------------------------------------------------------
+	// Getters
+	//---------------------------------------------------------------------------
+	XnStatus GetTripleBuffer(XnFrameBufferManager** pBufferManager);
 
 	//---------------------------------------------------------------------------
 	// Setters
@@ -84,11 +83,13 @@ protected:
 private:
 	XnStatus OnRequiredSizeChanging();
 	XnStatus GetLastRawFrame(XnDynamicSizeBuffer* gbValue);
+	XnStatus SetExternalBufferPool(XnUInt32 nCount, XnGeneralBuffer* aBuffers);
 
 	static XnStatus XN_CALLBACK_TYPE SetFPSCallback(XnActualIntProperty* pSenser, XnUInt64 nValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE RequiredSizeChangedCallback(const XnProperty* pSenser, void* pCookie);
-	static void XN_CALLBACK_TYPE OnTripleBufferNewData(XnFrameBufferManager* pTripleBuffer, XnUInt64 nTimestamp, void* pCookie);
+	static void XN_CALLBACK_TYPE OnTripleBufferNewData(const XnFrameBufferManager::NewFrameEventArgs& args, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE GetLastRawFrameCallback(const XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE SetExternalBufferPoolCallback(XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie);
 
 	//---------------------------------------------------------------------------
 	// Members
@@ -101,6 +102,7 @@ private:
 
 	XnActualIntProperty m_IsFrameStream;
 	XnActualIntProperty m_FPS;
+	XnGeneralProperty m_externalBufferPool;
 	XnGeneralProperty m_LastRawFrame;
 	XnBool m_bTripleBufferReallocated;
 };

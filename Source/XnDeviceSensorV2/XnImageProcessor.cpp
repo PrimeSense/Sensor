@@ -30,8 +30,8 @@
 // Code
 //---------------------------------------------------------------------------
 
-XnImageProcessor::XnImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper, XnBool bCompressedOutput /* = FALSE */) :
-	XnFrameStreamProcessor(pStream, pHelper, XN_SENSOR_PROTOCOL_RESPONSE_IMAGE_START, XN_SENSOR_PROTOCOL_RESPONSE_IMAGE_END),
+XnImageProcessor::XnImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager, XnBool bCompressedOutput /* = FALSE */) :
+	XnFrameStreamProcessor(pStream, pHelper, pBufferManager, XN_SENSOR_PROTOCOL_RESPONSE_IMAGE_START, XN_SENSOR_PROTOCOL_RESPONSE_IMAGE_END),
 	m_bCompressedOutput(bCompressedOutput)
 {
 }
@@ -53,19 +53,19 @@ XnStatus XnImageProcessor::Init()
 	nRetVal = XnFrameStreamProcessor::Init();
 	XN_IS_STATUS_OK(nRetVal);
 	
-	nRetVal = GetStream()->XResProperty().OnChangeEvent().Register(ActualResChangedCallback, this, &m_hXResCallback);
+	nRetVal = GetStream()->XResProperty().OnChangeEvent().Register(ActualResChangedCallback, this, m_hXResCallback);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = GetStream()->YResProperty().OnChangeEvent().Register(ActualResChangedCallback, this, &m_hYResCallback);
+	nRetVal = GetStream()->YResProperty().OnChangeEvent().Register(ActualResChangedCallback, this, m_hYResCallback);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = GetStream()->m_FirmwareCropSizeX.OnChangeEvent().Register(ActualResChangedCallback, this, &m_hXCropCallback);
+	nRetVal = GetStream()->m_FirmwareCropSizeX.OnChangeEvent().Register(ActualResChangedCallback, this, m_hXCropCallback);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = GetStream()->m_FirmwareCropSizeY.OnChangeEvent().Register(ActualResChangedCallback, this, &m_hYCropCallback);
+	nRetVal = GetStream()->m_FirmwareCropSizeY.OnChangeEvent().Register(ActualResChangedCallback, this, m_hYCropCallback);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = GetStream()->m_FirmwareCropEnabled.OnChangeEvent().Register(ActualResChangedCallback, this, &m_hCropEnabledCallback);
+	nRetVal = GetStream()->m_FirmwareCropEnabled.OnChangeEvent().Register(ActualResChangedCallback, this, m_hCropEnabledCallback);
 	XN_IS_STATUS_OK(nRetVal);
 
 	CalcActualRes();

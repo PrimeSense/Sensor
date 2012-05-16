@@ -66,8 +66,8 @@ XnStatus XnDeviceModuleHolder::Free()
 	// them from Module).
 	while (!m_Allocated.IsEmpty())
 	{
-		XnProperty* pProp = *(m_Allocated.begin());
-		m_Allocated.Remove(m_Allocated.begin());
+		XnProperty* pProp = *(m_Allocated.Begin());
+		m_Allocated.Remove(m_Allocated.Begin());
 		XN_DELETE(pProp);
 	}
 
@@ -78,9 +78,9 @@ XnStatus XnDeviceModuleHolder::UnsafeSetProperties(const XnActualPropertiesHash&
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	for (XnActualPropertiesHash::ConstIterator it = props.begin(); it != props.end(); ++it)
+	for (XnActualPropertiesHash::ConstIterator it = props.Begin(); it != props.End(); ++it)
 	{
-		XnProperty* pRequestProp = it.Value();
+		XnProperty* pRequestProp = it->Value();
 		XnProperty* pProp = NULL;
 
 		// check if property already exist

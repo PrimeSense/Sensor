@@ -1,6 +1,57 @@
 Detailed Change log:
 --------------------
 
+Version 5.1.2.1 (Unstable version - May 15th 2012)
+--------------------------------------------------
+  * Redist: fix identification of ARM.
+  * Adding support for new command: get usb core type. Also add different USB handling for different cores.
+  * Remove annoying (and misleading) warning messages from the log. 
+  * Starting with firmware 5.7.0 - add the platform string to the firmware version (to support different platforms running the same FW version).
+  * Improved the hardware version information.
+  * Bug Fix: changing resolution might cause a crash when working without a server.
+  * Adding "Lean Init" mode which only gets version (no other FW queries).
+  * Adding -safe option to command console. If applied, lean init is used and chances of failing to open sensor are dramatically reduced.
+  * Bug Fix: If upload file fails, file remains open by process.
+  * Fix printing values during upload.
+  * Starting with 5.6.9 - check if image is supported using fixed params (instead of VSync ugly patch). Also moved fixed params to be part of SensorFirmware class.
+  * BIST: host now always performs soft reset before running BIST.
+  * Allowing AHB operations.
+  * Bug Fix: device is always opened on interface 0 (should be ISO on x86 and BULK on ARM).
+  * Added support to convert the uncompressed bayer image format into RGB24.
+  * Added the 720p & 1280x960 image resolutions in the Xiron.ini and GlobalDefaults.ini files.
+  * Added support for real uncompressed bayer image format.
+  * ARM depth defaults are now QQ and 12-bit.
+  * Allowing an application to provide buffers for map streams (instead of using the shared memory).
+  * Add some logs to the server session.
+  * Audio buffer (shared memory) and indexes are now owned by stream (and not the device).
+  * Workaround a FW bug which returns a preset with FPS 0 (causes DirectShow filter to crash).
+  * Using new data containers (XnListT, XnHashT, XnEventT).
+  * Added new server property: "ServerLogFile" (string) for getting log file name.
+  * Fix some static analysis warnings.
+  * Fix some minor, rare, never-gonna-happen, memory leaks.
+  * Moving "service discovery" into one location - takes place during init (instead of as part of the get version command).
+  * Adding support for FW 5.3.29 (like previous, with the get presets opcode).
+  * Adding a warning log when trying to set a non-supported mode.
+  * Bug Fix: enumerating for image caused soft-reset of the device when server is off. This is problematic if working from different contexts and this device is streaming in another context.
+  * Bug Fix: image resolution possible values were hard-coded, even when taking presets from FW.
+  * Fixed some bugs in the software registration:
+    1) The start/end padding code was removed. It was not really necessary and caused the result to be incorrect.
+    2) In the depth-to-shift table calculation, the distance between the cameras was truncated from bad float/int conversions.
+    3) Removed the code which stops building the registration table if the max Y was reached. The correct solution is not to stop the loop, but to mark the values as invalid.
+    4) Enabled software registration to also work in QVGA 30 mode.
+  * Using USB connection event instead of old single callback.
+  * Bug Fix: corrupt memory if resolution is changed *after* a frame was received but not read by application yet (#1950)
+  * Shifts map is stored as part of the frame.
+  * Added 12-bit depth processor.
+  * Optimizations for Arm Cortex A8 (neon).
+  * Adding interface for general i2c operations.
+  * Update device frequency whenever a stream is opened (frequency might change on setting to specific mode).
+  * Added a property "HostTimestamps" for making the code create timestamps according to host clock and disregard firmware timestamps.
+  * Added support for the Depth@QVGA and IR@VGA mode in FW 5.6 and above.
+  * Added support for QQVGA Depth.
+  * Now, when opening sensor without reset (for enumeration purposes), also not setting interface.
+  * Adding the 'CloseRange' property to the depth stream (supported by FW 5.6)
+
 Version 5.1.0.41 (Stable version - Dec 28th 2011)
 -------------------------------------------------
   * No code changes, build is based on latest OpenNI.	

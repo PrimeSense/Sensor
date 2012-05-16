@@ -26,7 +26,7 @@
 // Includes
 //---------------------------------------------------------------------------
 #include "XnDataProcessorHolder.h"
-#include <XnStringsHash.h>
+#include <XnStringsHashT.h>
 #include <XnDDK/XnDeviceStream.h>
 
 //---------------------------------------------------------------------------
@@ -69,7 +69,7 @@ private:
 		XnDeviceStream* pOwner;
 	};
 
-	XN_DECLARE_STRINGS_HASH(XnFirmwareStreamData, XnFirmwareStreamsHash)
+	typedef XnStringsHashT<XnFirmwareStreamData> XnFirmwareStreamsHash;
 
 	XnFirmwareStreamsHash m_FirmwareStreams;
 

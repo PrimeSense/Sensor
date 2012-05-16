@@ -34,7 +34,7 @@
 class XnImageProcessor : public XnFrameStreamProcessor
 {
 public:
-	XnImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper, XnBool bCompressedOutput = FALSE);
+	XnImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager, XnBool bCompressedOutput = FALSE);
 	virtual ~XnImageProcessor();
 
 	XnStatus Init();

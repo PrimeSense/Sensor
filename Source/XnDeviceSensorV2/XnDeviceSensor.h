@@ -161,26 +161,18 @@ class XnCmosInfo;
 
 typedef struct XnSensorObjects
 {
-	XnSensorObjects(XnSensorFirmware* pFirmware, XnDevicePrivateData* pDevicePrivateData, XnSensorFixedParams* pFixedParams, XnSensorFPS* pFPS, XnCmosInfo* pCmosInfo) :
+	XnSensorObjects(XnSensorFirmware* pFirmware, XnDevicePrivateData* pDevicePrivateData, XnSensorFPS* pFPS, XnCmosInfo* pCmosInfo) :
 		pFirmware(pFirmware),
 		pDevicePrivateData(pDevicePrivateData),
-		pFixedParams(pFixedParams),
 		pFPS(pFPS),
 		pCmosInfo(pCmosInfo)
 	{}
 
 	XnSensorFirmware* pFirmware;
 	XnDevicePrivateData* pDevicePrivateData;
-	XnSensorFixedParams* pFixedParams;
 	XnSensorFPS* pFPS;
 	XnCmosInfo* pCmosInfo;
 } XnSensorObjects;
-
-typedef struct XnSensorInfo
-{
-	XnSensorVer nSensorVer;
-//	XnChar     cSensorID[XN_SENSOR_PROTOCOL_SENSOR_ID_LENGTH+1];
-} XnSensorInfo;
 
 typedef struct XnHWInfo
 {
@@ -254,30 +246,9 @@ typedef XnStatus (XN_CALLBACK_TYPE* NewAudioDataCallback)(void* pCookie);
 struct XnSpecificUsbDevice; // Forward Declaration
 class XnSensor; // Forward Declaration
 
-typedef struct XnDevicePrivateData
+typedef struct XnDeviceAudioBuffer
 {
-	XnVersions Version;
-	XnUInt32 nDepthFramePos;
-	XnUInt32 nImageFramePos;
-
-	XnChar				cpSensorID[XN_SENSOR_PROTOCOL_SENSOR_ID_LENGTH+1];
-	XnUInt8				nBoardID;
-	XN_SENSOR_HANDLE	SensorHandle;
-	XnSensorInfo		SensorInfo;
-	XnFirmwareInfo		FWInfo;
-	XnHWInfo			HWInfo;
-	XnChipInfo			ChipInfo;
-
-	XN_CRITICAL_SECTION_HANDLE hAudioBufferCriticalSection;
-
-	XnSpecificUsbDevice* pSpecificDepthUsb;
-	XnSpecificUsbDevice* pSpecificImageUsb;
-	XnSpecificUsbDevice* pSpecificMiscUsb;
-
-	XnUInt32 nImageBayerDownSampleStep;
-
-	XnCropping IRCropping;
-
+	XN_CRITICAL_SECTION_HANDLE hLock;
 	/** A single (big) buffer for audio. */
 	XN_AUDIO_TYPE* pAudioBuffer;
 	/** An array of pointers into the audio buffer. */
@@ -291,11 +262,31 @@ typedef struct XnDevicePrivateData
 	/** Size of the audio buffer, in bytes. */
 	XnUInt32 nAudioBufferSize;
 	XnUInt32 nAudioPacketSize;
-	/** When true, when reading from device, if frames were lost, their audio will also be dropped. */
-	XnBool bSyncAudio;
 	/** A callback for new data */
 	NewAudioDataCallback pAudioCallback;
 	void* pAudioCallbackCookie;
+} XnDeviceAudioBuffer;
+
+typedef struct XnDevicePrivateData
+{
+	XnVersions Version;
+	XnUInt32 nDepthFramePos;
+	XnUInt32 nImageFramePos;
+
+	XnChar				cpSensorID[XN_SENSOR_PROTOCOL_SENSOR_ID_LENGTH+1];
+	XnUInt8				nBoardID;
+	XN_SENSOR_HANDLE	SensorHandle;
+	XnFirmwareInfo		FWInfo;
+	XnHWInfo			HWInfo;
+	XnChipInfo			ChipInfo;
+
+	XnSpecificUsbDevice* pSpecificDepthUsb;
+	XnSpecificUsbDevice* pSpecificImageUsb;
+	XnSpecificUsbDevice* pSpecificMiscUsb;
+
+	XnUInt32 nImageBayerDownSampleStep;
+
+	XnCropping IRCropping;
 
 	XnFloat fDeviceFrequency;
 

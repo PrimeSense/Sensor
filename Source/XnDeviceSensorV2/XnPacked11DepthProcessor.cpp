@@ -24,6 +24,9 @@
 //---------------------------------------------------------------------------
 #include "XnPacked11DepthProcessor.h"
 #include <XnProfiling.h>
+#ifdef XN_NEON
+#include <arm_neon.h>
+#endif
 
 //---------------------------------------------------------------------------
 // Defines
@@ -55,8 +58,8 @@
 //---------------------------------------------------------------------------
 // Code
 //---------------------------------------------------------------------------
-XnPacked11DepthProcessor::XnPacked11DepthProcessor(XnSensorDepthStream* pStream, XnSensorStreamHelper* pHelper) :
-	XnDepthProcessor(pStream, pHelper)
+XnPacked11DepthProcessor::XnPacked11DepthProcessor(XnSensorDepthStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager) :
+	XnDepthProcessor(pStream, pHelper, pBufferManager)
 {
 }
 
@@ -86,12 +89,21 @@ XnStatus XnPacked11DepthProcessor::Unpack11to16(const XnUInt8* pcInput, const Xn
 	*pnActualRead = 0;
 	XnBuffer* pWriteBuffer = GetWriteBuffer();
 
-	if (!CheckWriteBufferForOverflow(nNeededOutput))
+	// Check there is enough room for the depth pixels
+	if (!CheckDepthBufferForOverflow(nNeededOutput))
 	{
 		return XN_STATUS_OUTPUT_BUFFER_OVERFLOW;
 	}
 
-	XnUInt16* pnOutput = (XnUInt16*)pWriteBuffer->GetUnsafeWritePointer();
+	XnUInt16* pShiftOut = GetShiftsOutputBuffer();
+	XnUInt16* pnOutput = GetDepthOutputBuffer();
+
+	XnUInt16 a0,a1,a2,a3,a4,a5,a6,a7;
+#ifdef XN_NEON
+	XnUInt16 shift[8];
+	XnUInt16 depth[8];
+	uint16x8_t Q0;
+#endif
 
 	// Convert the 11bit packed data into 16bit shorts
 	for (XnUInt32 nElem = 0; nElem < nElements; ++nElem)
@@ -102,17 +114,68 @@ XnStatus XnPacked11DepthProcessor::Unpack11to16(const XnUInt8* pcInput, const Xn
 		//			---,---,-----,---,---,-----,---,---
 		// output:	  0,  1,    2,  3,  4,    5,  6,  7
 
-		pnOutput[0] = GetOutput((XN_TAKE_BITS(pcInput[0],8,0) << 3) | XN_TAKE_BITS(pcInput[1],3,5));
-		pnOutput[1] = GetOutput((XN_TAKE_BITS(pcInput[1],5,0) << 6) | XN_TAKE_BITS(pcInput[2],6,2));
-		pnOutput[2] = GetOutput((XN_TAKE_BITS(pcInput[2],2,0) << 9) | (XN_TAKE_BITS(pcInput[3],8,0) << 1) | XN_TAKE_BITS(pcInput[4],1,7));
-		pnOutput[3] = GetOutput((XN_TAKE_BITS(pcInput[4],7,0) << 4) | XN_TAKE_BITS(pcInput[5],4,4));
-		pnOutput[4] = GetOutput((XN_TAKE_BITS(pcInput[5],4,0) << 7) | XN_TAKE_BITS(pcInput[6],7,1));
-		pnOutput[5] = GetOutput((XN_TAKE_BITS(pcInput[6],1,0) << 10) | (XN_TAKE_BITS(pcInput[7],8,0) << 2) | XN_TAKE_BITS(pcInput[8],2,6));
-		pnOutput[6] = GetOutput((XN_TAKE_BITS(pcInput[8],6,0) << 5) | XN_TAKE_BITS(pcInput[9],5,3));
-		pnOutput[7] = GetOutput((XN_TAKE_BITS(pcInput[9],3,0) << 8) | XN_TAKE_BITS(pcInput[10],8,0));
+		a0 = (XN_TAKE_BITS(pcInput[0],8,0) << 3) | XN_TAKE_BITS(pcInput[1],3,5);
+		a1 = (XN_TAKE_BITS(pcInput[1],5,0) << 6) | XN_TAKE_BITS(pcInput[2],6,2);
+		a2 = (XN_TAKE_BITS(pcInput[2],2,0) << 9) | (XN_TAKE_BITS(pcInput[3],8,0) << 1) | XN_TAKE_BITS(pcInput[4],1,7);
+		a3 = (XN_TAKE_BITS(pcInput[4],7,0) << 4) | XN_TAKE_BITS(pcInput[5],4,4);
+		a4 = (XN_TAKE_BITS(pcInput[5],4,0) << 7) | XN_TAKE_BITS(pcInput[6],7,1);
+		a5 = (XN_TAKE_BITS(pcInput[6],1,0) << 10) | (XN_TAKE_BITS(pcInput[7],8,0) << 2) | XN_TAKE_BITS(pcInput[8],2,6);
+		a6 = (XN_TAKE_BITS(pcInput[8],6,0) << 5) | XN_TAKE_BITS(pcInput[9],5,3);
+		a7 = (XN_TAKE_BITS(pcInput[9],3,0) << 8) | XN_TAKE_BITS(pcInput[10],8,0);
+
+
+#ifdef XN_NEON
+		shift[0] = (((a0) < (XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1)) ? (a0) : 0);
+		shift[1] = (((a1) < (XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1)) ? (a1) : 0);
+		shift[2] = (((a2) < (XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1)) ? (a2) : 0);
+		shift[3] = (((a3) < (XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1)) ? (a3) : 0);
+		shift[4] = (((a4) < (XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1)) ? (a4) : 0);
+		shift[5] = (((a5) < (XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1)) ? (a5) : 0);
+		shift[6] = (((a6) < (XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1)) ? (a6) : 0);
+		shift[7] = (((a7) < (XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1)) ? (a7) : 0);
+
+		depth[0] = GetOutput(a0);
+		depth[1] = GetOutput(a1);
+		depth[2] = GetOutput(a2);
+		depth[3] = GetOutput(a3);
+		depth[4] = GetOutput(a4);
+		depth[5] = GetOutput(a5);
+		depth[6] = GetOutput(a6);
+		depth[7] = GetOutput(a7);
+
+		// Load
+		Q0 = vld1q_u16(depth);
+		// Store
+		vst1q_u16(pnOutput, Q0);
+
+		// Load
+		Q0 = vld1q_u16(shift);
+		// Store
+		vst1q_u16(pShiftOut, Q0);
+#else
+		pShiftOut[0] = (((a0) < (XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1)) ? (a0) : 0);
+		pShiftOut[1] = (((a1) < (XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1)) ? (a1) : 0);
+		pShiftOut[2] = (((a2) < (XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1)) ? (a2) : 0);
+		pShiftOut[3] = (((a3) < (XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1)) ? (a3) : 0);
+		pShiftOut[4] = (((a4) < (XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1)) ? (a4) : 0);
+		pShiftOut[5] = (((a5) < (XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1)) ? (a5) : 0);
+		pShiftOut[6] = (((a6) < (XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1)) ? (a6) : 0);
+		pShiftOut[7] = (((a7) < (XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1)) ? (a7) : 0);
+
+		pnOutput[0] = GetOutput(a0);
+		pnOutput[1] = GetOutput(a1);
+		pnOutput[2] = GetOutput(a2);
+		pnOutput[3] = GetOutput(a3);
+		pnOutput[4] = GetOutput(a4);
+		pnOutput[5] = GetOutput(a5);
+		pnOutput[6] = GetOutput(a6);
+		pnOutput[7] = GetOutput(a7);
+
+#endif
 
 		pcInput += XN_INPUT_ELEMENT_SIZE;
 		pnOutput += 8;
+		pShiftOut += 8;
 	}
 
 	*pnActualRead = (XnUInt32)(pcInput - pOrigInput);

@@ -104,7 +104,7 @@ XnStatus XnSensorAudioGenerator::GetSupportedWaveOutputModes(XnWaveOutputMode aS
 	}
 
 	XnUInt32 i = 0;
-	for (XnWaveOutputModeList::Iterator it = m_SupportedModes.begin(); it != m_SupportedModes.end(); ++it, ++i)
+	for (XnWaveOutputModeList::Iterator it = m_SupportedModes.Begin(); it != m_SupportedModes.End(); ++it, ++i)
 	{
 		aSupportedModes[i] = *it;
 	}
@@ -193,26 +193,33 @@ XnStatus XnExportedSensorAudioGenerator::IsSupportedForDevice(xn::Context& conte
 	nRetVal = sensorInfo.GetInstance(sensor);
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnBool bShouldBeCreated = (!sensor.IsValid());
+	XnUInt64 nAudioSupported = FALSE;
 
-	if (bShouldBeCreated)
+	if (sensor.IsValid())
 	{
-		nRetVal = context.CreateProductionTree(sensorInfo, sensor);
+		nRetVal = sensor.GetIntProperty(XN_MODULE_PROPERTY_AUDIO_SUPPORTED, nAudioSupported);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+	else
+	{
+		// Don't create sensor through OpenNI. This will cause it to soft-reset.
+		// instead, "talk" directly to the sensor class
+		XnSensor lowLevelSensor(FALSE);
+		XnDeviceConfig config;
+		config.DeviceMode = XN_DEVICE_MODE_READ;
+		config.cpConnectionString = sensorInfo.GetCreationInfo();
+		config.SharingMode = XN_DEVICE_EXCLUSIVE;
+		config.pInitialValues = NULL;
+		nRetVal = lowLevelSensor.Init(&config);
+		XN_IS_STATUS_OK(nRetVal);
+
+		nRetVal = lowLevelSensor.GetProperty(XN_MODULE_NAME_DEVICE, XN_MODULE_PROPERTY_AUDIO_SUPPORTED, &nAudioSupported);
 		XN_IS_STATUS_OK(nRetVal);
 	}
 
-	// check if firmware supports audio
-	XnUInt64 nAudioSupported = FALSE;
-	nRetVal = sensor.GetIntProperty(XN_MODULE_PROPERTY_AUDIO_SUPPORTED, nAudioSupported);
-	XN_IS_STATUS_OK(nRetVal);
 	if (nAudioSupported != TRUE)
 	{
 		*pbSupported = FALSE;
-	}
-
-	if (bShouldBeCreated)
-	{
-		sensor.Release();
 	}
 
 	return (XN_STATUS_OK);

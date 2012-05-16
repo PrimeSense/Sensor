@@ -1,5 +1,5 @@
-PrimeSense Sensor Module for OpenNI (Version 5.1.0.41 version - Dec 28th 2011)
-------------------------------------------------------------------------------
+PrimeSense Sensor Module for OpenNI (Version 5.1.2.1 - May 15th 2012)
+---------------------------------------------------------------------
 
 Website: http://www.primesense.com
 Forum: http://groups.google.com/group/openni-dev
@@ -35,7 +35,7 @@ Build Notes:
 ------------
 Windows:
 	Requirements:
-		1) Microsoft Visual Studio 2008/2010
+		1) Microsoft Visual Studio 2010
 		   From: http://msdn.microsoft.com/en-us/vstudio/bb984878.aspx
 		2) Python 2.6+/3.x
 		   From: http://www.python.org/download/
@@ -44,7 +44,7 @@ Windows:
 		   Please make sure you download the version that matches your exact python version.
 		4) WIX 3.5
 		   From: http://wix.codeplex.com/releases/view/60102
-		5) OpenNI 1.3.x.x
+		5) OpenNI 1.5.x.x
 		   From: http://www.openni.org/Downloads/OpenNIModules.aspx	
 
 	Optional Requirements (To build the documentation):
@@ -75,7 +75,7 @@ Linux:
 		   From: http://www.python.org/download/
 		   Or via apt:
 		   sudo apt-get install python
-		3) OpenNI 1.3.x.x
+		3) OpenNI 1.5.x.x
 		   From: http://www.openni.org/Downloads/OpenNIModules.aspx
 		   
 	Building Sensor:
@@ -123,11 +123,25 @@ Linux:
 		
 MacOSX:
 	Requirements:
-		1) Xcode 3.2.6
-		   From: http://developer.apple.com/devcenter/mac/index.action
-		   http://developer.apple.com/devcenter/download.action?path=/Developer_Tools/xcode_3.2.6_and_ios_sdk_4.3__final/xcode_3.2.6_and_ios_sdk_4.3.dmg
-		   Please note that you need to register as a mac developer (It's free!).		   
-		2) OpenNI 1.3.x.x
+		1) For Mac OSX 10.7, Xcode 4.3.2
+		      From: http://developer.apple.com/devcenter/mac/index.action
+		      http://adcdownload.apple.com/Developer_Tools/xcode_4.3.2/xcode_432_lion.dmg    
+   
+		      You will also need to download and install the "Commandline Tools for XCode - Late March 2012" package:
+		      http://adcdownload.apple.com/Developer_Tools/command_line_tools_for_xcode_4.4__late_march_2012/cltools_lion_latemarch12.dmg
+		   
+		      Note: Since Xcode is now a normal application, it no longer automatically install itself. You have to copy&paste Xcode yourself into your Applications folder. 
+			        (or run the application "Install Xcode" from your Applications folder / LaunchPad). 		   
+			        It's also recommended to run the following command after you do the above:
+				      sudo xcode-select -switch /Applications/Xcode.app/
+		   
+		   For Mac OSX 10.6, Xcode 3.2.6:
+		      From: http://developer.apple.com/devcenter/mac/index.action
+		      http://developer.apple.com/devcenter/download.action?path=/Developer_Tools/xcode_3.2.6_and_ios_sdk_4.3__final/xcode_3.2.6_and_ios_sdk_4.3.dmg
+			   
+		   Please note that you need to register as a mac developer (It's free!).
+		   
+		2) OpenNI 1.5.x.x
 		   From: http://www.openni.org/Downloads/OpenNIModules.aspx
 		   	   
 	Building Sensor:

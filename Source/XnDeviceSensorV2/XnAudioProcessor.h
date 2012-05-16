@@ -35,7 +35,7 @@
 class XnAudioProcessor : public XnWholePacketProcessor
 {
 public:
-	XnAudioProcessor(XnSensorAudioStream* pStream, XnSensorStreamHelper* pHelper, XnUInt32 nInputPacketSize);
+	XnAudioProcessor(XnSensorAudioStream* pStream, XnSensorStreamHelper* pHelper, XnDeviceAudioBuffer* pBuffer, XnUInt32 nInputPacketSize);
 	~XnAudioProcessor();
 
 	XnStatus Init();
@@ -62,6 +62,7 @@ private:
 	XnDumpFile* m_AudioInDump;
 	XnBool m_bDeleteChannel;
 	XnSensorAudioStream* m_pStream;
+	XnDeviceAudioBuffer* m_pBuffer;
 	XnSensorStreamHelper* m_pHelper;
 
 	XnCallbackHandle m_hNumChannelsCallback;

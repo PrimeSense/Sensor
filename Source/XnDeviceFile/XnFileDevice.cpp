@@ -45,7 +45,7 @@ typedef struct XnLastStreamData
 	XnUInt64 nTimestamp;
 } XnLastStreamData;
 
-XN_DECLARE_STRINGS_HASH(XnLastStreamData, XnLastStreamDataHash);
+typedef XnStringsHashT<XnLastStreamData> XnLastStreamDataHash;
 
 //---------------------------------------------------------------------------
 // XnFileDevice class
@@ -87,9 +87,9 @@ XnStatus XnFileDevice::Init()
 
 void XnFileDevice::Free()
 {
-	for (XnNodeInfoMap::Iterator it = m_nodeInfoMap.begin(); it != m_nodeInfoMap.end(); ++it)
+	for (XnNodeInfoMap::Iterator it = m_nodeInfoMap.Begin(); it != m_nodeInfoMap.End(); ++it)
 	{
-		XnNodeInfo& nodeInfo = it.Value();
+		XnNodeInfo& nodeInfo = it->Value();
 		XN_DELETE(nodeInfo.pXnCodec);
 		if (nodeInfo.codec.IsValid())
 		{
@@ -201,7 +201,7 @@ XnStatus XnFileDevice::SetInitialState(XnPropertySet* pSet)
 		pDeviceModule->Remove(XN_MODULE_PROPERTY_PRIMARY_STREAM);
 
 		// check for timestamps resolution
-		XnActualIntProperty* pIntProp;
+		XnActualIntProperty* pIntProp = NULL;
 		if (XN_STATUS_OK == pDeviceModule->Get(XN_MODULE_PROPERTY_HIGH_RES_TIMESTAMPS, (XnProperty*&)pIntProp))
 		{
 			m_bHighresTimestamps = (pIntProp->GetValue() == TRUE);
@@ -212,20 +212,20 @@ XnStatus XnFileDevice::SetInitialState(XnPropertySet* pSet)
 
 	// now create the rest of the modules and streams (DEVICE was already created)
 	XnPropertySetData* pPropSetData = pSet->pData;
-	for (XnPropertySetData::ConstIterator it = pPropSetData->begin(); it != pPropSetData->end(); ++it)
+	for (XnPropertySetData::ConstIterator it = pPropSetData->Begin(); it != pPropSetData->End(); ++it)
 	{
 		// ignore module DEVICE
-		if (strcmp(XN_MODULE_NAME_DEVICE, it.Key()) == 0)
+		if (strcmp(XN_MODULE_NAME_DEVICE, it->Key()) == 0)
 		{
 			continue;
 		}
 
 		// check if this is a stream
-		XnActualPropertiesHash::ConstIterator itProp = it.Value()->end();
-		if (XN_STATUS_OK == it.Value()->Find(XN_STREAM_PROPERTY_TYPE, itProp))
+		XnActualPropertiesHash::ConstIterator itProp = it->Value()->End();
+		if (XN_STATUS_OK == it->Value()->Find(XN_STREAM_PROPERTY_TYPE, itProp))
 		{
-			XnActualStringProperty* pTypeProp = (XnActualStringProperty*)itProp.Value();
-			nRetVal = HandleNewStream(pTypeProp->GetValue(), it.Key(), it.Value());
+			XnActualStringProperty* pTypeProp = (XnActualStringProperty*)itProp->Value();
+			nRetVal = HandleNewStream(pTypeProp->GetValue(), it->Key(), it->Value());
 			XN_IS_STATUS_OK(nRetVal);
 		}
 	} // modules loop
@@ -360,7 +360,7 @@ XnStatus XnFileDevice::SeekTo(XnUInt64 nMinTimestamp, const XnChar* strNodeName,
 			XnLastStreamData data;
 			if (XN_STATUS_OK != StreamsHash.Get(props.StreamName, data))
 			{
-				XnNodeInfo* pNodeInfo;
+				XnNodeInfo* pNodeInfo = NULL;
 				nRetVal = m_nodeInfoMap.Get(props.StreamName, pNodeInfo);
 				XN_IS_STATUS_OK(nRetVal);
 
@@ -430,7 +430,7 @@ XnStatus XnFileDevice::SeekTo(XnUInt64 nMinTimestamp, const XnChar* strNodeName,
 		nRetVal = GetStreamsList(streams);
 		XN_IS_STATUS_OK(nRetVal);
 
-		for (XnDeviceModuleHolderList::Iterator it = streams.begin(); it != streams.end(); ++it)
+		for (XnDeviceModuleHolderList::Iterator it = streams.Begin(); it != streams.End(); ++it)
 		{
 			XnStreamReaderStream* pStream = (XnStreamReaderStream*)(*it)->GetModule();
 			pStream->ReMarkDataAsNew();
@@ -473,7 +473,7 @@ XnStatus XnFileDevice::SeekToFrame(const XnChar* strNodeName, XnInt32 nFrameOffs
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	XnNodeInfo* pNodeInfo;
+	XnNodeInfo* pNodeInfo = NULL;
 	nRetVal = m_nodeInfoMap.Get(strNodeName, pNodeInfo);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -521,7 +521,7 @@ XnStatus XnFileDevice::TellFrame(const XnChar* strNodeName, XnUInt32 &nFrameOffs
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	XnNodeInfo* pNodeInfo;
+	XnNodeInfo* pNodeInfo = NULL;
 	nRetVal = m_nodeInfoMap.Get(strNodeName, pNodeInfo);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -552,7 +552,7 @@ XnBool XnFileDevice::IsEOF()
 
 XnStatus XnFileDevice::RegisterToEndOfFileReached(XnModuleStateChangedHandler handler, void* pCookie, XnCallbackHandle& hCallback)
 {
-	return m_eofEvent.Register(handler, pCookie, &hCallback);
+	return m_eofEvent.Register(handler, pCookie, hCallback);
 }
 
 void XnFileDevice::UnregisterFromEndOfFileReached(XnCallbackHandle hCallback)
@@ -634,7 +634,7 @@ XnStatus XnFileDevice::ReadNewStream()
 	if (nRetVal == XN_STATUS_OK)
 	{
 		// create it
-		nRetVal = HandleNewStream(strType, strName, pPropertySet->pData->begin().Value());
+		nRetVal = HandleNewStream(strType, strName, pPropertySet->pData->Begin()->Value());
 	}
 
 	XnPropertySetDestroy(&pPropertySet);
@@ -672,7 +672,7 @@ XnStatus XnFileDevice::HandleNewStream(const XnChar *strType, const XnChar *strN
 	XnStatus nRetVal = XN_STATUS_OK;
 
 	// check if we need to ignore that (stream was not removed upon Rewind).
-	XnNodeInfoMap::Iterator it = m_ignoreNewNodes.end();
+	XnNodeInfoMap::Iterator it = m_ignoreNewNodes.End();
 	if (m_ignoreNewNodes.Find(strName, it) == XN_STATUS_OK)
 	{
 		// ignore
@@ -709,9 +709,9 @@ XnStatus XnFileDevice::HandleNewStream(const XnChar *strType, const XnChar *strN
 	XN_IS_STATUS_OK(nRetVal);
 
 	// now write state
-	for (XnActualPropertiesHash::ConstIterator it = pInitialValues->begin(); it != pInitialValues->end(); ++it)
+	for (XnActualPropertiesHash::ConstIterator it = pInitialValues->Begin(); it != pInitialValues->End(); ++it)
 	{
-		XnProperty* pProp = it.Value();
+		XnProperty* pProp = it->Value();
 
 		switch (pProp->GetType())
 		{
@@ -881,8 +881,8 @@ XnStatus XnFileDevice::HandleStreamRemoved(const XnChar* strName)
 
 	// check for specific case: all streams are removed and then end-of-file is reached.
 	// in this case, we don't really want to destroy streams, just wrap around.
-	XnStringsHash StreamsToRemove;
-	nRetVal = StreamsToRemove.Set(strName, NULL);
+	XnStringsSet StreamsToRemove;
+	nRetVal = StreamsToRemove.Set(strName);
 	XN_IS_STATUS_OK(nRetVal);
 
 	XnPackedDataType nType = XN_PACKED_STREAM_REMOVED;
@@ -902,7 +902,7 @@ XnStatus XnFileDevice::HandleStreamRemoved(const XnChar* strName)
 			nRetVal = m_pDataPacker->ReadStreamRemoved(strTempName);
 			XN_IS_STATUS_OK(nRetVal);
 
-			nRetVal = StreamsToRemove.Set(strTempName, NULL);
+			nRetVal = StreamsToRemove.Set(strTempName);
 			XN_IS_STATUS_OK(nRetVal);
 		}
 		else
@@ -914,16 +914,16 @@ XnStatus XnFileDevice::HandleStreamRemoved(const XnChar* strName)
 	if (nType != XN_PACKED_END)
 	{
 		// Not the case we were looking for. Remove those streams.
-		for (XnStringsHash::Iterator it = StreamsToRemove.begin(); it != StreamsToRemove.end(); ++it)
+		for (XnStringsSet::Iterator it = StreamsToRemove.Begin(); it != StreamsToRemove.End(); ++it)
 		{
-			nRetVal = m_pNotifications->OnNodeRemoved(m_pNotificationsCookie, it.Key());
+			nRetVal = m_pNotifications->OnNodeRemoved(m_pNotificationsCookie, it->Key());
 			XN_IS_STATUS_OK(nRetVal);
 
-			XnNodeInfo* pNodeInfo;
-			m_nodeInfoMap.Get(it.Key(), pNodeInfo);
+			XnNodeInfo* pNodeInfo = NULL;
+			m_nodeInfoMap.Get(it->Key(), pNodeInfo);
 			XN_DELETE(pNodeInfo->pXnCodec);
-			m_nodeInfoMap.Remove(it.Key());
-			m_ignoreNewNodes.Remove(it.Key());
+			m_nodeInfoMap.Remove(it->Key());
+			m_ignoreNewNodes.Remove(it->Key());
 		}
 
 		m_bNodeCollectionChanged = TRUE;
@@ -1115,7 +1115,7 @@ XnStatus XnFileDevice::HandleIntProperty(const XnChar *strModule, const XnChar *
 	{
 		// only after node is ready
 		xn::DepthGenerator depth(node);
-		XnNodeInfo* pNodeInfo;
+		XnNodeInfo* pNodeInfo = NULL;
 		if (m_nodeInfoMap.Get(strModule, pNodeInfo) == XN_STATUS_OK &&
 			m_context.GetProductionNodeByName(strModule, depth) == XN_STATUS_OK)
 		{
@@ -1169,7 +1169,7 @@ XnStatus XnFileDevice::HandleRealProperty(const XnChar *strModule, const XnChar 
 	nRetVal = m_pNotifications->OnNodeRealPropChanged(m_pNotificationsCookie, strModule, strName, dValue);
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnNodeInfo* pNodeInfo;
+	XnNodeInfo* pNodeInfo = NULL;
 
 	if (strcmp(strName, XN_STREAM_PROPERTY_ZERO_PLANE_PIXEL_SIZE) == 0 ||
 		strcmp(strName, XN_STREAM_PROPERTY_EMITTER_DCMOS_DISTANCE) == 0)
@@ -1303,11 +1303,11 @@ XnStatus XnFileDevice::HandleStreamData(XnStreamData* pDataProps, XnCompressionF
 	nRetVal = m_pInputStream->Tell(&nPosition);
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnUIntHash::Iterator it = m_PositionsToIgnore.end();
+	XnUIntHash::Iterator it = m_PositionsToIgnore.End();
 	if (XN_STATUS_OK == m_PositionsToIgnore.Find(nPosition, it))
 	{
 		// ignore this one. Just update the frame ID
-		XnNodeInfo* pNodeInfo;
+		XnNodeInfo* pNodeInfo = NULL;
 		nRetVal = m_nodeInfoMap.Get(pDataProps->StreamName, pNodeInfo);
 		XN_IS_STATUS_OK(nRetVal);
 
@@ -1449,9 +1449,9 @@ XnStatus XnFileDevice::Rewind()
 	XN_IS_STATUS_OK(nRetVal);
 
 	// first handle current streams. remove or reset them
-	for (XnNodeInfoMap::Iterator it = m_nodeInfoMap.begin(); it != m_nodeInfoMap.end(); ++it)
+	for (XnNodeInfoMap::Iterator it = m_nodeInfoMap.Begin(); it != m_nodeInfoMap.End(); ++it)
 	{
-		const XnChar* strName = it.Key();
+		const XnChar* strName = it->Key();
 
 		if (m_bNodeCollectionChanged)
 		{
@@ -1462,9 +1462,9 @@ XnStatus XnFileDevice::Rewind()
 		else
 		{
 			// just reset frame ID
-			it.Value().nCurrFrameID = 0;
+			it->Value().nCurrFrameID = 0;
 			// and mark not to recreate it
-			nRetVal = m_ignoreNewNodes.Set(strName, it.Value());
+			nRetVal = m_ignoreNewNodes.Set(strName, it->Value());
 			XN_IS_STATUS_OK(nRetVal);
 		}
 	}

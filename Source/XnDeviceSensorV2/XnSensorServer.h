@@ -32,6 +32,7 @@
 #include "XnServerLogger.h"
 #include "XnSensorsManager.h"
 #include "XnServerSession.h"
+#include <XnListT.h>
 
 //---------------------------------------------------------------------------
 // XnSensorServer class
@@ -48,7 +49,7 @@ public:
 	XnBool IsServerRunning();
 
 private:
-	XN_DECLARE_LIST(XnServerSession*, XnSessionsList);
+	typedef XnListT<XnServerSession*> XnSessionsList;
 
 	XnStatus InitServer();
 	XnStatus ServerMainLoop();

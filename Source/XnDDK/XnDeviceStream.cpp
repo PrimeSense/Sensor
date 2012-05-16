@@ -204,7 +204,7 @@ XnStatus XnDeviceStream::RegisterRequiredSizeProperty(XnProperty* pProperty)
 	XN_ASSERT(strcmp(pProperty->GetModule(), GetName()) == 0);
 
 	XnCallbackHandle hCallbackDummy;
-	nRetVal = pProperty->OnChangeEvent().Register(UpdateRequiredSizeCallback, this, &hCallbackDummy);
+	nRetVal = pProperty->OnChangeEvent().Register(UpdateRequiredSizeCallback, this, hCallbackDummy);
 	XN_IS_STATUS_OK(nRetVal);
 
 	// recalculate it

@@ -49,7 +49,7 @@ XnIntPropertySynchronizer::XnIntPropertySynchronizer()
 
 XnIntPropertySynchronizer::~XnIntPropertySynchronizer()
 {
-	for (XnList::Iterator it = m_Cookies.begin(); it != m_Cookies.end(); ++it)
+	for (CookiesList::Iterator it = m_Cookies.Begin(); it != m_Cookies.End(); ++it)
 	{
 		XnIntSynchronizerCookie* pSynchData = (XnIntSynchronizerCookie*)*it;
 		pSynchData->pSource->OnChangeEvent().Unregister(pSynchData->hCallback);
@@ -104,11 +104,11 @@ XnStatus XnIntPropertySynchronizer::RegisterSynchronization(XnIntProperty* pSour
 		return (nRetVal);
 	}
 
-	nRetVal = pSource->OnChangeEvent().Register(IntPropertyValueChangedCallback, pCookie, &pCookie->hCallback);
+	nRetVal = pSource->OnChangeEvent().Register(IntPropertyValueChangedCallback, pCookie, pCookie->hCallback);
 	if (nRetVal != XN_STATUS_OK)
 	{
 		XN_DELETE(pCookie);
-		m_Cookies.Remove(m_Cookies.begin());
+		m_Cookies.Remove(m_Cookies.Begin());
 		return (nRetVal);
 	}
 	

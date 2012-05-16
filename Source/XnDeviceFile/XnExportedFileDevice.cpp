@@ -27,7 +27,7 @@
 #include "XnDeviceFileReader.h"
 #include "XnFileDevice.h"
 #include <XnOpenNI.h>
-#include <XnCommon/XnCommon.h>
+#include <XnCommon.h>
 
 //---------------------------------------------------------------------------
 // XnExportedFileDevice class
@@ -74,6 +74,7 @@ XnStatus XnExportedFileDevice::Create(xn::Context& context, const XnChar* strIns
 	nRetVal = pDevice->Init();
 	if (nRetVal != XN_STATUS_OK)
 	{
+		XN_DELETE(pDevice);
 		return (nRetVal);
 	}
 

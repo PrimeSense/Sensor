@@ -119,31 +119,31 @@ XnStatus XnStreamReaderDevice::SetInitialState(const XnDeviceConfig* pDeviceConf
 
 	// now create the rest of the modules and streams (DEVICE was already created)
 	XnPropertySetData* pPropSetData = pSet->pData;
-	for (XnPropertySetData::ConstIterator it = pPropSetData->begin(); it != pPropSetData->end(); ++it)
+	for (XnPropertySetData::ConstIterator it = pPropSetData->Begin(); it != pPropSetData->End(); ++it)
 	{
 		// ignore module DEVICE
-		if (strcmp(XN_MODULE_NAME_DEVICE, it.Key()) == 0)
+		if (strcmp(XN_MODULE_NAME_DEVICE, it->Key()) == 0)
 		{
 			continue;
 		}
 
 		// check if this is a stream
-		XnActualPropertiesHash::ConstIterator itProp = it.Value()->end();
-		if (XN_STATUS_OK == it.Value()->Find(XN_STREAM_PROPERTY_TYPE, itProp))
+		XnActualPropertiesHash::ConstIterator itProp = it->Value()->End();
+		if (XN_STATUS_OK == it->Value()->Find(XN_STREAM_PROPERTY_TYPE, itProp))
 		{
-			XnActualStringProperty* pTypeProp = (XnActualStringProperty*)itProp.Value();
-			nRetVal = HandleNewStream(pTypeProp->GetValue(), it.Key(), it.Value());
+			XnActualStringProperty* pTypeProp = (XnActualStringProperty*)itProp->Value();
+			nRetVal = HandleNewStream(pTypeProp->GetValue(), it->Key(), it->Value());
 			XN_IS_STATUS_OK(nRetVal);
 		}
 		else
 		{
 			// this is module. create it
 			XnDeviceModuleHolder* pHolder = NULL;
-			nRetVal = CreateModule(it.Key(), &pHolder);
+			nRetVal = CreateModule(it->Key(), &pHolder);
 			XN_IS_STATUS_OK(nRetVal);
 
 			// set its props
-			nRetVal = pHolder->Init(it.Value());
+			nRetVal = pHolder->Init(it->Value());
 			if (nRetVal != XN_STATUS_OK)
 			{
 				DestroyModule(pHolder);
@@ -274,7 +274,7 @@ XnStatus XnStreamReaderDevice::ReadNewStream()
 	if (nRetVal == XN_STATUS_OK)
 	{
 		// create it
-		nRetVal = HandleNewStream(strType, strName, pPropertySet->pData->begin().Value());
+		nRetVal = HandleNewStream(strType, strName, pPropertySet->pData->Begin()->Value());
 	}
 
 	XnPropertySetDestroy(&pPropertySet);

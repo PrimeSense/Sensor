@@ -70,6 +70,9 @@ XnStatus XnSensorAudioStream::Init()
 	nRetVal = m_Helper.Init(this, this);
 	XN_IS_STATUS_OK(nRetVal);
 
+	nRetVal = xnOSCreateCriticalSection(&m_buffer.hLock);
+	XN_IS_STATUS_OK(nRetVal);
+
 	nRetVal = SetReadChunkSize(XN_AUDIO_STREAM_DEFAULT_CHUNK_SIZE);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -86,8 +89,8 @@ XnStatus XnSensorAudioStream::Init()
 	nRetVal = ReallocBuffer();
 	XN_IS_STATUS_OK(nRetVal);
 
-	m_Helper.GetPrivateData()->pAudioCallback = NewDataCallback;
-	m_Helper.GetPrivateData()->pAudioCallbackCookie = this;
+	m_buffer.pAudioCallback = NewDataCallback;
+	m_buffer.pAudioCallbackCookie = this;
 
 	// data processor
 	nRetVal = m_Helper.RegisterDataProcessorProperty(NumberOfChannelsProperty());
@@ -105,6 +108,14 @@ XnStatus XnSensorAudioStream::Free()
 		xnOSCloseSharedMemory(m_hSharedMemory);
 		m_hSharedMemory = NULL;
 	}
+
+	// close critical sections
+	if (m_buffer.hLock != NULL)
+	{
+		xnOSCloseCriticalSection(&m_buffer.hLock);
+		m_buffer.hLock = NULL;
+	}
+
 	return (XN_STATUS_OK);
 }
 
@@ -203,7 +214,7 @@ XnStatus XnSensorAudioStream::CloseStreamImpl()
 XnStatus XnSensorAudioStream::CreateDataProcessor(XnDataProcessor** ppProcessor)
 {
 	XnDataProcessor* pAudioProcessor;
-	XN_VALIDATE_NEW_AND_INIT(pAudioProcessor, XnAudioProcessor, this, &m_Helper, m_nOrigAudioPacketSize);
+	XN_VALIDATE_NEW_AND_INIT(pAudioProcessor, XnAudioProcessor, this, &m_Helper, &m_buffer, m_nOrigAudioPacketSize);
 
 	*ppProcessor = pAudioProcessor;
 
@@ -265,19 +276,17 @@ XnStatus XnSensorAudioStream::SetNumberOfChannels(XnUInt32 nNumberOfChannels)
 
 XnStatus XnSensorAudioStream::NewData()
 {
-	XnDevicePrivateData* pDevicePrivateData = m_Helper.GetPrivateData();
-
 	// check how many buffers we have
-	XnInt32 nAvailbalePackets = pDevicePrivateData->nAudioWriteIndex - pDevicePrivateData->nAudioReadIndex;
+	XnInt32 nAvailbalePackets = m_buffer.nAudioWriteIndex - m_buffer.nAudioReadIndex;
 	if (nAvailbalePackets < 0)
-		nAvailbalePackets += pDevicePrivateData->nAudioBufferNumOfPackets;
+		nAvailbalePackets += m_buffer.nAudioBufferNumOfPackets;
 
-	if ((XnUInt32)nAvailbalePackets * pDevicePrivateData->nAudioPacketSize >= GetReadChunkSize())
+	if ((XnUInt32)nAvailbalePackets * m_buffer.nAudioPacketSize >= GetReadChunkSize())
 	{
 		// update last write index (the last written byte)
-		m_pSharedHeader->nWritePacketIndex = pDevicePrivateData->nAudioWriteIndex;
+		m_pSharedHeader->nWritePacketIndex = m_buffer.nAudioWriteIndex;
 		// take first packet timestamp
-		NewDataAvailable(pDevicePrivateData->pAudioPacketsTimestamps[pDevicePrivateData->nAudioReadIndex], 0);
+		NewDataAvailable(m_buffer.pAudioPacketsTimestamps[m_buffer.nAudioReadIndex], 0);
 	}
 
 	return XN_STATUS_OK;
@@ -285,47 +294,45 @@ XnStatus XnSensorAudioStream::NewData()
 
 XnStatus XnSensorAudioStream::ReadImpl(XnStreamData *pStreamOutput)
 {
-	XnDevicePrivateData* pDevicePrivateData = m_Helper.GetPrivateData();
-
 	pStreamOutput->nDataSize = 0;
 
 	XN_AUDIO_TYPE* pAudioBuf = (XN_AUDIO_TYPE*)pStreamOutput->pData;
 
-	xnOSEnterCriticalSection(&pDevicePrivateData->hAudioBufferCriticalSection);
+	xnOSEnterCriticalSection(&m_buffer.hLock);
 
 	// check how many buffers we have
-	XnInt32 nAvailbalePackets = pDevicePrivateData->nAudioWriteIndex - pDevicePrivateData->nAudioReadIndex;
+	XnInt32 nAvailbalePackets = m_buffer.nAudioWriteIndex - m_buffer.nAudioReadIndex;
 	if (nAvailbalePackets < 0)
-		nAvailbalePackets += pDevicePrivateData->nAudioBufferNumOfPackets;
+		nAvailbalePackets += m_buffer.nAudioBufferNumOfPackets;
 
 	// now check if stream frame buffer has enough space
-	if (GetRequiredDataSize() < (XnUInt32)nAvailbalePackets * pDevicePrivateData->nAudioPacketSize)
+	if (GetRequiredDataSize() < (XnUInt32)nAvailbalePackets * m_buffer.nAudioPacketSize)
 	{
-		xnOSLeaveCriticalSection(&pDevicePrivateData->hAudioBufferCriticalSection);
+		xnOSLeaveCriticalSection(&m_buffer.hLock);
 		return (XN_STATUS_IO_INVALID_STREAM_AUDIO_BUFFER_SIZE);
 	}
 
 	// take first packet timestamp
-	pStreamOutput->nTimestamp = pDevicePrivateData->pAudioPacketsTimestamps[pDevicePrivateData->nAudioReadIndex];
-	XnUChar* pPacketData = pDevicePrivateData->pAudioBuffer + (pDevicePrivateData->nAudioReadIndex * pDevicePrivateData->nAudioPacketSize);
+	pStreamOutput->nTimestamp = m_buffer.pAudioPacketsTimestamps[m_buffer.nAudioReadIndex];
+	XnUChar* pPacketData = m_buffer.pAudioBuffer + (m_buffer.nAudioReadIndex * m_buffer.nAudioPacketSize);
 
 	// copy
-	while (pDevicePrivateData->nAudioReadIndex != pDevicePrivateData->nAudioWriteIndex)
+	while (m_buffer.nAudioReadIndex != m_buffer.nAudioWriteIndex)
 	{
-		xnOSMemCopy(pAudioBuf, pPacketData, pDevicePrivateData->nAudioPacketSize);
-		pAudioBuf += pDevicePrivateData->nAudioPacketSize;
-		pStreamOutput->nDataSize += pDevicePrivateData->nAudioPacketSize;
+		xnOSMemCopy(pAudioBuf, pPacketData, m_buffer.nAudioPacketSize);
+		pAudioBuf += m_buffer.nAudioPacketSize;
+		pStreamOutput->nDataSize += m_buffer.nAudioPacketSize;
 
-		pDevicePrivateData->nAudioReadIndex++;
-		pPacketData += pDevicePrivateData->nAudioPacketSize;
-		if (pDevicePrivateData->nAudioReadIndex == pDevicePrivateData->nAudioBufferNumOfPackets)
+		m_buffer.nAudioReadIndex++;
+		pPacketData += m_buffer.nAudioPacketSize;
+		if (m_buffer.nAudioReadIndex == m_buffer.nAudioBufferNumOfPackets)
 		{
-			pDevicePrivateData->nAudioReadIndex = 0;
-			pPacketData = pDevicePrivateData->pAudioBuffer;
+			m_buffer.nAudioReadIndex = 0;
+			pPacketData = m_buffer.pAudioBuffer;
 		}
 	}
 
-	xnOSLeaveCriticalSection(&pDevicePrivateData->hAudioBufferCriticalSection);
+	xnOSLeaveCriticalSection(&m_buffer.hLock);
 
 	++m_nFrameID;
 	pStreamOutput->nFrameID = m_nFrameID;
@@ -486,31 +493,31 @@ XnStatus XnSensorAudioStream::ReallocBuffer()
 		XN_IS_STATUS_OK(nRetVal);
 
 		m_pSharedHeader = (XnAudioSharedBuffer*)pAddress;
-		pDevicePrivateData->pAudioPacketsTimestamps = (XnUInt64*)(pAddress + sizeof(XnAudioSharedBuffer));
-		pDevicePrivateData->pAudioBuffer = (XN_AUDIO_TYPE*)(pAddress + sizeof(XnAudioSharedBuffer) + sizeof(XnUInt64) * nMaxPacketCount);
-		pDevicePrivateData->nAudioBufferSize = nMaxBufferSize;
+		m_buffer.pAudioPacketsTimestamps = (XnUInt64*)(pAddress + sizeof(XnAudioSharedBuffer));
+		m_buffer.pAudioBuffer = (XN_AUDIO_TYPE*)(pAddress + sizeof(XnAudioSharedBuffer) + sizeof(XnUInt64) * nMaxPacketCount);
+		m_buffer.nAudioBufferSize = nMaxBufferSize;
 
 		m_pSharedHeader->nTimestampsListOffset = sizeof(XnAudioSharedBuffer);
-		m_pSharedHeader->nBufferOffset = (XnUInt32)(pDevicePrivateData->pAudioBuffer - pAddress);
+		m_pSharedHeader->nBufferOffset = (XnUInt32)(m_buffer.pAudioBuffer - pAddress);
 	}
 
 	// calculate current packet size
-	pDevicePrivateData->nAudioPacketSize = m_nOrigAudioPacketSize;
+	m_buffer.nAudioPacketSize = m_nOrigAudioPacketSize;
 
 	if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_2 && GetNumberOfChannels() == 1)
 	{
-		pDevicePrivateData->nAudioPacketSize /= 2;
+		m_buffer.nAudioPacketSize /= 2;
 	}
 
-	pDevicePrivateData->nAudioBufferNumOfPackets = pDevicePrivateData->nAudioBufferSize / pDevicePrivateData->nAudioPacketSize;
-	pDevicePrivateData->nAudioBufferSize = pDevicePrivateData->nAudioBufferNumOfPackets * pDevicePrivateData->nAudioPacketSize;
+	m_buffer.nAudioBufferNumOfPackets = m_buffer.nAudioBufferSize / m_buffer.nAudioPacketSize;
+	m_buffer.nAudioBufferSize = m_buffer.nAudioBufferNumOfPackets * m_buffer.nAudioPacketSize;
 
-	m_pSharedHeader->nPacketCount = pDevicePrivateData->nAudioBufferNumOfPackets;
-	m_pSharedHeader->nPacketSize = pDevicePrivateData->nAudioPacketSize;
+	m_pSharedHeader->nPacketCount = m_buffer.nAudioBufferNumOfPackets;
+	m_pSharedHeader->nPacketSize = m_buffer.nAudioPacketSize;
 
 	// set read and write indices
-	pDevicePrivateData->nAudioReadIndex = 0;
-	pDevicePrivateData->nAudioWriteIndex = 0;
+	m_buffer.nAudioReadIndex = 0;
+	m_buffer.nAudioWriteIndex = 0;
 
 	return (XN_STATUS_OK);
 }

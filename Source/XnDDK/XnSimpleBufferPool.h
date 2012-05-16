@@ -26,7 +26,6 @@
 // Includes
 //---------------------------------------------------------------------------
 #include "XnBufferPool.h"
-#include <XnList.h>
 
 //---------------------------------------------------------------------------
 // Types
@@ -38,8 +37,11 @@ public:
 	~XnSimpleBufferPool();
 
 protected:
-	virtual XnStatus AllocateBuffers();
-	virtual void DestroyBuffer(XnBufferInPool* pBuffer);
+	virtual XnStatus AllocateBuffers(XnUInt32 nSize);
+	virtual void DestroyBuffer(void* pBuffer);
+
+private:
+	XnUInt32 m_nBufferCount;
 };
 
 #endif // __XN_SIMPLE_BUFFER_POOL_H__

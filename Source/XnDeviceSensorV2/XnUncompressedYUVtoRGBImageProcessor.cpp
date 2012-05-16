@@ -30,8 +30,8 @@
 // Code
 //---------------------------------------------------------------------------
 
-XnUncompressedYUVtoRGBImageProcessor::XnUncompressedYUVtoRGBImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper) :
-	XnImageProcessor(pStream, pHelper)
+XnUncompressedYUVtoRGBImageProcessor::XnUncompressedYUVtoRGBImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager) :
+	XnImageProcessor(pStream, pHelper, pBufferManager)
 {
 }
 

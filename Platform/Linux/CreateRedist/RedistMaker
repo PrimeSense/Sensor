@@ -27,7 +27,7 @@ else
 		PLATFORM="x86" ;;
 	x86_64)
 		PLATFORM="x64" ;;
-	arm)
+	arm*)
 		PLATFORM="Arm" ;;
 	*)
 		echo "Unknown machine type: $MACHINE_TYPE"

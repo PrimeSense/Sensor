@@ -93,9 +93,9 @@ public:
 		return m_pFuncs->CloseAllStreams(m_Handle);
 	}
 
-	virtual XnStatus RegisterToStreamsChange(XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+	virtual XnStatus RegisterToStreamsChange(XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 	{
-		return m_pFuncs->RegisterToStreamsChange(m_Handle, Handler, pCookie, phCallback);
+		return m_pFuncs->RegisterToStreamsChange(m_Handle, Handler, pCookie, hCallback);
 	}
 
 	virtual XnStatus UnregisterFromStreamsChange(XnCallbackHandle hCallback)
@@ -108,9 +108,9 @@ public:
 		return m_pFuncs->CreateStreamData(m_Handle, StreamName, ppStreamData);
 	}
 
-	virtual XnStatus RegisterToNewStreamData(XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+	virtual XnStatus RegisterToNewStreamData(XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 	{
-		return m_pFuncs->RegisterToNewStreamData(m_Handle, Handler, pCookie, phCallback);
+		return m_pFuncs->RegisterToNewStreamData(m_Handle, Handler, pCookie, hCallback);
 	}
 
 	virtual XnStatus UnregisterFromNewStreamData(XnCallbackHandle hCallback)
@@ -213,9 +213,9 @@ public:
 		return m_pFuncs->GetAllProperties(m_Handle, pSet, bNoStreams, strModule);
 	}
 
-	virtual XnStatus RegisterToPropertyChange(const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+	virtual XnStatus RegisterToPropertyChange(const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 	{
-		return m_pFuncs->RegisterToPropertyChange(m_Handle, Module, PropertyName, Handler, pCookie, phCallback);
+		return m_pFuncs->RegisterToPropertyChange(m_Handle, Module, PropertyName, Handler, pCookie, hCallback);
 	}
 
 	virtual XnStatus UnRegisterFromPropertyChange(const XnChar* Module, const XnChar* PropertyName, XnCallbackHandle hCallback)

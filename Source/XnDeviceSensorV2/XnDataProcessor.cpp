@@ -33,10 +33,12 @@ XnDataProcessor::XnDataProcessor(XnDevicePrivateData* pDevicePrivateData, const 
 	m_pDevicePrivateData(pDevicePrivateData),
 	m_csName(csName),
 	m_nLastPacketID(0),
-	m_nBytesReceived(0)
+	m_nBytesReceived(0),
+	m_bUseHostTimestamps(FALSE)
 {
 	m_TimeStampData.csStreamName = csName;
 	m_TimeStampData.bFirst = TRUE;
+	m_bUseHostTimestamps = pDevicePrivateData->pSensor->ShouldUseHostTimestamps();
 }
 
 XnDataProcessor::~XnDataProcessor()
@@ -80,18 +82,10 @@ void XnDataProcessor::ProcessData(const XnSensorProtocolResponseHeader* pHeader,
 void XnDataProcessor::OnPacketLost()
 {}
 
-XnUInt64 XnDataProcessor::GetTimeStamp(XnUInt32 nDeviceTimeStamp)
+XnUInt64 XnDataProcessor::CreateTimestampFromDevice(XnUInt32 nDeviceTimeStamp)
 {
-	const XnUInt64 nWrapPoint = ((XnUInt64)XN_MAX_UINT32) + 1;
-	XnUInt64 nResultInTicks;
-
 	XnUInt64 nNow;
 	xnOSGetHighResTimeStamp(&nNow);
-
-	const XnUInt32 nDumpCommentMaxLength = 200;
-	XnChar csDumpComment[nDumpCommentMaxLength] = "";
-
-	XnBool bCheckSanity = TRUE;
 
 	// we register the first TS calculated as time-zero. Every stream's TS data will be 
 	// synchronized with it
@@ -105,6 +99,12 @@ XnUInt64 XnDataProcessor::GetTimeStamp(XnUInt32 nDeviceTimeStamp)
 		}
 		xnOSLeaveCriticalSection(&m_pDevicePrivateData->hEndPointsCS);
 	}
+
+	const XnUInt64 nWrapPoint = ((XnUInt64)XN_MAX_UINT32) + 1;
+	XnUInt64 nResultInTicks;
+	const XnUInt32 nDumpCommentMaxLength = 200;
+	XnChar csDumpComment[nDumpCommentMaxLength] = "";
+	XnBool bCheckSanity = TRUE;
 
 	if (m_TimeStampData.bFirst)
 	{
@@ -212,8 +212,29 @@ XnUInt64 XnDataProcessor::GetTimeStamp(XnUInt32 nDeviceTimeStamp)
 	{
 		// sanity failed. We lost sync. restart
 		m_TimeStampData.bFirst = TRUE;
-		return GetTimeStamp(nDeviceTimeStamp);
+		return CreateTimestampFromDevice(nDeviceTimeStamp);
 	}
 }
 
+XnUInt64 XnDataProcessor::GetHostTimestamp()
+{
+	XnUInt64 nNow;
+	xnOSGetHighResTimeStamp(&nNow);
 
+	// we register the first TS calculated as time-zero. Every stream's TS data will be 
+	// synchronized with it
+	if (m_pDevicePrivateData->nGlobalReferenceTS == 0)
+	{
+		xnOSEnterCriticalSection(&m_pDevicePrivateData->hEndPointsCS);
+		if (m_pDevicePrivateData->nGlobalReferenceTS == 0)
+		{
+			m_pDevicePrivateData->nGlobalReferenceTS = nNow;
+			m_pDevicePrivateData->nGlobalReferenceOSTime = nNow;
+		}
+		xnOSLeaveCriticalSection(&m_pDevicePrivateData->hEndPointsCS);
+	}
+
+	XnUInt64 nResultTimeMicroseconds = nNow - m_pDevicePrivateData->nGlobalReferenceOSTime;
+	XnUInt64 nResultTimeMilliseconds = nResultTimeMicroseconds / 1000;
+	return (m_pDevicePrivateData->pSensor->IsHighResTimestamps() ? nResultTimeMicroseconds : nResultTimeMilliseconds);
+}

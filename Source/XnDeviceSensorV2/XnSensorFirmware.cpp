@@ -32,11 +32,12 @@ XnSensorFirmware::XnSensorFirmware(XnDevicePrivateData* pDevicePrivateData) :
 	m_Commands(pDevicePrivateData),
 	m_Params(m_pInfo, &m_Commands),
 	m_Streams(pDevicePrivateData),
+	m_FixedParams(pDevicePrivateData),
 	m_pDevicePrivateData(pDevicePrivateData)
 {
 }
 
-XnStatus XnSensorFirmware::Init(XnBool bReset)
+XnStatus XnSensorFirmware::Init(XnBool bReset, XnBool bLeanInit)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
@@ -111,17 +112,37 @@ XnStatus XnSensorFirmware::Init(XnBool bReset)
 		}
 	}
 
-	nRetVal = m_Params.Init();
-	XN_IS_STATUS_OK(nRetVal);
-
-	if (nMode == XN_HOST_PROTOCOL_MODE_PS)
+	if (!bLeanInit)
 	{
-		nRetVal = m_Params.UpdateAllProperties();
+		nRetVal = m_FixedParams.Init();
+		XN_IS_STATUS_OK(nRetVal);
+
+		nRetVal = m_Params.Init();
+		XN_IS_STATUS_OK(nRetVal);
+
+		if (nMode == XN_HOST_PROTOCOL_MODE_PS)
+		{
+			nRetVal = m_Params.UpdateAllProperties();
+			XN_IS_STATUS_OK(nRetVal);
+		}
+
+		// Check if image is supported
+		if (m_pInfo->bGetImageCmosTypeSupported)
+		{
+			m_pInfo->bImageSupported = (m_FixedParams.GetImageCmosType() != 0);
+		}
+		else
+		{
+			// This is an ugly patch to find out if this sensor has an image CMOS. It will be fixed
+			// in future firmwares so we can just ask.
+			XnUInt16 nLines;
+			nRetVal = XnHostProtocolGetCmosBlanking(m_pDevicePrivateData, XN_CMOS_TYPE_IMAGE, &nLines);
+			m_pInfo->bImageSupported = (nRetVal == XN_STATUS_OK && nLines > 0);
+		}
+
+		nRetVal = m_Streams.Init();
 		XN_IS_STATUS_OK(nRetVal);
 	}
-
-	nRetVal = m_Streams.Init();
-	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);
 }

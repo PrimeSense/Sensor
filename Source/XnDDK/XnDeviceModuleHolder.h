@@ -24,6 +24,7 @@
 
 #include "XnActualPropertiesHash.h"
 #include "XnDeviceModule.h"
+#include <XnListT.h>
 
 class XN_DDK_CPP_API XnDeviceModuleHolder
 {
@@ -54,7 +55,7 @@ private:
 	XnBool m_bAllowNewProps;
 };
 
-XN_DECLARE_LIST_DECL(XN_DDK_CPP_API, XnDeviceModuleHolder*, XnDeviceModuleHolderList)
+typedef XnListT<XnDeviceModuleHolder*> XnDeviceModuleHolderList;
 
 
 #endif //__XN_DEVICE_MODULE_HOLDER_H__

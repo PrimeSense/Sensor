@@ -27,9 +27,10 @@
 //---------------------------------------------------------------------------
 #include <XnDDK/XnActualIntProperty.h>
 #include "XnParams.h"
-#include <XnHash.h>
+#include <XnHashT.h>
 #include "XnFirmwareInfo.h"
 #include "XnFirmwareCommands.h"
+#include <XnListT.h>
 
 //---------------------------------------------------------------------------
 // Types
@@ -107,6 +108,7 @@ public:
 	XnActualIntProperty m_ImageExposureBar;
 	XnActualIntProperty m_ImageLowLightCompensation;
 	XnActualIntProperty m_ImageGain;
+	XnActualIntProperty m_DepthCloseRange;
 
 private:
 	typedef struct XnFirmwareParam
@@ -118,9 +120,9 @@ private:
 		XnUInt16 nValueIfNotSupported;
 	} XnFirmwareParam;
 
-	XN_DECLARE_DEFAULT_HASH(XnActualIntProperty*, XnFirmwareParam, XnFirmwareParamsHash)
-	XN_DECLARE_LIST(XnActualIntProperty*, XnActualIntPropertyList)
-	XN_DECLARE_DEFAULT_HASH(XnActualIntProperty*, XnUInt32, XnPropertyToValueHash)
+	typedef XnHashT<XnActualIntProperty*, XnFirmwareParam> XnFirmwareParamsHash;
+	typedef XnListT<XnActualIntProperty*> XnActualIntPropertyList;
+	typedef XnHashT<XnActualIntProperty*, XnUInt32> XnPropertyToValueHash;
 
 	XnStatus AddFirmwareParam(XnActualIntProperty& Property, XnUInt16 nFirmwareParam, XnFWVer nMinVer = XN_SENSOR_FW_VER_UNKNOWN, XnFWVer nMaxVer = XN_SENSOR_FW_VER_UNKNOWN, XnUInt16 nValueIfNotSupported = 0);
 	XnStatus AddFirmwareAudioParam(XnActualIntProperty& Property, XnUInt16 nFirmwareParam, XnFWVer nMinVer = XN_SENSOR_FW_VER_3_0, XnFWVer nMaxVer = XN_SENSOR_FW_VER_UNKNOWN, XnUInt16 nValueIfNotSupported = 0);
@@ -129,7 +131,6 @@ private:
 
 	XnStatus SetFirmwareParam(XnActualIntProperty* pProperty, XnUInt64 nValue);
 	XnStatus SetFirmwareAudioParam(XnActualIntProperty* pProperty, XnUInt64 nValue);
-	XnStatus SetImageResolution(XnUInt64 nValue);
 	XnStatus SetImageFormat(XnUInt64 nValue);
 	XnStatus SetStreamMode(XnActualIntProperty* pProperty, XnUInt64 nValue);
 	XnStatus RecalculateReferenceResolution();
@@ -140,7 +141,6 @@ private:
 
 	static XnStatus XN_CALLBACK_TYPE SetFirmwareParamCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE SetFirmwareAudioParamCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
-	static XnStatus XN_CALLBACK_TYPE SetImageResolutionCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE SetImageFormatCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE SetStreamModeCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE ReferenceResolutionPropertyValueChanged(const XnProperty* pSender, void* pCookie);

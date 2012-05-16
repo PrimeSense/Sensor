@@ -27,7 +27,6 @@
 //---------------------------------------------------------------------------
 #include <XnDDK/XnAudioStream.h>
 #include "XnSensorStreamHelper.h"
-#include "XnSharedMemoryBufferPool.h"
 
 //---------------------------------------------------------------------------
 // Defines
@@ -69,7 +68,6 @@ protected:
 	XnStatus CreateDataProcessor(XnDataProcessor** ppProcessor);
 	XnStatus MapPropertiesToFirmware();
 	void GetFirmwareStreamConfig(XnResolutions* pnRes, XnUInt32* pnFPS) { *pnRes = XN_RESOLUTION_CUSTOM; *pnFPS = 0; }
-	XnSharedMemoryBufferPool* GetSharedMemoryBuffer() { return NULL; }
 
 	XnStatus WriteImpl(XnStreamData* /*pStreamData*/) { return XN_STATUS_DEVICE_UNSUPPORTED_MODE; }
 	XnStatus ReadImpl(XnStreamData* pStreamOutput);
@@ -105,6 +103,8 @@ private:
 	// Members
 	//---------------------------------------------------------------------------
 	XnSensorStreamHelper m_Helper;
+
+	XnDeviceAudioBuffer m_buffer;
 
 	const XnChar* m_strDeviceName;
 	XnBool m_bAllowOtherUsers;

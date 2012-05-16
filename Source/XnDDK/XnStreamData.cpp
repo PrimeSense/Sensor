@@ -83,23 +83,30 @@ XN_DDK_API XnStatus XnStreamDataUpdateSize(XnStreamData* pStreamOutput, XnUInt32
 	XN_VALIDATE_INPUT_PTR(pStreamOutput);
 
 	// allocate new memory
-	void* pNew = xnOSMallocAligned(nAllocSize, XN_DEFAULT_MEM_ALIGN);
-	if (pNew == NULL)
-		return (XN_STATUS_ALLOC_FAILED);
+	void* pNew = NULL;
+	
+	if (nAllocSize > 0)
+	{
+		pNew = xnOSMallocAligned(nAllocSize, XN_DEFAULT_MEM_ALIGN);
+		if (pNew == NULL)
+			return (XN_STATUS_ALLOC_FAILED);
 
-	// zero it
-	xnOSMemSet(pNew, 0, nAllocSize);
+		// zero it
+		xnOSMemSet(pNew, 0, nAllocSize);
+	}
 
 	// free the buffer if it is allocated
-	XN_ALIGNED_FREE_AND_NULL(pStreamOutput->pData);
+	if (pStreamOutput->pData != NULL)
+	{
+		XN_ALIGNED_FREE_AND_NULL(pStreamOutput->pData);
+	}
 
 	// and now set new buffer
 	pStreamOutput->pData = pNew;
 
 	// and size
 	pStreamOutput->pInternal->nAllocSize = nAllocSize;
-
-	pStreamOutput->pInternal->bAllocated = TRUE;
+	pStreamOutput->pInternal->bAllocated = (nAllocSize > 0);
 
 	return XN_STATUS_OK;
 }

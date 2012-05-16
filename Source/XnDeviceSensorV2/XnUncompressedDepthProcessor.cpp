@@ -29,8 +29,8 @@
 // Code
 //---------------------------------------------------------------------------
 
-XnUncompressedDepthProcessor::XnUncompressedDepthProcessor(XnSensorDepthStream* pStream, XnSensorStreamHelper* pHelper) :
-	XnDepthProcessor(pStream, pHelper)
+XnUncompressedDepthProcessor::XnUncompressedDepthProcessor(XnSensorDepthStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager) :
+	XnDepthProcessor(pStream, pHelper, pBufferManager)
 {
 }
 
@@ -45,8 +45,8 @@ void XnUncompressedDepthProcessor::ProcessFramePacketChunk(const XnSensorProtoco
 	// when depth is uncompressed, we can just copy it directly to write buffer
 	XnBuffer* pWriteBuffer = GetWriteBuffer();
 
-	// make sure we have enough room
-	if (CheckWriteBufferForOverflow(nDataSize))
+	// Check there is enough room for the depth pixels
+	if (CheckDepthBufferForOverflow(nDataSize))
 	{
 		// sometimes, when packets are lost, we get uneven number of bytes, so we need to complete
 		// one byte, in order to keep UINT16 alignment
@@ -59,13 +59,20 @@ void XnUncompressedDepthProcessor::ProcessFramePacketChunk(const XnSensorProtoco
 		// copy values. Make sure we do not get corrupted shifts
 		XnUInt16* pRaw = (XnUInt16*)(pData);
 		XnUInt16* pRawEnd = (XnUInt16*)(pData + nDataSize);
-		XnDepthPixel* pWriteBuf = (XnDepthPixel*)pWriteBuffer->GetUnsafeWritePointer();
+		XnDepthPixel* pDepthBuf = GetDepthOutputBuffer();
+		XnDepthPixel* pShiftBuf = GetShiftsOutputBuffer();
 
+		XnUInt16 shift;
 		while (pRaw < pRawEnd)
 		{
-			*pWriteBuf = GetOutput(XN_MIN(*pRaw, XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1));
+			shift = (((*pRaw) < (XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1)) ? (*pRaw) : 0);
+			*pShiftBuf = shift;
+			*pDepthBuf = GetOutput(shift);
+
 			++pRaw;
-			++pWriteBuf;
+			++pDepthBuf;
+			++pShiftBuf;
+
 		}
 
  		pWriteBuffer->UnsafeUpdateSize(nDataSize);
@@ -73,3 +80,4 @@ void XnUncompressedDepthProcessor::ProcessFramePacketChunk(const XnSensorProtoco
 
 	XN_PROFILING_END_SECTION
 }
+

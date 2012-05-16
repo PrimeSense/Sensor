@@ -39,11 +39,9 @@
 //---------------------------------------------------------------------------
 // XnSensorImageStream class
 //---------------------------------------------------------------------------
-XnSensorImageStream::XnSensorImageStream(const XnChar* strDeviceName, const XnChar* StreamName, XnSensorObjects* pObjects, XnUInt32 nBufferCount, XnBool bAllowOtherUsers) : 
+XnSensorImageStream::XnSensorImageStream(const XnChar* StreamName, XnSensorObjects* pObjects) : 
 	XnImageStream(StreamName, FALSE),
 	m_Helper(pObjects),
-	m_BufferPool(nBufferCount, strDeviceName, StreamName, GetMaxBufferSize(m_Helper.GetFirmwareVersion()), bAllowOtherUsers),
-	m_SharedBufferName(XN_STREAM_PROPERTY_SHARED_BUFFER_NAME, m_BufferPool.GetSharedMemoryName()),
 	m_InputFormat(XN_STREAM_PROPERTY_INPUT_FORMAT, XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT),
 	m_AntiFlicker(XN_STREAM_PROPERTY_FLICKER, XN_IMAGE_STREAM_DEFAULT_FLICKER),
 	m_ImageQuality(XN_STREAM_PROPERTY_QUALITY, XN_IMAGE_STREAM_DEFAULT_QUALITY),
@@ -84,8 +82,8 @@ XnStatus XnSensorImageStream::Init()
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	nRetVal = SetBufferPool(&m_BufferPool);
-	XN_IS_STATUS_OK(nRetVal);
+// 	nRetVal = SetBufferPool(&m_BufferPool);
+// 	XN_IS_STATUS_OK(nRetVal);
 
 	// init base
 	nRetVal = XnImageStream::Init();
@@ -111,8 +109,7 @@ XnStatus XnSensorImageStream::Init()
 	XN_VALIDATE_ADD_PROPERTIES(this, &m_InputFormat, &m_AntiFlicker, &m_ImageQuality, 
 		&m_Brightness, &m_Contrast, &m_Saturation, &m_Sharpness,  
 		&m_ColorTemperature, &m_BackLightCompensation, &m_Gain, &m_Zoom, 
-		&m_Exposure, &m_Pan, &m_Tilt, &m_LowLightCompensation,
-		&m_SharedBufferName, &m_ActualRead);
+		&m_Exposure, &m_Pan, &m_Tilt, &m_LowLightCompensation, &m_ActualRead);
 
 	// set base properties default values
 	nRetVal = ResolutionProperty().UnsafeUpdateValue(XN_IMAGE_STREAM_DEFAULT_RESOLUTION);
@@ -139,7 +136,7 @@ XnStatus XnSensorImageStream::Init()
 	XN_IS_STATUS_OK(nRetVal);
 
 	// register supported modes
-	if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_4)
+	if (m_Helper.GetFirmware()->GetInfo()->bGetPresetsSupported)
 	{
 		// ask the firmware
 		const XnUInt32 nAllocSize = 100;
@@ -154,132 +151,74 @@ XnStatus XnSensorImageStream::Init()
 			return XN_STATUS_DEVICE_UNSUPPORTED_PARAMETER;
 		}
 
-		// check if our current (default) configuration is valid
-		XnUInt16 nValidInputFormat = XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT;
-		XnBool bModeFound = FALSE;
-
-		for (XnUInt32 i = 0; i < nCount; ++i)
-		{
-			if (aSupportedModes[i].nResolution == XN_IMAGE_STREAM_DEFAULT_RESOLUTION &&
-				aSupportedModes[i].nFPS == XN_IMAGE_STREAM_DEFAULT_FPS)
-			{
-				// found
-				if (!bModeFound)
-				{
-					bModeFound = TRUE;
-					nValidInputFormat = aSupportedModes[i].nFormat;
-				}
-
-				if (aSupportedModes[i].nFormat == XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT)
-				{
-					nValidInputFormat = XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT;
-					break;					
-				}
-			}
-		}
-
-		if (!bModeFound)
-		{
-			xnLogWarning(XN_MASK_DEVICE_SENSOR, "Default mode (res + FPS) is not supported by device. Changing defaults...");
-
-			nRetVal = ResolutionProperty().UnsafeUpdateValue(aSupportedModes[0].nResolution);
-			XN_IS_STATUS_OK(nRetVal);
-			nRetVal = FPSProperty().UnsafeUpdateValue(aSupportedModes[0].nFPS);
-			XN_IS_STATUS_OK(nRetVal);
-			nRetVal = m_InputFormat.UnsafeUpdateValue(aSupportedModes[0].nFormat);
-			XN_IS_STATUS_OK(nRetVal);
-		}
-		else
-		{
-			// just update input format
-			nRetVal = m_InputFormat.UnsafeUpdateValue(nValidInputFormat);
-			XN_IS_STATUS_OK(nRetVal);
-		}
-
 		nRetVal = AddSupportedModes(aSupportedModes, nCount);
 		XN_IS_STATUS_OK(nRetVal);
 	}
 	else
 	{
-		XnArray<XnCmosPreset> supportedModes(30);
+		// Firmware doesn't support getting presets. Instead, we'll need to register presets
+		// we know according to firmware version
+		XnCmosPreset* pSupportedModes; 
+		XnUInt8 nSupportedModes;
+		XnUInt64 nDefaultInputFormat;
 
-		// Uncompressed modes are only supported in ISO (not BULK)
-		XnBool bUncompressedAllowed = m_Helper.GetPrivateData()->pSpecificImageUsb->pUsbConnection->bIsISO;
-
-		// start with common modes supported by all
-		nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_YUV422, XN_RESOLUTION_QVGA, 30);
-		XN_IS_STATUS_OK(nRetVal);
-		nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_YUV422, XN_RESOLUTION_QVGA, 60);
-		XN_IS_STATUS_OK(nRetVal);
-		nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_YUV422, XN_RESOLUTION_VGA, 30);
-		XN_IS_STATUS_OK(nRetVal);
-
-		// add uncompressed ones
-		if (bUncompressedAllowed)
+		if (m_Helper.GetPrivateData()->pSpecificImageUsb->pUsbConnection->bIsISO)
 		{
-			nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_QVGA, 30);
-			XN_IS_STATUS_OK(nRetVal);
-			nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_QVGA, 60);
-			XN_IS_STATUS_OK(nRetVal);
-			nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_VGA, 30);
-			XN_IS_STATUS_OK(nRetVal);
+			pSupportedModes = m_Helper.GetPrivateData()->FWInfo.imageIsoModes.GetData();
+			nSupportedModes = m_Helper.GetPrivateData()->FWInfo.imageIsoModes.GetSize();
+		}
+		else
+		{
+			pSupportedModes = m_Helper.GetPrivateData()->FWInfo.imageBulkModes.GetData();
+			nSupportedModes = m_Helper.GetPrivateData()->FWInfo.imageBulkModes.GetSize();
 		}
 
-		// starting with FW 5.2, 25 FPS is also supported
-		if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_2)
-		{
-			nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_YUV422, XN_RESOLUTION_QVGA, 25);
-			XN_IS_STATUS_OK(nRetVal);
-			nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_YUV422, XN_RESOLUTION_VGA, 25);
-			XN_IS_STATUS_OK(nRetVal);
+		nRetVal = AddSupportedModes(pSupportedModes, nSupportedModes);
+		XN_IS_STATUS_OK(nRetVal);
+	}
 
-			if (bUncompressedAllowed)
+	// check if our current (default) configuration is valid
+	XnUInt16 nValidInputFormat = XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT;
+	XnBool bModeFound = FALSE;
+
+	const XnArray<XnCmosPreset>& aSupportedModes = GetSupportedModes();
+
+	for (XnUInt32 i = 0; i < aSupportedModes.GetSize(); ++i)
+	{
+		if (aSupportedModes[i].nResolution == XN_IMAGE_STREAM_DEFAULT_RESOLUTION &&
+			aSupportedModes[i].nFPS == XN_IMAGE_STREAM_DEFAULT_FPS)
+		{
+			// found
+			if (!bModeFound)
 			{
-				nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_QVGA, 25);
-				XN_IS_STATUS_OK(nRetVal);
-				nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_VGA, 25);
-				XN_IS_STATUS_OK(nRetVal);
+				bModeFound = TRUE;
+				nValidInputFormat = aSupportedModes[i].nFormat;
+			}
+
+			if (aSupportedModes[i].nFormat == XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT)
+			{
+				nValidInputFormat = XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT;
+				break;					
 			}
 		}
+	}
 
-		// high-res
-		if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_3)
-		{
-			nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_BAYER, XN_RESOLUTION_SXGA, 30);
-			XN_IS_STATUS_OK(nRetVal);
+	if (!bModeFound)
+	{
+		xnLogWarning(XN_MASK_DEVICE_SENSOR, "Default mode (res + FPS) is not supported by device. Changing defaults...");
 
-			// starting with 5.3.28, YUV is also supported in high-res
-			if (m_Helper.GetPrivateData()->Version.nMajor > 5 ||
-				(m_Helper.GetPrivateData()->Version.nMajor == 5 && m_Helper.GetPrivateData()->Version.nMinor > 3) ||
-				(m_Helper.GetPrivateData()->Version.nMajor == 5 && m_Helper.GetPrivateData()->Version.nMinor == 3 && m_Helper.GetPrivateData()->Version.nBuild >= 28))
-			{
-				nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_YUV422, XN_RESOLUTION_SXGA, 30);
-				XN_IS_STATUS_OK(nRetVal);
-
-				if (bUncompressedAllowed)
-				{
-					nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_SXGA, 30);
-					XN_IS_STATUS_OK(nRetVal);
-				}
-			}
-		}
-		else if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_2)
-		{
-			// on 5.2, high-res was UXGA
-			nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_BAYER, XN_RESOLUTION_UXGA, 30);
-			XN_IS_STATUS_OK(nRetVal);
-		}
-
-		// Add all supported modes to the stream
-		nRetVal = AddSupportedModes(supportedModes.GetData(), supportedModes.GetSize());
+		nRetVal = ResolutionProperty().UnsafeUpdateValue(aSupportedModes[0].nResolution);
 		XN_IS_STATUS_OK(nRetVal);
-
-		if (!bUncompressedAllowed)
-		{
-			// update default input format
-			nRetVal = m_InputFormat.UnsafeUpdateValue(XN_IO_IMAGE_FORMAT_YUV422);
-			XN_IS_STATUS_OK(nRetVal);
-		}
+		nRetVal = FPSProperty().UnsafeUpdateValue(aSupportedModes[0].nFPS);
+		XN_IS_STATUS_OK(nRetVal);
+		nRetVal = m_InputFormat.UnsafeUpdateValue(aSupportedModes[0].nFormat);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+	else
+	{
+		// just update input format
+		nRetVal = m_InputFormat.UnsafeUpdateValue(nValidInputFormat);
+		XN_IS_STATUS_OK(nRetVal);
 	}
 
 	return (XN_STATUS_OK);
@@ -290,20 +229,6 @@ XnStatus XnSensorImageStream::Free()
 	m_Helper.Free();
 	XnImageStream::Free();
 	return (XN_STATUS_OK);
-}
-
-XnUInt32 XnSensorImageStream::GetMaxBufferSize(XnFWVer version)
-{
-	if (version >= XN_SENSOR_FW_VER_5_3)
-	{
-		// max resolution is only SXGA
-		return (XN_SXGA_X_RES * XN_SXGA_Y_RES * sizeof(XnRGB24Pixel));
-	}
-	else
-	{
-		// max resolution is UXGA
-		return (XN_UXGA_X_RES * XN_UXGA_Y_RES * sizeof(XnRGB24Pixel));
-	}
 }
 
 XnStatus XnSensorImageStream::MapPropertiesToFirmware()
@@ -368,7 +293,8 @@ XnStatus XnSensorImageStream::ValidateMode()
 	case XN_OUTPUT_FORMAT_RGB24:
 		if (nInputFormat != XN_IO_IMAGE_FORMAT_YUV422 &&
 			nInputFormat != XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422 &&
-			nInputFormat != XN_IO_IMAGE_FORMAT_BAYER)
+			nInputFormat != XN_IO_IMAGE_FORMAT_BAYER &&
+			nInputFormat != XN_IO_IMAGE_FORMAT_UNCOMPRESSED_BAYER)
 		{
 			XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Input format %d cannot be converted to RGB24!", nInputFormat);
 		}
@@ -910,24 +836,30 @@ XnUInt32 XnSensorImageStream::CalculateExpectedSize()
 
 XnStatus XnSensorImageStream::CreateDataProcessor(XnDataProcessor** ppProcessor)
 {
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	XnFrameBufferManager* pBufferManager;
+	nRetVal = GetTripleBuffer(&pBufferManager);
+	XN_IS_STATUS_OK(nRetVal);
+
 	XnStreamProcessor* pNew;
 
 	switch (m_InputFormat.GetValue())
 	{
 	case XN_IO_IMAGE_FORMAT_BAYER:
-		XN_VALIDATE_NEW_AND_INIT(pNew, XnBayerImageProcessor, this, &m_Helper);
+		XN_VALIDATE_NEW_AND_INIT(pNew, XnBayerImageProcessor, this, &m_Helper, pBufferManager);
 		break;
 	case XN_IO_IMAGE_FORMAT_YUV422:
-		XN_VALIDATE_NEW_AND_INIT(pNew, XnPSCompressedImageProcessor, this, &m_Helper);
+		XN_VALIDATE_NEW_AND_INIT(pNew, XnPSCompressedImageProcessor, this, &m_Helper, pBufferManager);
 		break;
 	case XN_IO_IMAGE_FORMAT_JPEG:
 		if (GetOutputFormat() == XN_OUTPUT_FORMAT_JPEG)
 		{
-			XN_VALIDATE_NEW_AND_INIT(pNew, XnJpegImageProcessor, this, &m_Helper);
+			XN_VALIDATE_NEW_AND_INIT(pNew, XnJpegImageProcessor, this, &m_Helper, pBufferManager);
 		}
 		else if (GetOutputFormat() == XN_OUTPUT_FORMAT_RGB24)
 		{
-			XN_VALIDATE_NEW_AND_INIT(pNew, XnJpegToRGBImageProcessor, this, &m_Helper);
+			XN_VALIDATE_NEW_AND_INIT(pNew, XnJpegToRGBImageProcessor, this, &m_Helper, pBufferManager);
 		}
 		else
 		{
@@ -937,19 +869,19 @@ XnStatus XnSensorImageStream::CreateDataProcessor(XnDataProcessor** ppProcessor)
 	case XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422:
 		if (GetOutputFormat() == XN_OUTPUT_FORMAT_YUV422)
 		{
-			XN_VALIDATE_NEW_AND_INIT(pNew, XnUncompressedYUVImageProcessor, this, &m_Helper);
+			XN_VALIDATE_NEW_AND_INIT(pNew, XnUncompressedYUVImageProcessor, this, &m_Helper, pBufferManager);
 		}
 		else if (GetOutputFormat() == XN_OUTPUT_FORMAT_RGB24)
 		{
-			XN_VALIDATE_NEW_AND_INIT(pNew, XnUncompressedYUVtoRGBImageProcessor, this, &m_Helper);
+			XN_VALIDATE_NEW_AND_INIT(pNew, XnUncompressedYUVtoRGBImageProcessor, this, &m_Helper, pBufferManager);
 		}
 		else
 		{
-			XN_LOG_WARNING_RETURN(XN_STATUS_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "invalid output format %d!", GetOutputFormat());
+			XN_LOG_WARNING_RETURN(XN_STATUS_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "invalid output format %d!", pBufferManager);
 		}
 		break;
 	case XN_IO_IMAGE_FORMAT_UNCOMPRESSED_BAYER:
-		XN_VALIDATE_NEW_AND_INIT(pNew, XnUncompressedBayerProcessor, this, &m_Helper);
+		XN_VALIDATE_NEW_AND_INIT(pNew, XnUncompressedBayerProcessor, this, &m_Helper, pBufferManager);
 		break;
 	default:
 		return XN_STATUS_IO_INVALID_STREAM_IMAGE_FORMAT;

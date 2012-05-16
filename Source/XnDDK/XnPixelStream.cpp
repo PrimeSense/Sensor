@@ -78,16 +78,16 @@ XnStatus XnPixelStream::Init()
 
 	// register for important properties
 	XnCallbackHandle hDummyCallback;
-	nRetVal = m_Resolution.OnChangeEvent().Register(ResolutionValueChangedCallback, this, &hDummyCallback);
+	nRetVal = m_Resolution.OnChangeEvent().Register(ResolutionValueChangedCallback, this, hDummyCallback);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = OutputFormatProperty().OnChangeEvent().Register(OutputFormatValueChangedCallback, this, &hDummyCallback);
+	nRetVal = OutputFormatProperty().OnChangeEvent().Register(OutputFormatValueChangedCallback, this, hDummyCallback);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = m_XRes.OnChangeEvent().Register(FixCroppingCallback, this, &hDummyCallback);
+	nRetVal = m_XRes.OnChangeEvent().Register(FixCroppingCallback, this, hDummyCallback);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = m_YRes.OnChangeEvent().Register(FixCroppingCallback, this, &hDummyCallback);
+	nRetVal = m_YRes.OnChangeEvent().Register(FixCroppingCallback, this, hDummyCallback);
 	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);

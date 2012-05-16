@@ -26,7 +26,6 @@
 #include "XnSensorClientServer.h"
 #include <XnLog.h>
 #include <XnIONetworkStream.h>
-#include <XnStringsHash.h>
 
 //---------------------------------------------------------------------------
 // Defines
@@ -220,8 +219,8 @@ void XnSensorServer::CleanUpSessions()
 	XnAutoCSLocker locker(m_hSessionsLock);
 	if (!m_sessions.IsEmpty())
 	{
-		XnSessionsList::Iterator it = m_sessions.begin();
-		while (it != m_sessions.end())
+		XnSessionsList::Iterator it = m_sessions.Begin();
+		while (it != m_sessions.End())
 		{
 			XnSessionsList::Iterator curr = it;
 			++it;

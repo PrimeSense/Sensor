@@ -26,7 +26,7 @@
 // Includes
 //---------------------------------------------------------------------------
 #include <XnCore/XnBuffer.h>
-#include <XnList.h>
+#include <XnListT.h>
 #include <XnLog.h>
 #include <XnDDK.h>
 
@@ -50,7 +50,7 @@ private:
 class XN_DDK_CPP_API XnBufferPool
 {
 public:
-	XnBufferPool(XnUInt32 nBufferCount);
+	XnBufferPool();
 	virtual ~XnBufferPool();
 
 	XnStatus Init(XnUInt32 nBufferSize);
@@ -61,25 +61,24 @@ public:
 	XnStatus GetBuffer(XnBuffer** ppBuffer);
 
 	void AddRef(XnBuffer* pBuffer);
-
 	void DecRef(XnBuffer* pBuffer);
 
 	inline void Lock() { xnOSEnterCriticalSection(&m_hLock); }
 	inline void Unlock() { xnOSLeaveCriticalSection(&m_hLock); }
 
-	inline XnDumpFile* Dump() { return m_dump; }
-
 protected:
-	XN_DECLARE_LIST(XnBufferInPool*, XnBuffersList);
-
+	inline XnDumpFile* Dump() { return m_dump; }
+	XnStatus AddNewBuffer(void* pBuffer, XnUInt32 nSize);
 	void FreeAll(XnBool bForceDestroyOfLockedBuffers);
 
-	virtual XnStatus AllocateBuffers() = 0;
-	virtual void DestroyBuffer(XnBufferInPool* pBuffer) = 0;
+	virtual XnStatus AllocateBuffers(XnUInt32 nSize) = 0;
+	virtual void DestroyBuffer(void* pBuffer) = 0;
 
-protected:
+private:
+	typedef XnListT<XnBufferInPool*> XnBuffersList;
+
 	XnUInt32 m_nBufferSize;
-	XnUInt32 m_nBufferCount;
+	XnUInt32 m_nNextBufferID;
 	XnBuffersList m_AllBuffers;
 	XnBuffersList m_FreeBuffers; // a list of available buffers
 	XN_CRITICAL_SECTION_HANDLE m_hLock;

@@ -26,7 +26,7 @@
 #include <XnDeviceProxy.h>
 #include "XnDeviceManager.h"
 #include <XnOS.h>
-#include <XnHash.h>
+#include <XnHashT.h>
 #include "XnDeviceInterfaceAdapter.h"
 #include <XnPsVersion.h>
 
@@ -46,11 +46,13 @@ typedef struct XnDeviceProxyDeviceHandle
 	XnDeviceHandle ActualDevice;
 } XnDeviceProxyDeviceHandle;
 
+typedef XnHashT<XnStreamData*, XnDeviceDescriptor*> XnStreamOutputHash;
+
 //---------------------------------------------------------------------------
 // Global Variables
 //---------------------------------------------------------------------------
 /** Stores a hash of streamoutput objects to their creating device name. */
-XnHash g_StreamOutputHash;
+XnStreamOutputHash g_StreamOutputHash;
 
 //---------------------------------------------------------------------------
 // XnDeviceProxy functions
@@ -380,11 +382,11 @@ XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(DoesModuleExist)(const XnDeviceHandle 
 	return pHandle->pDesc->Interface.DoesModuleExist(pHandle->ActualDevice, ModuleName, pbDoesExist);
 }
 
-XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(RegisterToStreamsChange)(const XnDeviceHandle DeviceHandle, XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(RegisterToStreamsChange)(const XnDeviceHandle DeviceHandle, XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 {
 	XN_VALIDATE_INPUT_PTR(DeviceHandle);
 	XnDeviceProxyDeviceHandle* pHandle = (XnDeviceProxyDeviceHandle*)DeviceHandle;
-	return pHandle->pDesc->Interface.RegisterToStreamsChange(pHandle->ActualDevice, Handler, pCookie, phCallback);
+	return pHandle->pDesc->Interface.RegisterToStreamsChange(pHandle->ActualDevice, Handler, pCookie, hCallback);
 }
 
 XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(UnregisterFromStreamsChange)(const XnDeviceHandle DeviceHandle, XnCallbackHandle hCallback)
@@ -426,7 +428,7 @@ XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(DestroyStreamData)(XnStreamData** ppSt
 
 	// find descriptor of the device that created this object
 	XnDeviceDescriptor* pDesc = NULL;
-	nRetVal = g_StreamOutputHash.Get(*ppStreamData, (XnValue&)pDesc);
+	nRetVal = g_StreamOutputHash.Get(*ppStreamData, pDesc);
 	XN_IS_STATUS_OK(nRetVal);
 
 	// destroy the object
@@ -434,16 +436,16 @@ XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(DestroyStreamData)(XnStreamData** ppSt
 	XN_IS_STATUS_OK(nRetVal);
 
 	// and remove it from map
-	g_StreamOutputHash.Remove(pObject, (XnValue&)pDesc);
+	g_StreamOutputHash.Remove(pObject);
 
 	return (XN_STATUS_OK);
 }
 
-XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(RegisterToNewStreamData)(const XnDeviceHandle DeviceHandle, XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(RegisterToNewStreamData)(const XnDeviceHandle DeviceHandle, XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 {
 	XN_VALIDATE_INPUT_PTR(DeviceHandle);
 	XnDeviceProxyDeviceHandle* pHandle = (XnDeviceProxyDeviceHandle*)DeviceHandle;
-	return pHandle->pDesc->Interface.RegisterToNewStreamData(pHandle->ActualDevice, Handler, pCookie, phCallback);
+	return pHandle->pDesc->Interface.RegisterToNewStreamData(pHandle->ActualDevice, Handler, pCookie, hCallback);
 }
 
 XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(UnregisterFromNewStreamData)(const XnDeviceHandle DeviceHandle, XnCallbackHandle hCallback)
@@ -607,11 +609,11 @@ XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(GetAllProperties)(const XnDeviceHandle
 	return pHandle->pDesc->Interface.GetAllProperties(pHandle->ActualDevice, pPropertySet, bNoStreams, strModule);
 }
 
-XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(RegisterToPropertyChange)(const XnDeviceHandle DeviceHandle, const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(RegisterToPropertyChange)(const XnDeviceHandle DeviceHandle, const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 {
 	XN_VALIDATE_INPUT_PTR(DeviceHandle);
 	XnDeviceProxyDeviceHandle* pHandle = (XnDeviceProxyDeviceHandle*)DeviceHandle;
-	return pHandle->pDesc->Interface.RegisterToPropertyChange(pHandle->ActualDevice, Module, PropertyName, Handler, pCookie, phCallback);
+	return pHandle->pDesc->Interface.RegisterToPropertyChange(pHandle->ActualDevice, Module, PropertyName, Handler, pCookie, hCallback);
 }
 
 XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(UnregisterFromPropertyChange)(const XnDeviceHandle DeviceHandle, const XnChar* Module, const XnChar* PropertyName, XnCallbackHandle hCallback)

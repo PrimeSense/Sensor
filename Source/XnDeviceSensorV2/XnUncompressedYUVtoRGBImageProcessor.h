@@ -34,7 +34,7 @@
 class XnUncompressedYUVtoRGBImageProcessor : public XnImageProcessor
 {
 public:
-	XnUncompressedYUVtoRGBImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper);
+	XnUncompressedYUVtoRGBImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager);
 	~XnUncompressedYUVtoRGBImageProcessor();
 
 	XnStatus Init();

@@ -522,6 +522,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\..\..\Source\XnDDK\XnExternalBufferPool.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\..\Source\XnDDK\XnExternalBufferPool.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\..\Source\XnDDK\XnFrameBufferManager.cpp"
 					>
 				</File>

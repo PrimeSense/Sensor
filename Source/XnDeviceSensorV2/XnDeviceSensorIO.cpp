@@ -24,15 +24,12 @@
 //---------------------------------------------------------------------------
 #include "XnDeviceSensorIO.h"
 #include "XnDeviceSensor.h"
-#include <XnStringsHash.h>
+#include <XnStringsHashT.h>
 
 //---------------------------------------------------------------------------
 // Defines
 //---------------------------------------------------------------------------
 #define XN_SENSOR_VENDOR_ID			0x1D27
-#define XN_SENSOR_5_0_PRODUCT_ID	0x0500
-#define XN_SENSOR_6_0_PRODUCT_ID	0x0600
-#define XN_SENSOR_6_0_1_PRODUCT_ID	0x0601
 
 //---------------------------------------------------------------------------
 // Enums
@@ -42,6 +39,18 @@ typedef enum
 	XN_FW_USB_INTERFACE_ISO = 0,
 	XN_FW_USB_INTERFACE_BULK = 1,
 } XnFWUsbInterface;
+
+//---------------------------------------------------------------------------
+// Globals
+//---------------------------------------------------------------------------
+XnUInt16 XnSensorIO::ms_supportedProducts[] = 
+{
+	0x0500,
+	0x0600,
+	0x0601,
+};
+
+XnUInt32 XnSensorIO::ms_supportedProductsCount = sizeof(XnSensorIO::ms_supportedProducts) / sizeof(XnSensorIO::ms_supportedProducts[0]);
 
 //---------------------------------------------------------------------------
 // Code
@@ -55,7 +64,10 @@ XnSensorIO::XnSensorIO(XN_SENSOR_HANDLE* pSensorHandle) :
 
 XnSensorIO::~XnSensorIO()
 {
-
+	for (XnUInt32 i = 0; i < m_aRegistrationHandles.GetSize(); ++i)
+	{
+		xnUSBUnregisterFromConnectivityEvents(m_aRegistrationHandles[i]);
+	}
 }
 
 XnStatus XnSensorIO::OpenDevice(const XnChar* strPath)
@@ -356,7 +368,7 @@ XnStatus XnSensorIO::CloseDevice()
 	return (XN_STATUS_OK);
 }
 
-XnStatus Enumerate(XnUInt16 nProduct, XnStringsHash& devicesSet)
+XnStatus Enumerate(XnUInt16 nProduct, XnStringsSet& devicesSet)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
@@ -368,7 +380,7 @@ XnStatus Enumerate(XnUInt16 nProduct, XnStringsHash& devicesSet)
 
 	for (XnUInt32 i = 0; i < nCount; ++i)
 	{
-		nRetVal = devicesSet.Set(astrDevicePaths[i], NULL);
+		nRetVal = devicesSet.Set(astrDevicePaths[i]);
 		XN_IS_STATUS_OK(nRetVal);
 	}
 
@@ -387,41 +399,35 @@ XnStatus XnSensorIO::EnumerateSensors(XnConnectionString* aConnectionStrings, Xn
 
 // Temporary patch: "Cache" the devices since running USB enum on the MacOSX platform takes several seconds due to problems in libusb!		
 #if (XN_PLATFORM == XN_PLATFORM_MACOSX)	
-	static XnStringsHash devicesSet;
+	static XnStringsSet devicesSet;
 	
 	if (devicesSet.Size() == 0)
 	{
-		// search for a v6.0.1 device
-		nRetVal = Enumerate(XN_SENSOR_6_0_1_PRODUCT_ID, devicesSet);
-		XN_IS_STATUS_OK(nRetVal);
-
-		// search for a v6.0 device
-		nRetVal = Enumerate(XN_SENSOR_6_0_PRODUCT_ID, devicesSet);
-		XN_IS_STATUS_OK(nRetVal);	
+		// search for supported devices
+		for (XnUInt32 i = 0; i < ms_supportedProductsCount; ++i)
+		{
+			nRetVal = Enumerate(ms_supportedProducts[i], devicesSet);
+			XN_IS_STATUS_OK(nRetVal);
+		}
 	}
 #else
-	XnStringsHash devicesSet;
+	XnStringsSet devicesSet;
 
-	// search for a v6.0.1 device
-	nRetVal = Enumerate(XN_SENSOR_6_0_1_PRODUCT_ID, devicesSet);
-	XN_IS_STATUS_OK(nRetVal);
-
-	// search for a v6.0 device
-	nRetVal = Enumerate(XN_SENSOR_6_0_PRODUCT_ID, devicesSet);
-	XN_IS_STATUS_OK(nRetVal);
-
-	// search for a v5.0 device
-	nRetVal = Enumerate(XN_SENSOR_5_0_PRODUCT_ID, devicesSet);
-	XN_IS_STATUS_OK(nRetVal);
+	// search for supported devices
+	for (XnUInt32 i = 0; i < ms_supportedProductsCount; ++i)
+	{
+		nRetVal = Enumerate(ms_supportedProducts[i], devicesSet);
+		XN_IS_STATUS_OK(nRetVal);
+	}
 #endif
 	
 	// now copy back
 	XnUInt32 nCount = 0;
-	for (XnStringsHash::ConstIterator it = devicesSet.begin(); it != devicesSet.end(); ++it, ++nCount)
+	for (XnStringsSet::ConstIterator it = devicesSet.Begin(); it != devicesSet.End(); ++it, ++nCount)
 	{
 		if (nCount < *pnCount)
 		{
-			strcpy(aConnectionStrings[nCount], it.Key());
+			strcpy(aConnectionStrings[nCount], it->Key());
 		}
 	}
 
@@ -464,13 +470,36 @@ XnStatus XnSensorIO::IsSensorLowBandwidth(const XnConnectionString connectionStr
 	return (XN_STATUS_OK);
 }
 
+void XN_CALLBACK_TYPE XnSensorIO::OnConnectivityEvent(XnUSBEventArgs* pArgs, void* pCookie)
+{
+	XnSensorIO* pThis = (XnSensorIO*)pCookie;
+	if (strcmp(pThis->m_strDeviceName, pArgs->strDevicePath) == 0)
+	{
+		pThis->m_pCallbackPtr(pArgs->eventType, const_cast<XnChar*>(pArgs->strDevicePath), pThis->m_pCallbackData);
+	}
+}
+
 XnStatus XnSensorIO::SetCallback(XnUSBEventCallbackFunctionPtr pCallbackPtr, void* pCallbackData)
 {
-	//TODO: Support multiple sensors - this won't work for more than one.
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	// try to register callback to a 5.0 device
-	nRetVal = xnUSBSetCallbackHandler(XN_SENSOR_VENDOR_ID, XN_SENSOR_5_0_PRODUCT_ID, NULL, pCallbackPtr, pCallbackData);
+	if (m_aRegistrationHandles.GetSize() == 0)
+	{
+		// register for USB events
+		for (XnUInt32 i = 0; i < ms_supportedProductsCount; ++i)
+		{
+			XnRegistrationHandle hRegistration = NULL;
+			nRetVal = xnUSBRegisterToConnectivityEvents(XN_SENSOR_VENDOR_ID, ms_supportedProducts[i], OnConnectivityEvent, this, &hRegistration);
+			XN_IS_STATUS_OK(nRetVal);
+
+			nRetVal = m_aRegistrationHandles.AddLast(hRegistration);
+			XN_IS_STATUS_OK(nRetVal);
+		}
+	}
+
+	// set callbacks
+	m_pCallbackPtr = pCallbackPtr;
+	m_pCallbackData = pCallbackData;
 
 	return nRetVal;
 }

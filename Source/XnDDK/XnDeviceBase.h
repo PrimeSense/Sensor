@@ -26,11 +26,11 @@
 // Includes
 //---------------------------------------------------------------------------
 #include <XnDDK/IXnDevice.h>
-#include <XnStringsHash.h>
+#include <XnStringsHashT.h>
 #include <XnDevice.h>
 #include <XnDDK/XnDeviceModule.h>
 #include "XnDeviceModuleHolder.h"
-#include <XnEvent.h>
+#include <XnEventT.h>
 #include <XnDDK/XnDeviceStream.h>
 #include <XnDDK/XnActualStringProperty.h>
 #include <XnDDK/XnActualIntProperty.h>
@@ -96,11 +96,11 @@ public:
 	virtual XnStatus DoesModuleExist(const XnChar* ModuleName, XnBool* pbDoesExist);
 	virtual XnStatus OpenAllStreams();
 	virtual XnStatus CloseAllStreams();
-	virtual XnStatus RegisterToStreamsChange(XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback);
+	virtual XnStatus RegisterToStreamsChange(XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback);
 	virtual XnStatus UnregisterFromStreamsChange(XnCallbackHandle hCallback);
 	virtual XnStatus CreateStreamData(const XnChar* StreamName, XnStreamData** ppStreamData);
 	static XnStatus DestroyStreamData(XnStreamData** ppStreamData);
-	virtual XnStatus RegisterToNewStreamData(XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback);
+	virtual XnStatus RegisterToNewStreamData(XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback);
 	virtual XnStatus UnregisterFromNewStreamData(XnCallbackHandle hCallback);
 	virtual XnStatus IsNewDataAvailable(const XnChar* StreamName, XnBool* pbNewDataAvailable, XnUInt64* pnTimestamp);
 	virtual XnStatus ReadStream(XnStreamData* pStreamOutput);
@@ -122,14 +122,14 @@ public:
 	virtual XnStatus LoadConfigFromFile(const XnChar* csINIFilePath, const XnChar* csSectionName);
 	virtual XnStatus BatchConfig(const XnPropertySet* pChangeSet);
 	virtual XnStatus GetAllProperties(XnPropertySet* pSet, XnBool bNoStreams = FALSE, const XnChar* strModule = NULL);
-	virtual XnStatus RegisterToPropertyChange(const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback);
+	virtual XnStatus RegisterToPropertyChange(const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback);
 	virtual XnStatus UnregisterFromPropertyChange(const XnChar* Module, const XnChar* PropertyName, XnCallbackHandle hCallback);
 
-	XN_DECLARE_EVENT_3ARG(StreamCollectionChangedEvent, StreamCollectionChangedEventInterface, XnDeviceHandle, DeviceHandle, const XnChar*, StreamName, XnStreamsChangeEventType, EventType);
-	StreamCollectionChangedEventInterface& OnStreamCollectionChangedEvent() { return m_OnStreamsChangeEvent; }
+	typedef XnEventT<XnStreamCollectionChangedEventArgs> StreamCollectionChangedEvent;
+	StreamCollectionChangedEvent::TInterface& OnStreamCollectionChangedEvent() { return m_OnStreamsChangeEvent; }
 
-	XN_DECLARE_EVENT_2ARG(NewStreamDataEvent, NewStreamDataEventInterface, XnDeviceHandle, DeviceHandle, const XnChar*, StreamName);
-	NewStreamDataEventInterface& OnNewStreamDataEvent() { return m_OnNewStreamDataEvent; }
+	typedef XnEventT<XnNewStreamDataEventArgs> NewStreamDataEvent;
+	NewStreamDataEvent::TInterface& OnNewStreamDataEvent() { return m_OnNewStreamDataEvent; }
 
 protected:
 	virtual XnStatus InitImpl(const XnDeviceConfig* pDeviceConfig);
@@ -293,10 +293,24 @@ private:
 
 	static XnStatus XN_CALLBACK_TYPE StreamNewDataCallback(XnDeviceStream* pStream, void* pCookie);
 
-	XnStringsHash m_Modules;
-	XnStringsHash m_SupportedStreams;
+	typedef XnStringsHashT<XnDeviceModuleHolder*> ModuleHoldersHash;
+	ModuleHoldersHash m_Modules;
 
-	XnList m_PropertyCallbacks;
+	XnStringsSet m_SupportedStreams;
+
+	struct XnPropertyCallback
+	{
+		XnPropertyCallback(XnDeviceHandle DeviceHandle, const XnChar* strModule, const XnChar* strProp, XnDeviceOnPropertyChangedEventHandler pHandler, void* pCookie);
+
+		XnDeviceHandle DeviceHandle;
+		XnChar strModule[XN_DEVICE_MAX_STRING_LENGTH];
+		XnChar strProp[XN_DEVICE_MAX_STRING_LENGTH];
+		XnDeviceOnPropertyChangedEventHandler pHandler;
+		void* pCookie;
+		XnCallbackHandle hCallback;
+	};
+	typedef XnListT<XnPropertyCallback*> PropertiesCallbacks;
+	PropertiesCallbacks m_PropertyCallbacks;
 
 	StreamCollectionChangedEvent m_OnStreamsChangeEvent;
 	NewStreamDataEvent m_OnNewStreamDataEvent;

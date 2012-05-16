@@ -115,7 +115,9 @@ XnBool XN_CALLBACK_TYPE XnDeviceSensorProtocolUsbEpCb(XnUChar* pBuffer, XnUInt32
 					break;
 				}
 				else
+				{
 					pBuffer++;
+				}
 			}
 
 			if (pBuffer == pBufEnd &&					// magic wasn't found

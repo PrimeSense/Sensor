@@ -165,43 +165,43 @@ XnStatus XnDataPacker::WritePropertySetProperties(const XnPropertySet* pSet)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	for (XnPropertySetData::Iterator it = pSet->pData->begin(); it != pSet->pData->end(); ++it)
+	for (XnPropertySetData::Iterator it = pSet->pData->Begin(); it != pSet->pData->End(); ++it)
 	{
-		XnActualPropertiesHash* pModule = it.Value();
-		for (XnActualPropertiesHash::ConstIterator itProp = pModule->begin(); itProp != pModule->end(); ++itProp)
+		XnActualPropertiesHash* pModule = it->Value();
+		for (XnActualPropertiesHash::ConstIterator itProp = pModule->Begin(); itProp != pModule->End(); ++itProp)
 		{
-			switch (itProp.Value()->GetType())
+			switch (itProp->Value()->GetType())
 			{
 			case XN_PROPERTY_TYPE_INTEGER:
 				{
-					XnActualIntProperty* pProp = (XnActualIntProperty*)itProp.Value();
+					XnActualIntProperty* pProp = (XnActualIntProperty*)itProp->Value();
 					nRetVal = WritePropertyImpl(pProp->GetModule(), pProp->GetName(), pProp->GetValue());
 					XN_IS_STATUS_OK(nRetVal);
 					break;
 				}
 			case XN_PROPERTY_TYPE_REAL:
 				{
-					XnActualRealProperty* pProp = (XnActualRealProperty*)itProp.Value();
+					XnActualRealProperty* pProp = (XnActualRealProperty*)itProp->Value();
 					nRetVal = WritePropertyImpl(pProp->GetModule(), pProp->GetName(), pProp->GetValue());
 					XN_IS_STATUS_OK(nRetVal);
 					break;
 				}
 			case XN_PROPERTY_TYPE_STRING:
 				{
-					XnActualStringProperty* pProp = (XnActualStringProperty*)itProp.Value();
+					XnActualStringProperty* pProp = (XnActualStringProperty*)itProp->Value();
 					nRetVal = WritePropertyImpl(pProp->GetModule(), pProp->GetName(), pProp->GetValue());
 					XN_IS_STATUS_OK(nRetVal);
 					break;
 				}
 			case XN_PROPERTY_TYPE_GENERAL:
 				{
-					XnActualGeneralProperty* pProp = (XnActualGeneralProperty*)itProp.Value();
+					XnActualGeneralProperty* pProp = (XnActualGeneralProperty*)itProp->Value();
 					nRetVal = WritePropertyImpl(pProp->GetModule(), pProp->GetName(), pProp->GetValue());
 					XN_IS_STATUS_OK(nRetVal);
 					break;
 				}
 			default:
-				XN_LOG_WARNING_RETURN(XN_STATUS_ERROR, XN_MASK_DDK, "Unknown property type: %d", itProp.Value()->GetType());
+				XN_LOG_WARNING_RETURN(XN_STATUS_ERROR, XN_MASK_DDK, "Unknown property type: %d", itProp->Value()->GetType());
 			}
 		}
 	}
@@ -219,9 +219,9 @@ XnStatus XnDataPacker::WritePropertySetImpl(const XnPropertySet* pPropertySet)
 	StartWritingIntenalObject(XN_PACKED_PROPERTY_SET);
 
 	// Write module names
-	for (XnPropertySetData::Iterator it = pPropertySet->pData->begin(); it != pPropertySet->pData->end(); ++it)
+	for (XnPropertySetData::Iterator it = pPropertySet->pData->Begin(); it != pPropertySet->pData->End(); ++it)
 	{
-		nRetVal = WriteString(it.Key());
+		nRetVal = WriteString(it->Key());
 		XN_IS_STATUS_OK(nRetVal);
 	}
 

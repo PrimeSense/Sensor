@@ -19,39 +19,70 @@
 *  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
 *                                                                           *
 ****************************************************************************/
-#ifndef __XN_SHARED_MEMORY_BUFFER_POOL_H__
-#define __XN_SHARED_MEMORY_BUFFER_POOL_H__
-
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
-#include <XnDDK/XnBufferPool.h>
+#include "XnExternalBufferPool.h"
 
 //---------------------------------------------------------------------------
-// Types
+// Code
 //---------------------------------------------------------------------------
-class XnSharedMemoryBufferPool : public XnBufferPool
+XnExternalBufferPool::XnExternalBufferPool()
 {
-public:
-	XnSharedMemoryBufferPool(XnUInt32 nBufferCount, const XnChar* strDeviceName, const XnChar* strStreamName, XnUInt32 nMaxBufferSize, XnBool bAllowOtherUsers);
-	~XnSharedMemoryBufferPool();
+}
 
-	void Free();
+XnExternalBufferPool::~XnExternalBufferPool()
+{
+	FreeAll(TRUE);
+}
 
-	inline const XnChar* GetSharedMemoryName() const { return m_strName; }
+XnStatus XnExternalBufferPool::SetBuffers(XnUInt32 nCount, const XnGeneralBuffer* aBuffers)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+	
+	XN_VALIDATE_INPUT_PTR(aBuffers);
 
-	inline XnUInt32 GetBufferOffset(XnBuffer* pBuffer) const { return (XnUInt32)((XnUChar*)pBuffer->GetData() - m_pSharedMemoryAddress); }
+	// make sure we have at least 3 buffers (user, stable and working)
+	if (nCount < 3)
+	{
+		XN_LOG_WARNING_RETURN(XN_STATUS_BAD_PARAM, XN_MASK_DDK, "ExternalBufferPool: at least 3 buffers are required!");
+	}
 
-protected:
-	virtual XnStatus AllocateBuffers();
-	virtual void DestroyBuffer(XnBufferInPool* pBuffer);
+	m_buffers.Clear();
 
-private:
-	XnChar m_strName[XN_FILE_MAX_PATH];
-	XnUInt32 m_nMaxBufferSize;
-	XnBool m_bAllowOtherUsers;
-	XN_SHARED_MEMORY_HANDLE m_hSharedMemory;
-	XnUChar* m_pSharedMemoryAddress;
-};
+	// add buffers to the list
+	for (XnUInt32 i = 0; i < nCount; ++i)
+	{
+		nRetVal = m_buffers.AddLast(aBuffers[i]);
+		XN_IS_STATUS_OK(nRetVal);
+	}
 
-#endif // __XN_SHARED_MEMORY_BUFFER_POOL_H__
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnExternalBufferPool::AllocateBuffers(XnUInt32 nSize)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	// make sure all buffers are in the correct size
+	for (XnUInt32 i = 0; i < m_buffers.GetSize(); ++i)
+	{
+		if (m_buffers[i].nDataSize < nSize)
+		{
+			return XN_STATUS_ALLOC_FAILED;
+		}
+	}
+
+	// now "allocate" them
+	for (XnUInt32 i = 0; i < m_buffers.GetSize(); ++i)
+	{
+		nRetVal = AddNewBuffer(m_buffers[i].pData, m_buffers[i].nDataSize);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+
+	return (XN_STATUS_OK);
+}
+
+void XnExternalBufferPool::DestroyBuffer(void* /*pBuffer*/)
+{
+}

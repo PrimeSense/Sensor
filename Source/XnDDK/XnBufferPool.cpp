@@ -28,9 +28,9 @@
 // Code
 //---------------------------------------------------------------------------
 
-XnBufferPool::XnBufferPool(XnUInt32 nBufferCount) :
-	m_nBufferCount(nBufferCount),
+XnBufferPool::XnBufferPool() :
 	m_nBufferSize(0),
+	m_nNextBufferID(0),
 	m_hLock(NULL),
 	m_dump(NULL)
 {}
@@ -50,6 +50,7 @@ XnStatus XnBufferPool::Init(XnUInt32 nBufferSize)
 	XN_IS_STATUS_OK(nRetVal);
 
 	// allocate buffers
+	xnDumpFileWriteString(m_dump, "Initializing with size %u\n", nBufferSize);
 	nRetVal = ChangeBufferSize(nBufferSize);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -69,18 +70,23 @@ XnStatus XnBufferPool::ChangeBufferSize(XnUInt32 nBufferSize)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	xnDumpFileWriteString(m_dump, "changing buffer size to %d\n", nBufferSize);
+	xnDumpFileWriteString(m_dump, "Changing buffer size to %d\n", nBufferSize);
 
 	xnOSEnterCriticalSection(&m_hLock);
 
 	m_nBufferSize = nBufferSize;
 
-	nRetVal = AllocateBuffers();
+	// first free old ones
+	FreeAll(FALSE);
+
+	nRetVal = AllocateBuffers(nBufferSize);
 	if (nRetVal != XN_STATUS_OK)
 	{
 		xnOSLeaveCriticalSection(&m_hLock);
 		return (nRetVal);
 	}
+
+	xnDumpFileWriteString(m_dump, "Buffers were allocated\n");
 
 	xnOSLeaveCriticalSection(&m_hLock);
 	
@@ -90,8 +96,10 @@ XnStatus XnBufferPool::ChangeBufferSize(XnUInt32 nBufferSize)
 void XnBufferPool::FreeAll(XnBool bForceDestroyOfLockedBuffers)
 {
 	// free existing buffers
-	XnBuffersList::Iterator it = m_AllBuffers.begin();
-	while (it != m_AllBuffers.end())
+	xnDumpFileWriteString(m_dump, "freeing existing buffers...\n");
+
+	XnBuffersList::Iterator it = m_AllBuffers.Begin();
+	while (it != m_AllBuffers.End())
 	{
 		XnBuffersList::Iterator currIt = it;
 
@@ -104,17 +112,43 @@ void XnBufferPool::FreeAll(XnBool bForceDestroyOfLockedBuffers)
 		// check if item is in free list (or we're forcing deletion)
 		if (bForceDestroyOfLockedBuffers || pBuffer->m_nRefCount == 0)
 		{
-			DestroyBuffer(pBuffer);
+			xnDumpFileWriteString(m_dump, "\tdestroying buffer %u\n", pBuffer->m_nID);
+			DestroyBuffer((void*)pBuffer->GetData());
+			XN_DELETE(pBuffer);
 			m_AllBuffers.Remove(currIt);
 		}
 		else
 		{
 			// we can't free it, cause it's still locked. instead, mark it for deletion
+			xnDumpFileWriteString(m_dump, "\tBuffer %u can't be destroyed right now (locked). Just mark it for destruction.\n", pBuffer->m_nID);
 			pBuffer->m_bDestroy = TRUE;
 		}
 	}
 
 	m_FreeBuffers.Clear();
+
+	xnDumpFileWriteString(m_dump, "Buffers were freed\n");
+}
+
+XnStatus XnBufferPool::AddNewBuffer(void* pBuffer, XnUInt32 nSize)
+{
+	XnBufferInPool* pBufferInPool;
+	XN_VALIDATE_NEW(pBufferInPool, XnBufferInPool);
+
+	xnOSEnterCriticalSection(&m_hLock);
+
+	pBufferInPool->m_nID = m_nNextBufferID++;
+	pBufferInPool->SetExternalBuffer((XnUChar*)pBuffer, nSize);
+
+	xnDumpFileWriteString(Dump(), "\tAdd new buffer %u with size %u at 0x%p\n", pBufferInPool->m_nID, nSize, pBuffer);
+
+	// add it to free list
+	m_AllBuffers.AddLast(pBufferInPool);
+	m_FreeBuffers.AddLast(pBufferInPool);
+
+	xnOSLeaveCriticalSection(&m_hLock);
+
+	return XN_STATUS_OK;
 }
 
 XnStatus XnBufferPool::GetBuffer(XnBuffer** ppBuffer)
@@ -123,8 +157,8 @@ XnStatus XnBufferPool::GetBuffer(XnBuffer** ppBuffer)
 	
 	xnOSEnterCriticalSection(&m_hLock);
 
-	XnBuffersList::Iterator it = m_FreeBuffers.begin();
-	if (it == m_FreeBuffers.end())
+	XnBuffersList::Iterator it = m_FreeBuffers.Begin();
+	if (it == m_FreeBuffers.End())
 	{
 		xnOSLeaveCriticalSection(&m_hLock);
 		return XN_STATUS_ALLOC_FAILED;
@@ -154,6 +188,7 @@ void XnBufferPool::AddRef(XnBuffer* pBuffer)
 {
 	if (pBuffer == NULL)
 	{
+		XN_ASSERT(FALSE);
 		return;
 	}
 
@@ -170,6 +205,7 @@ void XnBufferPool::DecRef(XnBuffer* pBuffer)
 {
 	if (pBuffer == NULL)
 	{
+		XN_ASSERT(FALSE);
 		return;
 	}
 
@@ -185,10 +221,10 @@ void XnBufferPool::DecRef(XnBuffer* pBuffer)
 		{
 			// remove it from all buffers pool
 			XnBuffersList::ConstIterator it = m_AllBuffers.Find(pBufInPool);
-			XN_ASSERT(it != m_AllBuffers.end());
+			XN_ASSERT(it != m_AllBuffers.End());
 			m_AllBuffers.Remove(it);
 			// and free it
-			DestroyBuffer(pBufInPool);
+			DestroyBuffer((void*)pBufInPool->GetData());
 			xnDumpFileWriteString(m_dump, "destroy!\n");
 		}
 		else

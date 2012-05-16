@@ -30,6 +30,8 @@
 // Defines
 //---------------------------------------------------------------------------
 #define XN_SENSOR_TERMINATE_READER_THREAD_TIMEOUT		5000
+#define XN_SENSOR_DEFAULT_ENABLE_MULTI_USERS			FALSE
+#define XN_SENSOR_DEFAULT_NUMBER_OF_BUFFERS				6
 
 //---------------------------------------------------------------------------
 // Code
@@ -39,8 +41,12 @@ XnServerSensorInvoker::XnServerSensorInvoker() :
 	m_hReaderThread(NULL),
 	m_hNewDataEvent(NULL),
 	m_bShouldRun(TRUE),
-	m_errorState(XN_STATUS_OK)
+	m_errorState(XN_STATUS_OK),
+	m_numberOfBuffers(XN_MODULE_PROPERTY_NUMBER_OF_BUFFERS, XN_SENSOR_DEFAULT_NUMBER_OF_BUFFERS),
+	m_allowOtherUsers(XN_MODULE_PROPERTY_ENABLE_MULTI_USERS, XN_SENSOR_DEFAULT_ENABLE_MULTI_USERS)
 {
+	m_numberOfBuffers.UpdateSetCallback(SetNumberOfBuffersCallback, this);
+	m_allowOtherUsers.UpdateSetCallback(SetAllowOtherUsersCallback, this);
 }
 
 XnServerSensorInvoker::~XnServerSensorInvoker()
@@ -70,15 +76,20 @@ XnStatus XnServerSensorInvoker::Init(const XnChar* strDevicePath, const XnChar* 
 	nRetVal = m_sensor.DeviceModule()->AddProperties(aAdditionalProps, nAdditionalProps);
 	XN_IS_STATUS_OK(nRetVal);
 
+	XnProperty* aInvokerAdditionalProps[] = { &m_numberOfBuffers, &m_allowOtherUsers };
+	nRetVal = m_sensor.DeviceModule()->AddProperties(aInvokerAdditionalProps, sizeof(aInvokerAdditionalProps) / sizeof(aInvokerAdditionalProps[0]));
+	XN_IS_STATUS_OK(nRetVal);
+
 	// configure from global file
 	nRetVal = m_sensor.ConfigureModuleFromGlobalFile(XN_MODULE_NAME_DEVICE, XN_SENSOR_SERVER_CONFIG_FILE_SECTION);
 	XN_IS_STATUS_OK(nRetVal);
 
 	// register to events
-	nRetVal = m_sensor.OnStreamCollectionChangedEvent().Register(StreamCollectionChangedCallback, this);
+	XnCallbackHandle hDummy = NULL;
+	nRetVal = m_sensor.OnStreamCollectionChangedEvent().Register(StreamCollectionChangedCallback, this, hDummy);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = m_sensor.OnNewStreamDataEvent().Register(NewStreamDataCallback, this);
+	nRetVal = m_sensor.OnNewStreamDataEvent().Register(NewStreamDataCallback, this, hDummy);
 	XN_IS_STATUS_OK(nRetVal);
 
 	// register to all properties
@@ -137,24 +148,25 @@ const XnChar* XnServerSensorInvoker::GetDevicePath()
 XnStatus XnServerSensorInvoker::RegisterToProps(XnPropertySet* pProps)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
+	XnCallbackHandle hDummy = NULL;
 
-	for (XnPropertySetData::Iterator itMod = pProps->pData->begin(); itMod != pProps->pData->end(); ++itMod)
+	for (XnPropertySetData::Iterator itMod = pProps->pData->Begin(); itMod != pProps->pData->End(); ++itMod)
 	{
-		XnActualPropertiesHash* pHash = itMod.Value();
+		XnActualPropertiesHash* pHash = itMod->Value();
 
 		XnDeviceModule* pModule;
-		nRetVal = m_sensor.FindModule(itMod.Key(), &pModule);
+		nRetVal = m_sensor.FindModule(itMod->Key(), &pModule);
 		XN_IS_STATUS_OK(nRetVal);
 
-		for (XnActualPropertiesHash::Iterator itProp = pHash->begin(); itProp != pHash->end(); ++itProp)
+		for (XnActualPropertiesHash::Iterator itProp = pHash->Begin(); itProp != pHash->End(); ++itProp)
 		{
 			XnProperty* pProp;
-			nRetVal = pModule->GetProperty(itProp.Key(), &pProp);
+			nRetVal = pModule->GetProperty(itProp->Key(), &pProp);
 			XN_IS_STATUS_OK(nRetVal);
 
 			// no need to keep the handle. We only want to unregister when the stream is destroyed, and then
 			// it happens anyway.
-			nRetVal = pProp->OnChangeEvent().Register(PropertyChangedCallback, this);
+			nRetVal = pProp->OnChangeEvent().Register(PropertyChangedCallback, this, hDummy);
 			XN_IS_STATUS_OK(nRetVal);
 		}
 	}
@@ -246,7 +258,7 @@ XnStatus XnServerSensorInvoker::GetStream(const XnChar* strType, const XnPropert
 	
 	// check if stream already exists
 	XnAutoCSLocker locker(m_hSensorLock);
-	SensorInvokerStream* pStream;
+	SensorInvokerStream* pStream = NULL;
 	nRetVal = m_streams.Get(strType, pStream);
 	if (nRetVal == XN_STATUS_OK)
 	{
@@ -281,12 +293,120 @@ XnStatus XnServerSensorInvoker::GetStream(const XnChar* strType, const XnPropert
 	return (XN_STATUS_OK);
 }
 
+XnStatus XnServerSensorInvoker::SetStreamSharedMemory(SensorInvokerStream* pStream)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+	
+	// give shared memory a name (to make the name unique, we'll add process ID)
+	XN_PROCESS_ID procID;
+	xnOSGetCurrentProcessID(&procID);
+	XnChar strSharedMemoryName[XN_FILE_MAX_PATH];
+	sprintf(strSharedMemoryName, "%u_%s_%s", (XnUInt32)procID, m_sensor.GetUSBPath(), pStream->strType);
+	nRetVal = pStream->pSharedMemoryName->UnsafeUpdateValue(strSharedMemoryName);
+	XN_IS_STATUS_OK(nRetVal);
+
+	XnUInt32 nBufferSize = 0;
+	XnUInt32 nPixelSize = 0;
+
+	if (strcmp(pStream->strType, XN_STREAM_TYPE_DEPTH) == 0)
+	{
+		// have space for depth and shift values
+		nPixelSize = sizeof(XnDepthPixel) + sizeof(XnUInt16);
+	}
+	else if (strcmp(pStream->strType, XN_STREAM_TYPE_IMAGE) == 0)
+	{
+		// biggest pixel size is the RGB24
+		nPixelSize = sizeof(XnRGB24Pixel);
+	}
+	else if (strcmp(pStream->strType, XN_STREAM_TYPE_IR) == 0)
+	{
+		// biggest pixel size is the RGB24
+		nPixelSize = sizeof(XnIRPixel);
+	}
+	else
+	{
+		XN_ASSERT(FALSE);
+		return XN_STATUS_ERROR;
+	}
+
+	// find out max resolution
+	XnUInt32 nMaxNumPixels = 0;
+	nRetVal = GetStreamMaxResolution(pStream, nMaxNumPixels);
+	XN_IS_STATUS_OK(nRetVal);
+
+	nBufferSize = (XnUInt32)(nMaxNumPixels * nPixelSize * m_numberOfBuffers.GetValue());
+
+	// allocate shared memory
+	nRetVal = xnOSCreateSharedMemoryEx(strSharedMemoryName, nBufferSize, XN_OS_FILE_READ | XN_OS_FILE_WRITE, m_allowOtherUsers.GetValue() == TRUE, &pStream->hSharedMemory);
+	XN_IS_STATUS_OK(nRetVal);
+
+	nRetVal = xnOSSharedMemoryGetAddress(pStream->hSharedMemory, (void**)&pStream->pSharedMemoryAddress);
+	XN_IS_STATUS_OK(nRetVal);
+
+	// Set buffer pool for this stream
+	XnGeneralBuffer* aBuffers = XN_NEW_ARR(XnGeneralBuffer, m_numberOfBuffers.GetValue());
+	XnUInt32 nSingleBufferSize = nBufferSize / m_numberOfBuffers.GetValue();
+	for (XnUInt32 i = 0; i < m_numberOfBuffers.GetValue(); ++i)
+	{
+		aBuffers[i].pData = pStream->pSharedMemoryAddress + (i * nSingleBufferSize);
+		aBuffers[i].nDataSize = nSingleBufferSize;
+	}
+
+	nRetVal = m_sensor.SetProperty(pStream->strType, XN_STREAM_PROPERTY_EXTERNAL_BUFFER_POOL, XnGeneralBufferPack(aBuffers, m_numberOfBuffers.GetValue() * sizeof(XnGeneralBuffer)));
+	XN_DELETE_ARR(aBuffers);
+
+	XN_IS_STATUS_OK(nRetVal);
+	
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnServerSensorInvoker::GetStreamMaxResolution(SensorInvokerStream* pStream, XnUInt32& nMaxNumPixels)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+	
+	XnUInt64 nCount = 0;
+	nRetVal = m_sensor.GetProperty(pStream->strType, XN_STREAM_PROPERTY_SUPPORT_MODES_COUNT, &nCount);
+	XN_IS_STATUS_OK(nRetVal);
+
+	XnCmosPreset* aPresets = XN_NEW_ARR(XnCmosPreset, nCount);
+	nRetVal = m_sensor.GetProperty(pStream->strType, XN_STREAM_PROPERTY_SUPPORT_MODES, XnGeneralBufferPack(aPresets, nCount * sizeof(XnCmosPreset)));
+	if (nRetVal != XN_STATUS_OK)
+	{
+		XN_DELETE_ARR(aPresets);
+		return nRetVal;
+	}
+
+	XnUInt32 nMaxPixels = 0;
+	for (XnUInt32 i = 0; i < nCount; ++i)
+	{
+		XnUInt32 nXRes;
+		XnUInt32 nYRes;
+		if (!XnDDKGetXYFromResolution((XnResolutions)aPresets[i].nResolution, &nXRes, &nYRes))
+		{
+			continue;
+		}
+
+		if (nXRes * nYRes > nMaxPixels)
+		{
+			nMaxPixels = nXRes * nYRes;
+		}
+	}
+
+	XN_ASSERT(nMaxPixels > 0);
+
+	XN_DELETE_ARR(aPresets);
+
+	nMaxNumPixels = nMaxPixels;
+	
+	return (XN_STATUS_OK);
+}
+
 XnStatus XnServerSensorInvoker::ReleaseStream(const XnChar* strType)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
 	XnAutoCSLocker locker(m_hSensorLock);
-	SensorInvokerStream* pStream;
+	SensorInvokerStream* pStream = NULL;
 	nRetVal = m_streams.Get(strType, pStream);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -304,18 +424,18 @@ XnStatus XnServerSensorInvoker::ReleaseStream(const XnChar* strType)
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnServerSensorInvoker::OpenStream(const XnChar* strName, NewStreamDataHandler pNewDataHandler, void* pCookie, XnCallbackHandle* phCallback)
+XnStatus XnServerSensorInvoker::OpenStream(const XnChar* strName, NewStreamDataHandler pNewDataHandler, void* pCookie, XnCallbackHandle& hCallback)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
 	XnAutoCSLocker locker(m_hSensorLock);
 
-	SensorInvokerStream* pStream;
+	SensorInvokerStream* pStream = NULL;
 	nRetVal = m_streams.Get(strName, pStream);
 	XN_IS_STATUS_OK(nRetVal);
 
 	// register for new data event
-	nRetVal = pStream->pNewDataEvent->Register(pNewDataHandler, pCookie, phCallback);
+	nRetVal = pStream->pNewDataEvent->Register(pNewDataHandler, pCookie, hCallback);
 	XN_IS_STATUS_OK(nRetVal);
 
 	// increase open ref count
@@ -329,7 +449,7 @@ XnStatus XnServerSensorInvoker::OpenStream(const XnChar* strName, NewStreamDataH
 		{
 			xnLogError(XN_MASK_SENSOR_SERVER, "Failed to open stream: %s", xnGetStatusString(nRetVal));
 			--pStream->nOpenRefCount;
-			pStream->pNewDataEvent->Unregister(*phCallback);
+			pStream->pNewDataEvent->Unregister(hCallback);
 			return (nRetVal);
 		}
 	}
@@ -345,7 +465,7 @@ XnStatus XnServerSensorInvoker::CloseStream(const XnChar* strName, XnCallbackHan
 	
 	XnAutoCSLocker locker(m_hSensorLock);
 
-	SensorInvokerStream* pStream;
+	SensorInvokerStream* pStream = NULL;
 	nRetVal = m_streams.Get(strName, pStream);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -376,8 +496,8 @@ XnStatus XnServerSensorInvoker::AddRefFrameBuffer(const XnChar* strStreamName, X
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	XnSharedMemoryBufferPool* pBufferPool = NULL;
-	nRetVal = m_sensor.GetSharedBufferPool(strStreamName, &pBufferPool);
+	XnBufferPool* pBufferPool = NULL;
+	nRetVal = m_sensor.GetBufferPool(strStreamName, &pBufferPool);
 	XN_IS_STATUS_OK(nRetVal);
 
 	pBufferPool->AddRef(pBuffer);
@@ -389,8 +509,8 @@ XnStatus XnServerSensorInvoker::ReleaseFrameBuffer(const XnChar* strStreamName, 
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	XnSharedMemoryBufferPool* pBufferPool = NULL;
-	nRetVal = m_sensor.GetSharedBufferPool(strStreamName, &pBufferPool);
+	XnBufferPool* pBufferPool = NULL;
+	nRetVal = m_sensor.GetBufferPool(strStreamName, &pBufferPool);
 	XN_IS_STATUS_OK(nRetVal);
 
 	pBufferPool->DecRef(pBuffer);
@@ -403,12 +523,12 @@ XnStatus XnServerSensorInvoker::ReadStream(XnStreamData* pStreamData, XnUInt32* 
 	XnStatus nRetVal = XN_STATUS_OK;
 	
 	XnAutoCSLocker locker(m_hSensorLock);
-	SensorInvokerStream* pStream;
+	SensorInvokerStream* pStream = NULL;
 	nRetVal = m_streams.Get(pStreamData->StreamName, pStream);
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnSharedMemoryBufferPool* pBufferPool = NULL;
-	nRetVal = m_sensor.GetSharedBufferPool(pStreamData->StreamName, &pBufferPool);
+	XnBufferPool* pBufferPool = NULL;
+	nRetVal = m_sensor.GetBufferPool(pStreamData->StreamName, &pBufferPool);
 	XN_IS_STATUS_OK(nRetVal);
 
 	// dec ref old data
@@ -430,7 +550,44 @@ XnStatus XnServerSensorInvoker::ReadStream(XnStreamData* pStreamData, XnUInt32* 
 		pBufferPool->AddRef(pStreamData->pInternal->pLockedBuffer);
 	}
 
-	*pnOffset = pBufferPool->GetBufferOffset(pStreamData->pInternal->pLockedBuffer);
+	*pnOffset = pStreamData->pInternal->pLockedBuffer->GetData() - pStream->pSharedMemoryAddress;
+
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnServerSensorInvoker::SetNumberOfBuffers(XnUInt32 nCount)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	// This is a special property. It can only be changed BEFORE reading starts
+	if (m_sensor.HasReadingStarted() && nCount != m_numberOfBuffers.GetValue())
+	{
+		return (XN_STATUS_DEVICE_PROPERTY_READ_ONLY);
+	}
+
+	if (nCount < 3)
+	{
+		return XN_STATUS_BAD_PARAM;
+	}
+
+	nRetVal = m_numberOfBuffers.UnsafeUpdateValue(nCount);
+	XN_IS_STATUS_OK(nRetVal);
+
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnServerSensorInvoker::SetAllowOtherUsers(XnBool bAllowOtherUsers)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	// This is a special property. It can only be changed BEFORE reading starts
+	if (m_sensor.HasReadingStarted() && m_allowOtherUsers.GetValue() != bAllowOtherUsers)
+	{
+		return (XN_STATUS_DEVICE_PROPERTY_READ_ONLY);
+	}
+
+	nRetVal = m_allowOtherUsers.UnsafeUpdateValue(bAllowOtherUsers);
+	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);
 }
@@ -464,7 +621,7 @@ XnStatus XnServerSensorInvoker::OnPropertyChanged(const XnProperty* pProp)
 
 	// raise event
 	m_propChangedEvent.Raise(pProp);
-	
+
 	return (XN_STATUS_OK);
 }
 
@@ -481,12 +638,7 @@ XnStatus XnServerSensorInvoker::OnStreamAdded(const XnChar* StreamName)
 	nRetVal = RegisterToProps(&props);
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnActualPropertiesHash* pStreamProps = props.pData->begin().Value();
-
-	// take type
-	XnProperty* pProp = NULL;
-	nRetVal = pStreamProps->Get(XN_STREAM_PROPERTY_TYPE, pProp);
-	XN_IS_STATUS_OK(nRetVal);
+	XnActualPropertiesHash* pStreamProps = props.pData->Begin()->Value();
 
 	// create stream data
 	SensorInvokerStream serverStream;
@@ -495,15 +647,65 @@ XnStatus XnServerSensorInvoker::OnStreamAdded(const XnChar* StreamName)
 
 	XN_VALIDATE_NEW(serverStream.pNewDataEvent, NewStreamDataEvent);
 
+	// check if this is a frame stream
+	XnProperty* pIsFrameBased;
+	nRetVal = pStreamProps->Get(XN_STREAM_PROPERTY_IS_FRAME_BASED, pIsFrameBased);
+	if (nRetVal == XN_STATUS_OK)
+	{
+		XnActualIntProperty* pIntProp = (XnActualIntProperty*)pIsFrameBased;
+		serverStream.bFrameStream = (pIntProp->GetValue() == TRUE);
+	}
+
+	if (serverStream.bFrameStream)
+	{
+		// create the "shared memory name" property
+		XN_VALIDATE_NEW(serverStream.pSharedMemoryName, XnActualStringProperty, XN_STREAM_PROPERTY_SHARED_BUFFER_NAME);
+
+		// and add it to the stream
+		XnDeviceStream* pStream;
+		nRetVal = m_sensor.GetStream(StreamName, &pStream);
+		if (nRetVal != XN_STATUS_OK)
+		{
+			XN_DELETE(serverStream.pNewDataEvent);
+			XN_DELETE(serverStream.pSharedMemoryName);
+			return nRetVal;
+		}
+
+		nRetVal = pStream->AddProperty(serverStream.pSharedMemoryName);
+		if (nRetVal != XN_STATUS_OK)
+		{
+			XN_DELETE(serverStream.pNewDataEvent);
+			XN_DELETE(serverStream.pSharedMemoryName);
+			return nRetVal;
+		}
+
+		// create a shared memory buffer pool for it
+		nRetVal = SetStreamSharedMemory(&serverStream);
+		if (nRetVal != XN_STATUS_OK)
+		{
+			XN_DELETE(serverStream.pNewDataEvent);
+			XN_DELETE(serverStream.pSharedMemoryName);
+			return nRetVal;
+		}
+	}
+
+	// create a stream data object for the stream
 	nRetVal = m_sensor.CreateStreamData(StreamName, &serverStream.pStreamData);
 	if (nRetVal != XN_STATUS_OK)
 	{
 		XN_DELETE(serverStream.pNewDataEvent);
+		XN_DELETE(serverStream.pSharedMemoryName);
 		return (nRetVal);
 	}
 
+	// and add it to our list of streams
 	nRetVal = m_streams.Set(StreamName, serverStream);
-	XN_IS_STATUS_OK(nRetVal);
+	if (nRetVal != XN_STATUS_OK)
+	{
+		XN_DELETE(serverStream.pNewDataEvent);
+		XN_DELETE(serverStream.pSharedMemoryName);
+		return (nRetVal);
+	}
 
 	return (XN_STATUS_OK);
 }
@@ -515,7 +717,7 @@ XnStatus XnServerSensorInvoker::OnStreamRemoved(const XnChar* StreamName)
 	// no need to unregister from its props - they do not exist anymore.
 
 	// remove stream data
-	SensorInvokerStream* pServerStream;
+	SensorInvokerStream* pServerStream = NULL;
 	nRetVal = m_streams.Get(StreamName, pServerStream);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -523,6 +725,14 @@ XnStatus XnServerSensorInvoker::OnStreamRemoved(const XnChar* StreamName)
 	XN_IS_STATUS_OK(nRetVal);
 
 	XN_DELETE(pServerStream->pNewDataEvent);
+
+	if (pServerStream->pSharedMemoryName != NULL)
+	{
+		XN_DELETE(pServerStream->pSharedMemoryName);
+	}
+
+	// destroy shared memory
+	xnOSCloseSharedMemory(pServerStream->hSharedMemory);
 
 	nRetVal = m_streams.Remove(StreamName);
 	XN_IS_STATUS_OK(nRetVal);
@@ -561,7 +771,7 @@ XnStatus XnServerSensorInvoker::OnNewStreamData(const XnChar* StreamName)
 
 	// no need to lock the sensor (this might cause a dead lock).
 	// Instead, only lock the streams collection (so it wouldn't change while we search for the stream)
-	SensorInvokerStream* pStream;
+	SensorInvokerStream* pStream = NULL;
 	nRetVal = m_streams.Get(StreamName, pStream);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -592,9 +802,9 @@ XnStatus XnServerSensorInvoker::ReadStreams()
 	// lock sensor (we iterate over streams list. make sure no stream is added/removed from the list)
 	{
 		XnLockedServerStreamsHash lockedHash = m_streams.GetLockedHashForIterating();
-		for (XnLockedServerStreamsHash::Iterator it = lockedHash.begin(); it != lockedHash.end(); ++it)
+		for (XnLockedServerStreamsHash::Iterator it = lockedHash.Begin(); it != lockedHash.End(); ++it)
 		{
-			SensorInvokerStream& stream = it.Value();
+			SensorInvokerStream& stream = it->Value();
 
 			if (stream.bNewData)
 			{
@@ -613,12 +823,28 @@ XnStatus XnServerSensorInvoker::ReadStreams()
 
 				stream.bNewData = FALSE;
 
-				stream.pNewDataEvent->Raise(stream.strType, stream.pStreamData->nTimestamp, stream.pStreamData->nFrameID);
+				NewStreamDataEventArgs eventArgs;
+				eventArgs.strStreamName = stream.strType;
+				eventArgs.nTimestamp = stream.pStreamData->nTimestamp;
+				eventArgs.nFrameID = stream.pStreamData->nFrameID;
+				stream.pNewDataEvent->Raise(eventArgs);
 			}
 		} // streams loop
 	} // lock
 
 	return (XN_STATUS_OK);
+}
+
+XnStatus XN_CALLBACK_TYPE XnServerSensorInvoker::SetNumberOfBuffersCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
+{
+	XnServerSensorInvoker* pThis = (XnServerSensorInvoker*)pCookie;
+	return pThis->SetNumberOfBuffers((XnUInt32)nValue);
+}
+
+XnStatus XN_CALLBACK_TYPE XnServerSensorInvoker::SetAllowOtherUsersCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
+{
+	XnServerSensorInvoker* pThis = (XnServerSensorInvoker*)pCookie;
+	return pThis->SetAllowOtherUsers(nValue == TRUE);
 }
 
 XnStatus XN_CALLBACK_TYPE XnServerSensorInvoker::PropertyChangedCallback(const XnProperty* pProp, void* pCookie)
@@ -628,16 +854,16 @@ XnStatus XN_CALLBACK_TYPE XnServerSensorInvoker::PropertyChangedCallback(const X
 	return XN_STATUS_OK;
 }
 
-void XN_CALLBACK_TYPE XnServerSensorInvoker::StreamCollectionChangedCallback(XnDeviceHandle /*DeviceHandle*/, const XnChar* StreamName, XnStreamsChangeEventType EventType, void* pCookie)
+void XN_CALLBACK_TYPE XnServerSensorInvoker::StreamCollectionChangedCallback(const XnStreamCollectionChangedEventArgs& args, void* pCookie)
 {
 	XnServerSensorInvoker* pThis = (XnServerSensorInvoker*)pCookie;
-	pThis->OnStreamCollectionChanged(StreamName, EventType);
+	pThis->OnStreamCollectionChanged(args.strStreamName, args.eventType);
 }
 
-void XN_CALLBACK_TYPE XnServerSensorInvoker::NewStreamDataCallback(XnDeviceHandle /*DeviceHandle*/, const XnChar* StreamName, void* pCookie)
+void XN_CALLBACK_TYPE XnServerSensorInvoker::NewStreamDataCallback(const XnNewStreamDataEventArgs& args, void* pCookie)
 {
 	XnServerSensorInvoker* pThis = (XnServerSensorInvoker*)pCookie;
-	pThis->OnNewStreamData(StreamName);
+	pThis->OnNewStreamData(args.strStreamName);
 }
 
 XN_THREAD_PROC XnServerSensorInvoker::ReaderThread(XN_THREAD_PARAM pThreadParam)

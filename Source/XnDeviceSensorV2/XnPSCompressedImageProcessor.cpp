@@ -31,8 +31,8 @@
 // Code
 //---------------------------------------------------------------------------
 
-XnPSCompressedImageProcessor::XnPSCompressedImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper) :
-	XnImageProcessor(pStream, pHelper)
+XnPSCompressedImageProcessor::XnPSCompressedImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager) :
+	XnImageProcessor(pStream, pHelper, pBufferManager)
 {
 }
 

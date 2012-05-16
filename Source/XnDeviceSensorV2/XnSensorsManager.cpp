@@ -36,11 +36,12 @@
 XnSensorsManager::XnSensorsManager(const XnChar* strGlobalConfigFile) :
 	m_noClientTimeout(XN_MODULE_PROPERTY_SERVER_NO_CLIENTS_TIMEOUT, XN_SENSOR_DEFAULT_SERVER_WAIT_FOR_CLIENT_TIME),
 	m_startNewLog(XN_MODULE_PROPERTY_SERVER_START_NEW_LOG_FILE),
+	m_logFile(XN_MODULE_PROPERTY_SERVER_LOG_FILE, NULL),
 	m_hLock(NULL)
 {
 	m_noClientTimeout.UpdateSetCallbackToDefault();
 	m_startNewLog.UpdateSetCallback(StartNewLogCallback, this);
-
+	m_logFile.UpdateGetCallback(GetLogCallback, this);
 	strcpy(m_strGlobalConfigFile, strGlobalConfigFile);
 }
 
@@ -66,9 +67,9 @@ XnStatus XnSensorsManager::Init()
 void XnSensorsManager::Free()
 {
 	// close all sensors
-	while (m_sensors.begin() != m_sensors.end())
+	while (m_sensors.Begin() != m_sensors.End())
 	{
-		ReferencedSensor& sensor = m_sensors.begin().Value();
+		ReferencedSensor& sensor = m_sensors.Begin()->Value();
 		XN_DELETE(sensor.pInvoker);
 	}
 
@@ -96,7 +97,7 @@ XnStatus XnSensorsManager::GetSensor(const XnChar* strDevicePath, XnServerSensor
 		sensor.nRefCount = 0;
 		XN_VALIDATE_NEW(sensor.pInvoker, XnServerSensorInvoker);
 
-		XnProperty* aAdditionalProps[] = { &m_noClientTimeout, &m_startNewLog };
+		XnProperty* aAdditionalProps[] = { &m_noClientTimeout, &m_startNewLog, &m_logFile };
 		nRetVal = sensor.pInvoker->Init(strDevicePath, m_strGlobalConfigFile, sizeof(aAdditionalProps)/sizeof(XnProperty*), aAdditionalProps);
 		XN_IS_STATUS_OK(nRetVal);
 
@@ -162,16 +163,16 @@ void XnSensorsManager::CleanUp()
 
 	XnUInt64 nNow;
 	xnOSGetTimeStamp(&nNow);
-	XnSensorsHash::Iterator it = m_sensors.begin();
-	while (it != m_sensors.end())
+	XnSensorsHash::Iterator it = m_sensors.Begin();
+	while (it != m_sensors.End())
 	{
 		XnSensorsHash::Iterator curr = it;
 		++it;
 
-		ReferencedSensor& sensor = curr.Value();
+		ReferencedSensor& sensor = curr->Value();
 		if (sensor.nRefCount == 0 && (nNow - sensor.nNoClientsTime) > m_noClientTimeout.GetValue())
 		{
-			xnLogInfo(XN_MASK_SENSOR_SERVER, "No session holding sensor '%s' for %u ms. Shutting down...", curr.Key(), m_noClientTimeout.GetValue());
+			xnLogInfo(XN_MASK_SENSOR_SERVER, "No session holding sensor '%s' for %u ms. Shutting down...", curr->Key(), m_noClientTimeout.GetValue());
 			XN_DELETE(sensor.pInvoker);
 			m_sensors.Remove(curr);
 		}
@@ -182,5 +183,10 @@ XnStatus XN_CALLBACK_TYPE XnSensorsManager::StartNewLogCallback(XnIntProperty* /
 {
 	xnLogVerbose(XN_MASK_SENSOR_SERVER, "Closing current log file...");
 	return xnLogStartNewFile();
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensorsManager::GetLogCallback(const XnStringProperty* /*pSender*/, XnChar* csValue, void* /*pCookie*/)
+{
+	return xnLogGetFileName(csValue, XN_DEVICE_MAX_STRING_LENGTH);
 }
 

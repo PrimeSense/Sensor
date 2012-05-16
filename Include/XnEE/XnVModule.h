@@ -97,7 +97,7 @@ public:
 	XnStatus SetProperty(const XnChar* strProperty, const XnChar* strValue);
 	XnStatus SetProperty(const XnChar* strProperty, const XnGeneralBuffer& gbValue);
 
-	XnStatus RegisterForPropertyChangedEvent(const XnChar* strProperty, XnVModulePropertyChangedHandler* pHandler, XnCallbackHandle* phCallback);
+	XnStatus RegisterForPropertyChangedEvent(const XnChar* strProperty, XnVModulePropertyChangedHandler* pHandler, XnCallbackHandle& hCallback);
 	XnStatus UnregisterFromPropertyChangedEvent(const XnChar* strProperty, XnCallbackHandle hCallback);
 
 	XN_3_6_API XnStatus GetProperty(const XnChar* strProperty, XnUInt8& nValue) const;

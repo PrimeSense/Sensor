@@ -53,6 +53,7 @@ public:
 	inline XnUInt32 GetYRes() const { return (XnUInt32)m_YRes.GetValue(); }
 	inline XnUInt32 GetBytesPerPixel() const { return (XnUInt32)m_BytesPerPixel.GetValue(); }
 	inline const XnCropping* GetCropping() const { return (XnCropping*)m_Cropping.GetValue().pData; }
+	inline const XnArray<XnCmosPreset>& GetSupportedModes() const { return m_supportedModesData; }
 
 protected:
 	XnStatus AddSupportedModes(XnCmosPreset* aPresets, XnUInt32 nCount);

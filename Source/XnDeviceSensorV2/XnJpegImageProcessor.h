@@ -35,7 +35,7 @@
 class XnJpegImageProcessor : public XnImageProcessor
 {
 public:
-	XnJpegImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper);
+	XnJpegImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager);
 	~XnJpegImageProcessor();
 
 protected:

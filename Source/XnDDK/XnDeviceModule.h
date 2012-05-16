@@ -26,7 +26,6 @@
 // Includes
 //---------------------------------------------------------------------------
 #include <XnPlatform.h>
-#include <XnStringsHash.h>
 #include <XnDDK/XnPropertySetInternal.h>
 #include <XnDDK/XnIntProperty.h>
 #include <XnDDK/XnRealProperty.h>
@@ -76,7 +75,7 @@ public:
 
 	XnStatus GetAllProperties(XnPropertySet* pSet) const;
 
-	XnStatus RegisterForOnPropertyValueChanged(const XnChar* strName, XnProperty::OnValueChangedHandler pFunc, void* pCookie, XnCallbackHandle* pHandle);
+	XnStatus RegisterForOnPropertyValueChanged(const XnChar* strName, XnProperty::OnValueChangedHandler pFunc, void* pCookie, XnCallbackHandle& hCallback);
 	XnStatus UnregisterFromOnPropertyValueChanged(const XnChar* strName, XnCallbackHandle hCallback);
 
 	/**

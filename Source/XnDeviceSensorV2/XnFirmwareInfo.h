@@ -26,6 +26,7 @@
 // Includes
 //---------------------------------------------------------------------------
 #include <XnStreamParams.h>
+#include <XnArray.h>
 
 //---------------------------------------------------------------------------
 // Types
@@ -42,6 +43,8 @@ public:
 	XnParamCurrentMode nCurrMode;
 
 	XnBool bAudioSupported;
+	XnBool bGetPresetsSupported;
+	XnBool bDeviceInfoSupported;
 
 	XnUInt16 nOpcodeGetVersion;
 	XnUInt16 nOpcodeKeepAlive;
@@ -57,6 +60,14 @@ public:
 	XnUInt16 nOpcodeGetCmosPresets;
 	XnUInt16 nOpcodeGetSerialNumber;
 	XnUInt16 nOpcodeGetFastConvergenceTEC;
+	XnUInt16 nOpcodeGetCMOSReg;
+	XnUInt16 nOpcodeSetCMOSReg;
+	XnUInt16 nOpcodeWriteI2C;
+	XnUInt16 nOpcodeReadI2C;
+	XnUInt16 nOpcodeReadAHB;
+	XnUInt16 nOpcodeWriteAHB;
+	XnUInt16 nOpcodeGetPlatformString;
+	XnUInt16 nOpcodeGetUsbCore;
 
 
 	XnBool bMirrorSupported;
@@ -72,6 +83,14 @@ public:
 
 	XnUInt8 nISOAlternativeInterface;
 	XnUInt8 nBulkAlternativeInterface;
+
+	XnBool bGetImageCmosTypeSupported;
+	XnBool bImageSupported;
+
+	XnArray<XnCmosPreset> depthModes;
+	XnArray<XnCmosPreset> imageBulkModes;
+	XnArray<XnCmosPreset> imageIsoModes;
+	XnArray<XnCmosPreset> irModes;
 };
 
 #endif //__XN_FIRMWARE_INFO_H__

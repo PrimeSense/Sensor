@@ -932,7 +932,7 @@ XnStatus XnDeviceFileReader::BCSeekFrame(XnUInt32 nFrameID)
 		XN_IS_STATUS_OK(nRetVal);
 
 		// increment streams frame ID
-		for (XnDeviceModuleHolderList::Iterator it = streams.begin(); it != streams.end(); ++it)
+		for (XnDeviceModuleHolderList::Iterator it = streams.Begin(); it != streams.End(); ++it)
 		{
 			XnStreamReaderStream* pStream = (XnStreamReaderStream*)(*it)->GetModule();
 			pStream->NewDataAvailable(0, 0);

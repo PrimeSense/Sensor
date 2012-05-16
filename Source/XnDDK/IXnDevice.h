@@ -111,9 +111,9 @@ public:
 	* 
 	* @param	Handler			[in]	A pointer to the function that will handle the event.
 	* @param	pCookie			[in]	User cookie that will be passed as an argument to the event handler.
-	* @param	phCallback		[out]	A handle for unregister.
+	* @param	hCallback		[out]	A handle for unregister.
 	*/
-	virtual XnStatus RegisterToStreamsChange(XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback) = 0;
+	virtual XnStatus RegisterToStreamsChange(XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback) = 0;
 
 	/**
 	* Unregisters from the event of streams change (stream created / destroyed)
@@ -135,9 +135,9 @@ public:
 	* 
 	* @param	Handler			[in]	A pointer to the function that will handle the event.
 	* @param	pCookie			[in]	User cookie that will be passed as an argument to the event handler.
-	* @param	phCallback		[out]	A handle for unregister.
+	* @param	hCallback		[out]	A handle for unregister.
 	*/
-	virtual XnStatus RegisterToNewStreamData(XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback) = 0;
+	virtual XnStatus RegisterToNewStreamData(XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback) = 0;
 
 	/**
 	* Unregisters from the event of new data from a stream.
@@ -331,9 +331,9 @@ public:
 	* @param	PropertyName	[in]	Name of the property to register to.
 	* @param	Handler			[in]	A pointer to the function that will handle the event.
 	* @param	pCookie			[in]	User cookie that will be passed as an argument to the event handler.
-	* @param	phCallback		[out]	A handle for unregister.
+	* @param	hCallback		[out]	A handle for unregister.
 	*/
-	virtual XnStatus RegisterToPropertyChange(const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback) = 0;
+	virtual XnStatus RegisterToPropertyChange(const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback) = 0;
 
 	/**
 	* Unregisters an event handler from the Property Changed event.

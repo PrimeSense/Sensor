@@ -25,8 +25,9 @@
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
-#include <XnModuleCppInterface.h>
 #include "XnSensor.h"
+#include <XnModuleCppInterface.h>
+#include <XnListT.h>
 
 //---------------------------------------------------------------------------
 // Types
@@ -44,16 +45,18 @@ public:
 private:
 	struct DeviceKey
 	{
+		DeviceKey() {}
 		DeviceKey(XnContext* pContext, const XnChar* strConnStr);
+
 		XnContext* m_pContext;
 		XnChar m_strConnStr[XN_MAX_CREATION_INFO_LENGTH]; 
 	};
 
-
-	XN_DECLARE_LIST(DeviceKey, CreatedDevices);
-	CreatedDevices m_createdDevices;
+	typedef XnListT<DeviceKey> CreatedDevices;
 
 	CreatedDevices::Iterator FindCreatedDevice(XnContext* pContext, const XnChar* strConnStr);
+
+	CreatedDevices m_createdDevices;
 };
 
 #endif // __XN_EXPORTED_SENSOR_DEVICE_H__

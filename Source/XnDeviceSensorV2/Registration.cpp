@@ -222,8 +222,6 @@ void CreateDXDYTables (XnDouble* RegXTable, XnDouble* RegYTable,
 
 #define RGB_REG_X_RES 640
 #define RGB_REG_Y_RES 512
-#define XN_DEPTH_XRES 640
-#define XN_DEPTH_YRES 480
 #define XN_CMOS_VGAOUTPUT_XRES 1280
 #define XN_SENSOR_WIN_OFFET_X 1
 #define XN_SENSOR_WIN_OFFET_Y 1
@@ -231,9 +229,9 @@ void CreateDXDYTables (XnDouble* RegXTable, XnDouble* RegYTable,
 #define S2D_PEL_CONST 10
 #define S2D_CONST_OFFSET 0.375
 
-void BuildDepthToShiftTable(XnUInt16* pDepth2Shift, XnSensorDepthStream* m_pStream)
+void XnRegistration::BuildDepthToShiftTable(XnUInt16* pDepth2Shift, XnSensorDepthStream* m_pStream)
 {
-	XnUInt32 nXScale = XN_CMOS_VGAOUTPUT_XRES / XN_DEPTH_XRES;
+	XnUInt32 nXScale = XN_CMOS_VGAOUTPUT_XRES / m_pDepthStream->GetXRes();
 	XnInt16* pRGBRegDepthToShiftTable = (XnInt16*)pDepth2Shift; 
 	XnUInt32 nIndex = 0;
 	XnDouble dDepth = 0;
@@ -248,10 +246,8 @@ void BuildDepthToShiftTable(XnUInt16* pDepth2Shift, XnSensorDepthStream* m_pStre
 	m_pStream->GetProperty(XN_STREAM_PROPERTY_ZERO_PLANE_DISTANCE, &nPlaneDsr);
 	dPlaneDsr = (XnDouble)nPlaneDsr;
 
-	XnUInt64 nDCRCDist;
 	XnDouble dDCRCDist;
-	m_pStream->GetProperty(XN_STREAM_PROPERTY_DCMOS_RCMOS_DISTANCE, &nDCRCDist);
-	dDCRCDist = (XnDouble)nDCRCDist;
+	m_pStream->GetProperty(XN_STREAM_PROPERTY_DCMOS_RCMOS_DISTANCE, &dDCRCDist);
 
 	XnDouble dPelSize = 1.0 / (dPlanePixelSize * nXScale * S2D_PEL_CONST);
 	XnDouble dPelDCC = dDCRCDist * dPelSize * S2D_PEL_CONST;
@@ -275,10 +271,6 @@ XnStatus XnRegistration::BuildRegTable1080()
 	nRetVal = XnHostProtocolAlgorithmParams(m_pDevicePrivateData, XN_HOST_PROTOCOL_ALGORITHM_REGISTRATION, &RegData, sizeof(RegData), m_pDepthStream->GetResolution(), (XnUInt16)m_pDepthStream->GetFPS());
 	XN_IS_STATUS_OK(nRetVal);
 
-	xnOSMemSet(&m_padInfo, 0, sizeof(m_padInfo));
-	nRetVal = XnHostProtocolAlgorithmParams(m_pDevicePrivateData, XN_HOST_PROTOCOL_ALGORITHM_PADDING, &m_padInfo, sizeof(m_padInfo), m_pDepthStream->GetResolution(), (XnUInt16)m_pDepthStream->GetFPS());
-	XN_IS_STATUS_OK(nRetVal);
-
 	XN_VALIDATE_ALIGNED_CALLOC(m_pDepthToShiftTable, XnUInt16, m_pDepthStream->GetXRes()*m_pDepthStream->GetYRes(), XN_DEFAULT_MEM_ALIGN);
 	m_bD2SAlloc = TRUE;
 
@@ -287,8 +279,8 @@ XnStatus XnRegistration::BuildRegTable1080()
 	XnDouble* RegXTable = XN_NEW_ARR(XnDouble, RGB_REG_X_RES*RGB_REG_Y_RES);
 	XnDouble* RegYTable = XN_NEW_ARR(XnDouble, RGB_REG_X_RES*RGB_REG_Y_RES);
 
-	XnUInt16 nDepthXRes = XN_DEPTH_XRES;
-	XnUInt16 nDepthYRes = XN_DEPTH_YRES;
+	XnUInt16 nDepthXRes = m_pDepthStream->GetXRes();
+	XnUInt16 nDepthYRes = m_pDepthStream->GetYRes();
 	XnDouble* pRegXTable = (XnDouble*)RegXTable;
 	XnDouble* pRegYTable = (XnDouble*)RegYTable;
 	XnInt16* pRegTable = (XnInt16*)m_pRegistrationTable;
@@ -345,8 +337,8 @@ XnStatus XnRegistration::BuildRegTable1080()
 
 			if (nNewY > nDepthYRes-2)
 			{
+				nNewX = ((nDepthXRes*4) * RGB_REG_X_VAL_SCALE); // set illegal value on purpose
 				nNewY = nDepthYRes;
-				goto FinishLoop;
 			}
 
 			*pRegTable = (XnInt16)nNewX;
@@ -358,10 +350,6 @@ XnStatus XnRegistration::BuildRegTable1080()
 		}
 	}
 
-FinishLoop:
-	XN_DELETE_ARR(RegXTable);
-	XN_DELETE_ARR(RegYTable);
-	
 	return (XN_STATUS_OK);
 }
 
@@ -501,13 +489,10 @@ void XnRegistration::Apply1080(XnDepthPixel* pInput, XnDepthPixel* pOutput)
 	XnUInt32 nNewX = 0;
 	XnUInt32 nNewY = 0;
 	XnUInt32 nArrPos = 0;
-	XnUInt32 nDepthXRes = XN_DEPTH_XRES;
-	XnUInt32 nDepthYRes = XN_DEPTH_YRES;
+	XnUInt32 nDepthXRes = m_pDepthStream->GetXRes();
+	XnUInt32 nDepthYRes = m_pDepthStream->GetYRes();
 
 	memset(pOutput, XN_DEVICE_SENSOR_NO_DEPTH_VALUE, nDepthXRes*nDepthYRes*sizeof(XnDepthPixel));
-
-	// entire map should be shifted by X lines
-	XnUInt32 nConstOffset = nDepthXRes*m_padInfo.nStartLines;
 
 	XnBool bMirror = m_pDepthStream->IsMirrored();
 
@@ -526,7 +511,6 @@ void XnRegistration::Apply1080(XnDepthPixel* pInput, XnDepthPixel* pOutput)
 				if (nNewX < nDepthXRes)
 				{
 					nArrPos = bMirror ? (nNewY+1)*nDepthXRes - nNewX : (nNewY*nDepthXRes) + nNewX;
-					nArrPos -= nConstOffset;
 					
 					nOutValue = pOutput[nArrPos];
 

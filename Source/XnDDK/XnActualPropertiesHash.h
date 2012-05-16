@@ -55,10 +55,10 @@ public:
 	inline XnStatus Find(const XnChar* strName, ConstIterator& iter) const { return m_Hash.Find(strName, iter); }
 	inline XnStatus Get(const XnChar* strName, XnProperty*& pProp) const { return m_Hash.Get(strName, pProp); }
 
-	inline Iterator begin() { return m_Hash.begin(); }
-	inline ConstIterator begin() const { return m_Hash.begin(); }
-	inline Iterator end() { return m_Hash.end(); }
-	inline ConstIterator end() const { return m_Hash.end(); }
+	inline Iterator Begin() { return m_Hash.Begin(); }
+	inline ConstIterator Begin() const { return m_Hash.Begin(); }
+	inline Iterator End() { return m_Hash.End(); }
+	inline ConstIterator End() const { return m_Hash.End(); }
 
 	XnStatus CopyFrom(const XnActualPropertiesHash& other);
 

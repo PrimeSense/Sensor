@@ -29,8 +29,8 @@
 // Code
 //---------------------------------------------------------------------------
 
-XnUncompressedYUVImageProcessor::XnUncompressedYUVImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper) :
-	XnImageProcessor(pStream, pHelper)
+XnUncompressedYUVImageProcessor::XnUncompressedYUVImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager) :
+	XnImageProcessor(pStream, pHelper, pBufferManager)
 {
 }
 

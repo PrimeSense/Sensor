@@ -45,6 +45,8 @@ public:
 	void ProcessData(const XnSensorProtocolResponseHeader* pHeader, const XnUChar* pData, XnUInt32 nDataOffset, XnUInt32 nDataSize);
 
 private:
+	XN_DISABLE_COPY_AND_ASSIGN(XnDataProcessorHolder);
+
 	XN_CRITICAL_SECTION_HANDLE m_hLock;
 	XnDataProcessor* m_pProcessor;
 };

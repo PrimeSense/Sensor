@@ -28,7 +28,6 @@
 #include <XnDDK/XnDeviceModule.h>
 #include <XnDDK/XnActualIntProperty.h>
 #include <XnDDK/XnActualStringProperty.h>
-#include <XnEvent.h>
 #include <XnOS.h>
 
 //---------------------------------------------------------------------------
@@ -95,6 +94,8 @@ protected:
 	inline XnActualIntProperty& IsMirroredProperty() { return m_IsMirrored; }
 
 	inline XN_CRITICAL_SECTION_HANDLE* GetLock() { return &m_hCriticalSection; }
+
+	inline void ResetNewDataAvailableFlag() { m_bNewDataAvailable = FALSE; }
 
 protected:
 	//---------------------------------------------------------------------------

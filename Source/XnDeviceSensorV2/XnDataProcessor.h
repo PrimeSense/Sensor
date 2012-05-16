@@ -60,6 +60,8 @@ public:
 	*/
 	void ProcessData(const XnSensorProtocolResponseHeader* pHeader, const XnUChar* pData, XnUInt32 nDataOffset, XnUInt32 nDataSize);
 
+	inline XnBool ShouldUseHostTimestamps() { return m_bUseHostTimestamps; }
+
 //---------------------------------------------------------------------------
 // Virtual Functions
 //---------------------------------------------------------------------------
@@ -76,7 +78,9 @@ protected:
 	*
 	* @param	nDeviceTimeStamp	[in]	The device TS to translate.
 	*/ 
-	virtual XnUInt64 GetTimeStamp(XnUInt32 nDeviceTimeStamp);
+	virtual XnUInt64 CreateTimestampFromDevice(XnUInt32 nDeviceTimeStamp);
+
+	XnUInt64 GetHostTimestamp();
 
 //---------------------------------------------------------------------------
 // Class Members
@@ -93,6 +97,7 @@ protected:
 private:
 	/* Data used for calculating timestamps. */
 	XnTimeStampData m_TimeStampData;
+	XnBool m_bUseHostTimestamps;
 };
 
 #endif //__XN_DATA_PROCESSOR_H__

@@ -29,8 +29,8 @@
 // Code
 //---------------------------------------------------------------------------
 
-XnJpegToRGBImageProcessor::XnJpegToRGBImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper) :
-	XnImageProcessor(pStream, pHelper)
+XnJpegToRGBImageProcessor::XnJpegToRGBImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager) :
+	XnImageProcessor(pStream, pHelper, pBufferManager)
 {
 	SetAllowDoubleSOFPackets(TRUE);
 }

@@ -35,9 +35,14 @@
 #define XN_FPGA_VER_FPDB_26	0x21
 #define XN_FPGA_VER_FPDB_25	0x0
 #define XN_FPGA_VER_CDB		0x1
+#define XN_FPGA_VER_RD3		0x2
+#define XN_FPGA_VER_RD5		0x3
+#define XN_FPGA_VER_RD1081	0x4
+#define XN_FPGA_VER_RD1082	0x5
 
 #define XN_CHIP_VER_PS1000	0x00101010
 #define XN_CHIP_VER_PS1080	0x00202020
+#define XN_CHIP_VER_PS1080A6	0x00212020
 
 enum EPsProtocolOpCodes
 {
@@ -48,37 +53,21 @@ enum EPsProtocolOpCodes
 	OPCODE_GET_FIXED_PARAMS = 4,
 	OPCODE_GET_MODE = 5,
 	OPCODE_SET_MODE = 6,
+	OPCODE_I2C_WRITE = 10,
+	OPCODE_I2C_READ = 11,
+	OPCODE_READ_AHB = 20,
+	OPCODE_WRITE_AHB = 21,
 	OPCODE_ALGORITM_PARAMS = 22,
 	OPCODE_SET_CMOS_BLANKING = 34,
 	OPCODE_GET_CMOS_BLANKING = 35,
 	OPCODE_GET_CMOS_PRESETS = 36,
 	OPCODE_GET_SERIAL_NUMBER = 37,
 	OPCODE_GET_FAST_CONVERGENCE_TEC = 38,
+	OPCODE_GET_PLATFORM_STRING = 39,
+	OPCODE_GET_USB_CORE_TYPE = 40,
+	OPCODE_KILL = 999,
 };
 
-enum EPsProtocolOpCodes_V400
-{
-	OPCODE_V400_GET_VERSION = 0,
-	OPCODE_V400_KEEP_ALIVE = 1,
-	OPCODE_V400_GET_PARAM = 2,
-	OPCODE_V400_SET_PARAM = 3,
-	OPCODE_V400_GET_FIXED_PARAMS = 4,
-	OPCODE_V400_GET_MODE = 5,
-	OPCODE_V400_SET_MODE = 6,
-	OPCODE_V400_ALGORITM_PARAMS = 22,
-};
-
-enum EPsProtocolOpCodes_V300
-{
-	OPCODE_V300_GET_VERSION = 0,
-	OPCODE_V300_KEEP_ALIVE = 1,
-	OPCODE_V300_GET_PARAM = 2,
-	OPCODE_V300_SET_PARAM = 3,
-	OPCODE_V300_GET_FIXED_PARAMS = 4,
-	OPCODE_V300_GET_MODE = 5,
-	OPCODE_V300_SET_MODE = 6,
-	OPCODE_V300_ALGORITM_PARAMS = 22,
-};
 
 enum XnHostProtocolOpcodes_V110
 {
@@ -89,6 +78,10 @@ enum XnHostProtocolOpcodes_V110
 	OPCODE_V110_GET_FIXED_PARAMS = 4,
 	OPCODE_V110_GET_MODE = 5,
 	OPCODE_V110_SET_MODE = 6,
+	OPCODE_V110_GET_CMOS_REGISTER = 8,
+	OPCODE_V110_SET_CMOS_REGISTER = 9,
+	OPCODE_V110_READ_AHB = 20,
+	OPCODE_V110_WRITE_AHB = 21,
 	OPCODE_V110_ALGORITHM_PARAMS = 22,
 };
 
@@ -100,6 +93,10 @@ enum EPsProtocolOpCodes_V017
 	OPCODE_V017_SET_PARAM = 3,
 	OPCODE_V017_GET_FIXED_PARAMS = 4,
 	OPCODE_V017_RESET = 5,
+	OPCODE_V017_GET_CMOS_REGISTER = 7,
+	OPCODE_V017_SET_CMOS_REGISTER = 8,
+	OPCODE_V017_READ_AHB = 19,
+	OPCODE_V017_WRITE_AHB = 20,
 	OPCODE_V017_ALGORITM_PARAMS = 21,
 };
 
@@ -157,6 +154,12 @@ typedef enum
 	A2D_NUM_OF_SAMPLE_RATES
 } EA2d_SampleRate;
 
+typedef enum XnHostProtocolUsbCore
+{
+	XN_USB_CORE_JANGO = 0,
+	XN_USB_CORE_GADGETFS = 1,
+} XnHostProtocolUsbCore;
+
 #pragma pack(push,1)
 typedef struct
 {
@@ -188,8 +191,10 @@ typedef struct
 
 // All implemented protocol commands
 // Init
+XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnUInt8 nMajor, XnUInt8 nMinor, XnUInt16 nBuild, XnHostProtocolUsbCore usb);
+
 XnStatus XnHostProtocolKeepAlive		(XnDevicePrivateData* pDevicePrivateData);
-XnStatus XnHostProtocolGetVersion		(XnDevicePrivateData* pDevicePrivateData, XnVersions& Version);
+XnStatus XnHostProtocolGetVersion		(const XnDevicePrivateData* pDevicePrivateData, XnVersions& Version);
 XnStatus XnHostProtocolAlgorithmParams	(XnDevicePrivateData* pDevicePrivateData,
 										 XnHostProtocolAlgorithmType eAlgorithmType,
 										 void* pAlgorithmInformation, XnUInt16 nAlgInfoSize, XnResolutions nResolution, XnUInt16 nFPS);
@@ -219,6 +224,15 @@ XnStatus XnHostProtocolGetCmosBlanking	(XnDevicePrivateData* pDevicePrivateData,
 XnStatus XnHostProtocolGetCmosPresets	(XnDevicePrivateData* pDevicePrivateData, XnCMOSType nCMOSID, XnCmosPreset* aPresets, XnUInt32& nCount);
 
 XnStatus XnHostProtocolGetSerialNumber	(XnDevicePrivateData* pDevicePrivateData, XnChar* cpSerialNumber);
+XnStatus XnHostProtocolGetPlatformString(XnDevicePrivateData* pDevicePrivateData, XnChar* cpPlatformString);
+
+XnStatus XnHostProtocolGetCMOSRegister(XnDevicePrivateData* pDevicePrivateData, XnCMOSType nCMOS, XnUInt16 nAddress, XnUInt16& nValue);
+XnStatus XnHostProtocolSetCMOSRegister	(XnDevicePrivateData* pDevicePrivateData, XnCMOSType nCMOS, XnUInt16 nAddress, XnUInt16 nValue);
+XnStatus XnHostProtocolGetCMOSRegisterI2C(XnDevicePrivateData* pDevicePrivateData, XnCMOSType nCMOS, XnUInt16 nAddress, XnUInt16& nValue);
+XnStatus XnHostProtocolSetCMOSRegisterI2C (XnDevicePrivateData* pDevicePrivateData, XnCMOSType nCMOS, XnUInt16 nAddress, XnUInt16 nValue);
+XnStatus XnHostProtocolReadAHB			(XnDevicePrivateData* pDevicePrivateData, XnUInt32 nAddress, XnUInt32 &nValue);
+XnStatus XnHostProtocolWriteAHB			(XnDevicePrivateData* pDevicePrivateData, XnUInt32 nAddress, XnUInt32 nValue, XnUInt32 nMask);
+XnStatus XnHostProtocolGetUsbCoreType	(XnDevicePrivateData* pDevicePrivateData, XnHostProtocolUsbCore& nValue);
 
 
 #endif

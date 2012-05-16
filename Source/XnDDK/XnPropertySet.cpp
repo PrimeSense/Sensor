@@ -23,8 +23,6 @@
 // Includes
 //---------------------------------------------------------------------------
 #include "XnPropertySetInternal.h"
-#include <XnList.h>
-#include <XnStringsHash.h>
 #include "XnActualIntProperty.h"
 #include "XnActualRealProperty.h"
 #include "XnActualStringProperty.h"
@@ -33,13 +31,8 @@
 //---------------------------------------------------------------------------
 // Types
 //---------------------------------------------------------------------------
-
 struct XnPropertySetModuleEnumerator
 {
-	XnPropertySetModuleEnumerator(XnPropertySetData* pModules) : 
-		bFirst(TRUE), pModules(pModules), it(pModules->end()) 
-	{}
-
 	XnBool bFirst;
 	XnPropertySetData* pModules;
 	XnPropertySetData::ConstIterator it;
@@ -47,17 +40,11 @@ struct XnPropertySetModuleEnumerator
 
 struct XnPropertySetEnumerator
 {
-	XnPropertySetEnumerator(XnPropertySetData* pModules, const XnChar* strModule) :
-		bFirst(TRUE), pModules(pModules), itModule(pModules->end()), pItProp(NULL)
-	{
-		strncpy(this->strModule, strModule, XN_DEVICE_MAX_STRING_LENGTH);
-	}
-
 	XnBool bFirst;
 	XnPropertySetData* pModules;
 	XnPropertySetData::ConstIterator itModule;
 	XnChar strModule[XN_DEVICE_MAX_STRING_LENGTH];
-	XnActualPropertiesHash::ConstIterator* pItProp;
+	XnActualPropertiesHash::ConstIterator itProp;
 };
 
 //---------------------------------------------------------------------------
@@ -79,7 +66,7 @@ XN_DDK_API XnStatus XnPropertySetCreate(XnPropertySet** ppSet)
 	}
 
 	*ppSet = pSet;
-	
+
 	return (XN_STATUS_OK);
 }
 
@@ -99,19 +86,19 @@ XN_DDK_API XnStatus XnPropertySetDestroy(XnPropertySet** ppSet)
 	xnOSFree(pSet);
 
 	*ppSet = NULL;
-	
+
 	return (XN_STATUS_OK);
 }
 
 XN_DDK_API XnStatus XnPropertySetClear(XnPropertySet* pSet)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-	
+
 	XN_VALIDATE_INPUT_PTR(pSet);
 
 	while (!pSet->pData->IsEmpty())
 	{
-		nRetVal = XnPropertySetRemoveModule(pSet, pSet->pData->begin().Key());
+		nRetVal = XnPropertySetRemoveModule(pSet, pSet->pData->Begin()->Key());
 		XN_IS_STATUS_OK(nRetVal);
 	}
 
@@ -121,7 +108,7 @@ XN_DDK_API XnStatus XnPropertySetClear(XnPropertySet* pSet)
 XN_DDK_API XnStatus XnPropertySetAddModule(XnPropertySet* pSet, const XnChar* strModuleName)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-	
+
 	XN_VALIDATE_INPUT_PTR(pSet);
 	XN_VALIDATE_INPUT_PTR(strModuleName);
 
@@ -167,13 +154,13 @@ XN_DDK_API XnStatus XnPropertySetRemoveModule(XnPropertySet* pSet, const XnChar*
 XN_DDK_API XnStatus XnPropertySetAddIntProperty(XnPropertySet* pSet, const XnChar* strModuleName, const XnChar* strProperty, XnUInt64 nValue)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-	
+
 	XN_VALIDATE_INPUT_PTR(pSet);
 	XN_VALIDATE_INPUT_PTR(strModuleName);
 	XN_VALIDATE_INPUT_PTR(strProperty);
 
 	// get module
-	XnActualPropertiesHash* pModule;
+	XnActualPropertiesHash* pModule = NULL;
 	nRetVal = pSet->pData->Get(strModuleName, pModule);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -193,7 +180,7 @@ XN_DDK_API XnStatus XnPropertySetAddRealProperty(XnPropertySet* pSet, const XnCh
 	XN_VALIDATE_INPUT_PTR(strProperty);
 
 	// get module
-	XnActualPropertiesHash* pModule;
+	XnActualPropertiesHash* pModule = NULL;
 	nRetVal = pSet->pData->Get(strModuleName, pModule);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -214,7 +201,7 @@ XN_DDK_API XnStatus XnPropertySetAddStringProperty(XnPropertySet* pSet, const Xn
 	XN_VALIDATE_INPUT_PTR(strValue);
 
 	// get module
-	XnActualPropertiesHash* pModule;
+	XnActualPropertiesHash* pModule = NULL;
 	nRetVal = pSet->pData->Get(strModuleName, pModule);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -235,7 +222,7 @@ XN_DDK_API XnStatus XnPropertySetAddGeneralProperty(XnPropertySet* pSet, const X
 	XN_VALIDATE_INPUT_PTR(pgbValue);
 
 	// get module
-	XnActualPropertiesHash* pModule;
+	XnActualPropertiesHash* pModule = NULL;
 	nRetVal = pSet->pData->Get(strModuleName, pModule);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -249,13 +236,13 @@ XN_DDK_API XnStatus XnPropertySetAddGeneralProperty(XnPropertySet* pSet, const X
 XN_DDK_API XnStatus XnPropertySetRemoveProperty(XnPropertySet* pSet, const XnChar* strModuleName, const XnChar* strProperty)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-	
+
 	XN_VALIDATE_INPUT_PTR(pSet);
 	XN_VALIDATE_INPUT_PTR(strModuleName);
 	XN_VALIDATE_INPUT_PTR(strProperty);
 
 	// get module
-	XnActualPropertiesHash* pModule;
+	XnActualPropertiesHash* pModule = NULL;
 	nRetVal = pSet->pData->Get(strModuleName, pModule);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -272,7 +259,11 @@ XN_DDK_API XnStatus XnPropertySetGetModuleEnumerator(const XnPropertySet* pSet, 
 	XN_VALIDATE_OUTPUT_PTR(ppEnumerator);
 
 	XnPropertySetModuleEnumerator* pEnumer;
-	XN_VALIDATE_NEW(pEnumer, XnPropertySetModuleEnumerator, pSet->pData);
+	XN_VALIDATE_NEW(pEnumer, XnPropertySetModuleEnumerator);
+
+	pEnumer->bFirst = TRUE;
+	pEnumer->it = pSet->pData->End();
+	pEnumer->pModules = pSet->pData;
 
 	*ppEnumerator = pEnumer;
 
@@ -283,7 +274,7 @@ XN_DDK_API XnStatus XnPropertySetModuleEnumeratorFree(XnPropertySetModuleEnumera
 {
 	XN_VALIDATE_INPUT_PTR(ppEnumer);
 	XN_VALIDATE_INPUT_PTR(*ppEnumer);
-	
+
 	XN_DELETE(*ppEnumer);
 	*ppEnumer = NULL;
 
@@ -297,10 +288,10 @@ XN_DDK_API XnStatus XnPropertySetModuleEnumeratorMoveNext(XnPropertySetModuleEnu
 
 	if (pEnumerator->bFirst)
 	{
-		pEnumerator->it = pEnumerator->pModules->begin();
+		pEnumerator->it = pEnumerator->pModules->Begin();
 		pEnumerator->bFirst = FALSE;
 	}
-	else if (pEnumerator->it == pEnumerator->pModules->end())
+	else if (pEnumerator->it == pEnumerator->pModules->End())
 	{
 		return XN_STATUS_ILLEGAL_POSITION;
 	}
@@ -309,8 +300,8 @@ XN_DDK_API XnStatus XnPropertySetModuleEnumeratorMoveNext(XnPropertySetModuleEnu
 		pEnumerator->it++;
 	}
 
-	*pbEnd = (pEnumerator->it == pEnumerator->pModules->end());
-	
+	*pbEnd = (pEnumerator->it == pEnumerator->pModules->End());
+
 	return (XN_STATUS_OK);
 }
 
@@ -318,13 +309,13 @@ XN_DDK_API XnStatus XnPropertySetModuleEnumeratorGetCurrent(const XnPropertySetM
 {
 	XN_VALIDATE_INPUT_PTR(pEnumer);
 	XN_VALIDATE_OUTPUT_PTR(pstrModuleName);
-	
-	if (pEnumer->it == pEnumer->pModules->end())
+
+	if (pEnumer->it == pEnumer->pModules->End())
 	{
 		return XN_STATUS_ILLEGAL_POSITION;
 	}
 
-	*pstrModuleName = pEnumer->it.Key();
+	*pstrModuleName = pEnumer->it->Key();
 
 	return (XN_STATUS_OK);
 }
@@ -332,20 +323,31 @@ XN_DDK_API XnStatus XnPropertySetModuleEnumeratorGetCurrent(const XnPropertySetM
 XN_DDK_API XnStatus XnPropertySetGetEnumerator(const XnPropertySet* pSet, XnPropertySetEnumerator** ppEnumerator, const XnChar* strModule /* = NULL */)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-	
+
 	XN_VALIDATE_INPUT_PTR(pSet);
 	XN_VALIDATE_OUTPUT_PTR(ppEnumerator);
 
 	if (strModule != NULL)
 	{
 		// make sure module exists
-		XnPropertySetData::ConstIterator it = pSet->pData->end();
+		XnPropertySetData::ConstIterator it = pSet->pData->End();
 		nRetVal = pSet->pData->Find(strModule, it);
 		XN_IS_STATUS_OK(nRetVal);
 	}
 
 	XnPropertySetEnumerator* pEnumer;
-	XN_VALIDATE_NEW(pEnumer, XnPropertySetEnumerator, pSet->pData, strModule == NULL ? "" : strModule);
+	XN_VALIDATE_NEW(pEnumer, XnPropertySetEnumerator)
+
+		pEnumer->bFirst = TRUE;
+	pEnumer->pModules = pSet->pData;
+	if (strModule != NULL)
+	{
+		strncpy(pEnumer->strModule, strModule, XN_DEVICE_MAX_STRING_LENGTH);
+	}
+	else
+	{
+		pEnumer->strModule[0] = '\0';
+	}
 
 	*ppEnumerator = pEnumer;
 
@@ -362,23 +364,25 @@ XN_DDK_API XnStatus XnPropertySetFindProperty(const XnPropertySet* pSet, const X
 	XN_VALIDATE_OUTPUT_PTR(ppEnumerator);
 
 	// find module
-	XnPropertySetData::Iterator itModule = pSet->pData->end();
+	XnPropertySetData::Iterator itModule = pSet->pData->End();
 	nRetVal = pSet->pData->Find(strModule, itModule);
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnActualPropertiesHash* pModule = itModule.Value();
+	XnActualPropertiesHash* pModule = itModule->Value();
 
 	// find property
-	XnActualPropertiesHash::Iterator itProp = pModule->end();
+	XnActualPropertiesHash::Iterator itProp = pModule->End();
 	nRetVal = pModule->Find(strProp, itProp);
 	XN_IS_STATUS_OK(nRetVal);
 
 	// create enumerator
 	XnPropertySetEnumerator* pEnumer;
-	XN_VALIDATE_NEW(pEnumer, XnPropertySetEnumerator, pSet->pData, "");
+	XN_VALIDATE_NEW(pEnumer, XnPropertySetEnumerator);
 
 	pEnumer->itModule = itModule;
-	XN_VALIDATE_NEW(pEnumer->pItProp, XnActualPropertiesHash::ConstIterator, itProp);
+	pEnumer->itProp = itProp;
+	pEnumer->pModules = pSet->pData;
+	pEnumer->strModule[0] = '\0';
 	pEnumer->bFirst = FALSE;
 
 	*ppEnumerator = pEnumer;
@@ -391,17 +395,16 @@ XN_DDK_API XnStatus XnPropertySetEnumeratorFree(XnPropertySetEnumerator** ppEnum
 	XN_VALIDATE_INPUT_PTR(ppEnumerator);
 	XN_VALIDATE_INPUT_PTR(*ppEnumerator);
 
-	XN_DELETE((*ppEnumerator)->pItProp);
 	XN_DELETE(*ppEnumerator);
 	*ppEnumerator = NULL;
-	
+
 	return (XN_STATUS_OK);
 }
 
 XN_DDK_API XnStatus XnPropertySetEnumeratorMoveNext(XnPropertySetEnumerator* pEnumerator, XnBool* pbEnd)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-	
+
 	XN_VALIDATE_INPUT_PTR(pEnumerator);
 	XN_VALIDATE_OUTPUT_PTR(pbEnd);
 
@@ -417,23 +420,23 @@ XN_DDK_API XnStatus XnPropertySetEnumeratorMoveNext(XnPropertySetEnumerator* pEn
 			nRetVal = pEnumerator->pModules->Find(pEnumerator->strModule, pEnumerator->itModule);
 			if (nRetVal == XN_STATUS_NO_MATCH)
 			{
-				pEnumerator->itModule = pEnumerator->pModules->end();
+				pEnumerator->itModule = pEnumerator->pModules->End();
 			}
 			XN_IS_STATUS_OK(nRetVal);
 
-			XN_VALIDATE_NEW(pEnumerator->pItProp, XnActualPropertiesHash::ConstIterator, pEnumerator->itModule.Value()->begin());
+			pEnumerator->itProp = pEnumerator->itModule->Value()->Begin();
 		}
-		else if (*pEnumerator->pItProp == pEnumerator->itModule.Value()->end())
+		else if (pEnumerator->itProp == pEnumerator->itModule->Value()->End())
 		{
 			return XN_STATUS_ILLEGAL_POSITION;
 		}
 		else
 		{
 			// advance prop iterator
-			++(*pEnumerator->pItProp);
+			++pEnumerator->itProp;
 		}
 
-		*pbEnd = (*pEnumerator->pItProp == pEnumerator->itModule.Value()->end());
+		*pbEnd = (pEnumerator->itProp == pEnumerator->itModule->Value()->End());
 	}
 	else // all modules
 	{
@@ -442,16 +445,16 @@ XN_DDK_API XnStatus XnPropertySetEnumeratorMoveNext(XnPropertySetEnumerator* pEn
 			pEnumerator->bFirst = FALSE;
 
 			// search for the first modules that has properties
-			pEnumerator->itModule = pEnumerator->pModules->begin();
-			while (pEnumerator->itModule != pEnumerator->pModules->end() && pEnumerator->itModule.Value()->IsEmpty())
+			pEnumerator->itModule = pEnumerator->pModules->Begin();
+			while (pEnumerator->itModule != pEnumerator->pModules->End() && pEnumerator->itModule->Value()->IsEmpty())
 			{
 				pEnumerator->itModule++;
 			}
 
 			// if we found one, take it's first property
-			if (pEnumerator->itModule != pEnumerator->pModules->end())
+			if (pEnumerator->itModule != pEnumerator->pModules->End())
 			{
-				XN_VALIDATE_NEW(pEnumerator->pItProp, XnActualPropertiesHash::ConstIterator, pEnumerator->itModule.Value()->begin());
+				pEnumerator->itProp = pEnumerator->itModule->Value()->Begin();
 				*pbEnd = FALSE;
 			}
 			else
@@ -459,32 +462,29 @@ XN_DDK_API XnStatus XnPropertySetEnumeratorMoveNext(XnPropertySetEnumerator* pEn
 				*pbEnd = TRUE;
 			}
 		}
-		else if (*pEnumerator->pItProp == pEnumerator->pModules->end())
+		else if (pEnumerator->itModule == pEnumerator->pModules->End())
 		{
 			return XN_STATUS_ILLEGAL_POSITION;
 		}
 		else
 		{
 			// move to next one
-			++(*pEnumerator->pItProp);
+			++pEnumerator->itProp;
 
 			// check if we reached end of module
-			if (*pEnumerator->pItProp == pEnumerator->itModule.Value()->end())
+			if (pEnumerator->itProp == pEnumerator->itModule->Value()->End())
 			{
-				XN_DELETE(pEnumerator->pItProp);
-				pEnumerator->pItProp = NULL;
-
 				// move to next module with properties
 				do
 				{
 					pEnumerator->itModule++;
 				}
-				while (pEnumerator->itModule != pEnumerator->pModules->end() && pEnumerator->itModule.Value()->IsEmpty());
+				while (pEnumerator->itModule != pEnumerator->pModules->End() && pEnumerator->itModule->Value()->IsEmpty());
 
 				// if we found one, take it's first property
-				if (pEnumerator->itModule != pEnumerator->pModules->end())
+				if (pEnumerator->itModule != pEnumerator->pModules->End())
 				{
-					XN_VALIDATE_NEW(pEnumerator->pItProp, XnActualPropertiesHash::ConstIterator, pEnumerator->itModule.Value()->begin());
+					pEnumerator->itProp = pEnumerator->itModule->Value()->Begin();
 					*pbEnd = FALSE;
 				}
 				else
@@ -508,17 +508,12 @@ XN_DDK_API XnStatus XnPropertySetEnumeratorGetCurrentPropertyInfo(const XnProper
 	XN_VALIDATE_OUTPUT_PTR(pnType);
 	XN_VALIDATE_OUTPUT_PTR(pstrModule);
 	XN_VALIDATE_OUTPUT_PTR(pstrProp);
-	
-	if (pEnumerator->pItProp == NULL)
-	{
-		return XN_STATUS_ILLEGAL_POSITION;
-	}
-	
-	XnProperty* pProp = pEnumerator->pItProp->Value();
+
+	XnProperty* pProp = pEnumerator->itProp->Value();
 	*pnType = pProp->GetType();
 	*pstrModule = pProp->GetModule();
 	*pstrProp = pProp->GetName();
-	
+
 	return (XN_STATUS_OK);
 }
 
@@ -527,12 +522,7 @@ XN_DDK_API XnStatus XnPropertySetEnumeratorGetIntValue(const XnPropertySetEnumer
 	XN_VALIDATE_INPUT_PTR(pEnumerator);
 	XN_VALIDATE_OUTPUT_PTR(pnValue);
 
-	if (pEnumerator->pItProp == NULL)
-	{
-		return XN_STATUS_ILLEGAL_POSITION;
-	}
-
-	XnProperty* pPropBase = pEnumerator->pItProp->Value();
+	XnProperty* pPropBase = pEnumerator->itProp->Value();
 	if (pPropBase->GetType() != XN_PROPERTY_TYPE_INTEGER)
 	{
 		return XN_STATUS_DEVICE_PROPERTY_BAD_TYPE;
@@ -549,12 +539,7 @@ XN_DDK_API XnStatus XnPropertySetEnumeratorGetRealValue(const XnPropertySetEnume
 	XN_VALIDATE_INPUT_PTR(pEnumerator);
 	XN_VALIDATE_OUTPUT_PTR(pdValue);
 
-	if (pEnumerator->pItProp == NULL)
-	{
-		return XN_STATUS_ILLEGAL_POSITION;
-	}
-
-	XnProperty* pPropBase = pEnumerator->pItProp->Value();
+	XnProperty* pPropBase = pEnumerator->itProp->Value();
 	if (pPropBase->GetType() != XN_PROPERTY_TYPE_REAL)
 	{
 		return XN_STATUS_DEVICE_PROPERTY_BAD_TYPE;
@@ -571,12 +556,7 @@ XN_DDK_API XnStatus XnPropertySetEnumeratorGetStringValue(const XnPropertySetEnu
 	XN_VALIDATE_INPUT_PTR(pEnumerator);
 	XN_VALIDATE_OUTPUT_PTR(pstrValue);
 
-	if (pEnumerator->pItProp == NULL)
-	{
-		return XN_STATUS_ILLEGAL_POSITION;
-	}
-
-	XnProperty* pPropBase = pEnumerator->pItProp->Value();
+	XnProperty* pPropBase = pEnumerator->itProp->Value();
 	if (pPropBase->GetType() != XN_PROPERTY_TYPE_STRING)
 	{
 		return XN_STATUS_DEVICE_PROPERTY_BAD_TYPE;
@@ -593,12 +573,7 @@ XN_DDK_API XnStatus XnPropertySetEnumeratorGetGeneralValue(const XnPropertySetEn
 	XN_VALIDATE_INPUT_PTR(pEnumerator);
 	XN_VALIDATE_OUTPUT_PTR(pgbValue);
 
-	if (pEnumerator->pItProp == NULL)
-	{
-		return XN_STATUS_ILLEGAL_POSITION;
-	}
-
-	XnProperty* pPropBase = pEnumerator->pItProp->Value();
+	XnProperty* pPropBase = pEnumerator->itProp->Value();
 	if (pPropBase->GetType() != XN_PROPERTY_TYPE_GENERAL)
 	{
 		return XN_STATUS_DEVICE_PROPERTY_BAD_TYPE;
@@ -613,27 +588,35 @@ XN_DDK_API XnStatus XnPropertySetEnumeratorGetGeneralValue(const XnPropertySetEn
 XN_DDK_API XnStatus XnPropertySetDataAttachModule(XnPropertySetData* pSetData, const XnChar* strModuleName, XnActualPropertiesHash* pModule)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-	
+
 	XN_VALIDATE_INPUT_PTR(pSetData);
 	XN_VALIDATE_INPUT_PTR(strModuleName);
 	XN_VALIDATE_INPUT_PTR(pModule);
 
 	nRetVal = pSetData->Set(strModuleName, pModule);
 	XN_IS_STATUS_OK(nRetVal);
-	
+
 	return (XN_STATUS_OK);
 }
 
 XN_DDK_API XnStatus XnPropertySetDataDetachModule(XnPropertySetData* pSetData, const XnChar* strModuleName, XnActualPropertiesHash** ppModule)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-	
+
 	XN_VALIDATE_INPUT_PTR(pSetData);
 	XN_VALIDATE_INPUT_PTR(strModuleName);
 	XN_VALIDATE_OUTPUT_PTR(ppModule);
-	
+
 	// remove it
-	nRetVal = pSetData->Remove(strModuleName, *ppModule);
+	XnPropertySetDataInternal::Iterator it = pSetData->Find(strModuleName);
+	if (it == pSetData->End())
+	{
+		return XN_STATUS_NO_MATCH;
+	}
+
+	*ppModule = it->Value();
+
+	nRetVal = pSetData->Remove(strModuleName);
 	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);
@@ -642,17 +625,17 @@ XN_DDK_API XnStatus XnPropertySetDataDetachModule(XnPropertySetData* pSetData, c
 XN_DDK_API XnStatus XnPropertySetCloneModule(const XnPropertySet* pSource, XnPropertySet* pDest, const XnChar* strModule, const XnChar* strNewName)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-	
-	XnActualPropertiesHash* pModuleProps;
+
+	XnActualPropertiesHash* pModuleProps = NULL;
 	nRetVal = pSource->pData->Get(strModule, pModuleProps);
 	XN_IS_STATUS_OK(nRetVal);
 
 	nRetVal = XnPropertySetAddModule(pDest, strNewName);
 	XN_IS_STATUS_OK(nRetVal);
 
-	for (XnActualPropertiesHash::ConstIterator it = pModuleProps->begin(); it != pModuleProps->end(); ++it)
+	for (XnActualPropertiesHash::ConstIterator it = pModuleProps->Begin(); it != pModuleProps->End(); ++it)
 	{
-		XnProperty* pProp = it.Value();
+		XnProperty* pProp = it->Value();
 		switch (pProp->GetType())
 		{
 		case XN_PROPERTY_TYPE_INTEGER:
@@ -687,6 +670,6 @@ XN_DDK_API XnStatus XnPropertySetCloneModule(const XnPropertySet* pSource, XnPro
 			XN_LOG_WARNING_RETURN(XN_STATUS_ERROR, XN_MASK_DDK, "Unknown property type: %d", pProp->GetType());
 		}
 	}
-	
+
 	return (XN_STATUS_OK);
 }

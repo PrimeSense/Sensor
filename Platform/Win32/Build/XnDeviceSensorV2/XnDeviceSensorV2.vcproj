@@ -425,14 +425,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorFixedParams.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorFixedParams.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorFPS.cpp"
 				>
 			</File>
@@ -548,6 +540,14 @@
 					</File>
 					<File
 						RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnPacked11DepthProcessor.h"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnPacked12DepthProcessor.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnPacked12DepthProcessor.h"
 						>
 					</File>
 					<File
@@ -723,14 +723,6 @@
 					RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorStreamHelper.h"
 					>
 				</File>
-				<File
-					RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSharedMemoryBufferPool.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSharedMemoryBufferPool.h"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="Firmware"
@@ -805,6 +797,14 @@
 				</File>
 				<File
 					RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorFirmwareParams.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorFixedParams.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\..\Source\XnDeviceSensorV2\XnSensorFixedParams.h"
 					>
 				</File>
 			</Filter>

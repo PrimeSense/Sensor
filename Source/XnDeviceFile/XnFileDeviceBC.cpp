@@ -417,9 +417,9 @@ XnStatus XnFileDevice::BCSeekFrame(XnUInt32 nFrameID)
 		XN_IS_STATUS_OK(nRetVal);
 
 		// increment streams frame ID
-		for (XnNodeInfoMap::Iterator it = m_nodeInfoMap.begin(); it != m_nodeInfoMap.end(); ++it)
+		for (XnNodeInfoMap::Iterator it = m_nodeInfoMap.Begin(); it != m_nodeInfoMap.End(); ++it)
 		{
-			it.Value().nCurrFrameID++;
+			it->Value().nCurrFrameID++;
 		}
 
 		// Make sure frame ids are sequential

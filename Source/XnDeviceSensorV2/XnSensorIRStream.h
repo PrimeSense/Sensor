@@ -27,7 +27,6 @@
 //---------------------------------------------------------------------------
 #include <XnDDK/XnIRStream.h>
 #include "XnSensorStreamHelper.h"
-#include "XnSharedMemoryBufferPool.h"
 
 //---------------------------------------------------------------------------
 // Defines
@@ -43,7 +42,7 @@
 class XnSensorIRStream : public XnIRStream, public IXnSensorStream
 {
 public:
-	XnSensorIRStream(const XnChar* strDeviceName, const XnChar* StreamName, XnSensorObjects* pObjects, XnUInt32 nBufferCount, XnBool bAllowOtherUsers);
+	XnSensorIRStream(const XnChar* StreamName, XnSensorObjects* pObjects);
 	~XnSensorIRStream() { Free(); }
 
 	//---------------------------------------------------------------------------
@@ -75,7 +74,6 @@ protected:
 	XnStatus MapPropertiesToFirmware();
 	void GetFirmwareStreamConfig(XnResolutions* pnRes, XnUInt32* pnFPS) { *pnRes = GetResolution(); *pnFPS = GetFPS(); }
 	XnStatus WriteImpl(XnStreamData* /*pStreamData*/) { return XN_STATUS_DEVICE_UNSUPPORTED_MODE; }
-	XnSharedMemoryBufferPool* GetSharedMemoryBuffer() { return &m_BufferPool; }
 
 	//---------------------------------------------------------------------------
 	// Setters
@@ -96,9 +94,6 @@ private:
 	XnActualIntProperty m_InputFormat;
 
 	XnSensorStreamHelper m_Helper;
-	XnSharedMemoryBufferPool m_BufferPool;
-
-	XnActualStringProperty m_SharedBufferName;
 	XnActualIntProperty m_FirmwareCropSizeX;
 	XnActualIntProperty m_FirmwareCropSizeY;
 	XnActualIntProperty m_FirmwareCropOffsetX;

@@ -155,6 +155,7 @@ XnStatus XnSensorMapGenerator::SetMapOutputMode(const XnMapOutputMode& Mode)
 
 	if (nChosenInputFormat == XN_MAX_UINT32) // not found
 	{
+		xnLogWarning(XN_MASK_DEVICE_SENSOR, "Mode %ux%u@%u is not supported!", Mode.nXRes, Mode.nYRes, Mode.nFPS);
 		return XN_STATUS_BAD_PARAM;
 	}
 

@@ -35,7 +35,7 @@
 class XnIRProcessor : public XnFrameStreamProcessor
 {
 public:
-	XnIRProcessor(XnSensorIRStream* pStream, XnSensorStreamHelper* pHelper);
+	XnIRProcessor(XnSensorIRStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager);
 	virtual ~XnIRProcessor();
 
 	XnStatus Init();
@@ -46,7 +46,7 @@ protected:
 	//---------------------------------------------------------------------------
 	virtual void ProcessFramePacketChunk(const XnSensorProtocolResponseHeader* pHeader, const XnUChar* pData, XnUInt32 nDataOffset, XnUInt32 nDataSize);
 	virtual void OnEndOfFrame(const XnSensorProtocolResponseHeader* pHeader);
-	virtual XnUInt64 GetTimeStamp(XnUInt32 nDeviceTimeStamp);
+	virtual XnUInt64 CreateTimestampFromDevice(XnUInt32 nDeviceTimeStamp);
 
 	//---------------------------------------------------------------------------
 	// Internal Functions

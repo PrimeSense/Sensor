@@ -57,6 +57,8 @@ protected:
 	virtual void DestroyIOStreamImpl(XnIOStream* pStream) = 0;
 
 private:
+	XN_DISABLE_COPY_AND_ASSIGN(XnStreamDevice);
+
 	XnIOStream* m_pIOStream;
 	XnDataPacker* m_pDataPacker;
 	XnUInt32 m_nInternalBufferSize;

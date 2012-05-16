@@ -26,10 +26,10 @@
 // Includes
 //---------------------------------------------------------------------------
 #include <XnDevice.h>
-#include <XnList.h>
-#include <XnStringsHash.h>
+#include <XnListT.h>
+#include <XnStringsHashT.h>
 #include <XnLog.h>
-#include <XnEvent.h>
+#include <XnEventT.h>
 
 //---------------------------------------------------------------------------
 // Types
@@ -42,6 +42,9 @@
 class XN_DDK_CPP_API XnProperty
 {
 public:
+	typedef XnStatus (XN_CALLBACK_TYPE* OnValueChangedHandler)(const XnProperty* pSender, void* pCookie);
+	typedef XnEventInterfaceT<OnValueChangedHandler> ChangeEventInterface;
+
 	/**
 	* Creates a new property. 
 	*
@@ -59,8 +62,6 @@ public:
 	inline XnBool IsReadOnly() const { return (m_pGetCallback == NULL); }
 	inline XnPropertyType GetType() const { return m_Type; }
 
-	XN_DECLARE_EVENT_1ARG_RETVAL(ChangeEvent, ChangeEventInterface, const XnProperty*, pSender);
-
 	inline ChangeEventInterface& OnChangeEvent() { return m_OnChangeEvent; }
 
 	/** Updates property name. */
@@ -68,8 +69,6 @@ public:
 
 	/** Updates the value of the property according to an INI file. */
 	virtual XnStatus ReadValueFromFile(const XnChar* csINIFile, const XnChar* csSection) = 0;
-
-	typedef XnStatus (XN_CALLBACK_TYPE* OnValueChangedHandler)(const XnProperty* pSender, void* pCookie);
 
 	/** Adds this property to the property set. */
 	virtual XnStatus AddToPropertySet(XnPropertySet* pSet) = 0;
@@ -109,6 +108,12 @@ protected:
 	inline void* Value() const { return m_pValueHolder; }
 
 private:
+	class ChangeEvent : public XnEventInterfaceT<OnValueChangedHandler>
+	{
+	public:
+		XnStatus Raise(const XnProperty* pSender);
+	};
+
 	XnChar m_strModule[XN_DEVICE_MAX_STRING_LENGTH]; // module name
 	XnChar m_strName[XN_DEVICE_MAX_STRING_LENGTH]; // property name
 	XnPropertyType m_Type; // property type
@@ -130,9 +135,9 @@ private:
 };
 
 /** A property list */
-XN_DECLARE_LIST_DECL(XN_DDK_CPP_API, XnProperty*, XnPropertiesList)
+typedef XnListT<XnProperty*> XnPropertiesList;
 
 /** A hash table, mapping property name to the property */
-XN_DECLARE_STRINGS_HASH_DECL(XN_DDK_CPP_API, XnProperty*, XnPropertiesHash)
+typedef XnStringsHashT<XnProperty*> XnPropertiesHash;
 
 #endif //__XN_PROPERTY_H__

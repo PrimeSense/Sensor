@@ -110,10 +110,10 @@ public:
 		return m_pActual->CloseAllStreams();
 	}
 
-	virtual XnStatus RegisterToStreamsChange(XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+	virtual XnStatus RegisterToStreamsChange(XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 	{
 		XN_VALIDATE_ACTUAL_DEVICE;
-		return m_pActual->RegisterToStreamsChange(Handler, pCookie, phCallback);
+		return m_pActual->RegisterToStreamsChange(Handler, pCookie, hCallback);
 	}
 
 	virtual XnStatus UnregisterFromStreamsChange(XnCallbackHandle hCallback)
@@ -128,10 +128,10 @@ public:
 		return m_pActual->CreateStreamData(StreamName, ppStreamData);
 	}
 
-	virtual XnStatus RegisterToNewStreamData(XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+	virtual XnStatus RegisterToNewStreamData(XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 	{
 		XN_VALIDATE_ACTUAL_DEVICE;
-		return m_pActual->RegisterToNewStreamData(Handler, pCookie, phCallback);
+		return m_pActual->RegisterToNewStreamData(Handler, pCookie, hCallback);
 	}
 
 	virtual XnStatus UnregisterFromNewStreamData(XnCallbackHandle hCallback)
@@ -272,10 +272,10 @@ public:
 		return m_pActual->GetAllProperties(pSet, bNoStreams, strModule);
 	}
 
-	virtual XnStatus RegisterToPropertyChange(const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+	virtual XnStatus RegisterToPropertyChange(const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 	{
 		XN_VALIDATE_ACTUAL_DEVICE;
-		return m_pActual->RegisterToPropertyChange(Module, PropertyName, Handler, pCookie, phCallback);
+		return m_pActual->RegisterToPropertyChange(Module, PropertyName, Handler, pCookie, hCallback);
 	}
 
 	virtual XnStatus UnregisterFromPropertyChange(const XnChar* Module, const XnChar* PropertyName, XnCallbackHandle hCallback)

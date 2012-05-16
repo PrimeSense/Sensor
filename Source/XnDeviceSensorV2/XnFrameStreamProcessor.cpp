@@ -23,21 +23,23 @@
 // Includes
 //---------------------------------------------------------------------------
 #include "XnFrameStreamProcessor.h"
+#include "XnSensor.h"
 #include <XnProfiling.h>
 
 //---------------------------------------------------------------------------
 // Code
 //---------------------------------------------------------------------------
-XnFrameStreamProcessor::XnFrameStreamProcessor(XnFrameStream* pStream, XnSensorStreamHelper* pHelper, XnUInt16 nTypeSOF, XnUInt16 nTypeEOF) :
+XnFrameStreamProcessor::XnFrameStreamProcessor(XnFrameStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager, XnUInt16 nTypeSOF, XnUInt16 nTypeEOF) :
 	XnStreamProcessor(pStream, pHelper),
 	m_nTypeSOF(nTypeSOF),
 	m_nTypeEOF(nTypeEOF),
-	m_pTripleBuffer(pStream->GetTripleBuffer()),
+	m_pTripleBuffer(pBufferManager),
 	m_InDump(NULL),
 	m_InternalDump(NULL),
 	m_bFrameCorrupted(FALSE),
 	m_bAllowDoubleSOF(FALSE),
-	m_nLastSOFPacketID(0)
+	m_nLastSOFPacketID(0),
+	m_nFirstPacketTimestamp(0)
 {
 	sprintf(m_csInDumpMask, "%sIn", pStream->GetType());
 	sprintf(m_csInternalDumpMask, "Internal%s", pStream->GetType());
@@ -87,6 +89,10 @@ void XnFrameStreamProcessor::OnStartOfFrame(const XnSensorProtocolResponseHeader
 {
 	m_bFrameCorrupted = FALSE;
 	m_pTripleBuffer->GetWriteBuffer()->Reset();
+	if (m_pDevicePrivateData->pSensor->ShouldUseHostTimestamps())
+	{
+		m_nFirstPacketTimestamp = GetHostTimestamp();
+	}
 }
 
 void XnFrameStreamProcessor::OnEndOfFrame(const XnSensorProtocolResponseHeader* pHeader)
@@ -100,7 +106,18 @@ void XnFrameStreamProcessor::OnEndOfFrame(const XnSensorProtocolResponseHeader* 
 	if (!m_bFrameCorrupted)
 	{
 		// mark the buffer as stable
-		XnUInt64 nTimestamp = GetTimeStamp(pHeader->nTimeStamp);
+		XnUInt64 nTimestamp;
+		if (m_pDevicePrivateData->pSensor->ShouldUseHostTimestamps())
+		{
+			// use the host timestamp of the first packet
+			nTimestamp = m_nFirstPacketTimestamp;
+		}
+		else
+		{
+			// use timestamp in last packet
+			nTimestamp = CreateTimestampFromDevice(pHeader->nTimeStamp);
+		}
+		
 		XnUInt32 nFrameID;
 		m_pTripleBuffer->MarkWriteBufferAsStable(nTimestamp, &nFrameID);
 

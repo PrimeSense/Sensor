@@ -45,6 +45,7 @@ public:
 	inline XnBool IsInitialized() { return m_bInitialized; }
 
 private:
+	void BuildDepthToShiftTable(XnUInt16* pDepth2Shift, XnSensorDepthStream* m_pStream);
 	XnStatus BuildRegTable();
 	XnStatus BuildRegTable1000();
 	XnStatus BuildRegTable1080();
@@ -58,7 +59,6 @@ private:
 	XnUInt16* m_pDepthToShiftTable;
 	XnBool m_bD2SAlloc;
 	XnUInt16* m_pRegistrationTable;
-	XnRegistrationPaddingInformation m_padInfo;
 	XnDepthPixel* m_pTempBuffer;
 	XnDouble m_dShiftFactor;
 	XnBool m_b1000;

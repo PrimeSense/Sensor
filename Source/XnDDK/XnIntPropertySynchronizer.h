@@ -25,13 +25,15 @@
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
-#include <XnList.h>
+#include <XnListT.h>
 #include <XnDDK/XnIntProperty.h>
 
 //---------------------------------------------------------------------------
 // Types
 //---------------------------------------------------------------------------
 typedef XnStatus (XN_CALLBACK_TYPE* XnIntPropertyConvertCallback)(XnUInt64 nSourceValue, XnUInt64* pnDestValue);
+
+class XnIntSynchronizerCookie; // forward declaration
 
 class XN_DDK_CPP_API XnIntPropertySynchronizer
 {
@@ -42,7 +44,8 @@ public:
 	XnStatus RegisterSynchronization(XnIntProperty* pSource, XnIntProperty* pDestination, XnIntPropertyConvertCallback pConvertFunc = NULL);
 
 private:
-	XnList m_Cookies;
+	typedef XnListT<XnIntSynchronizerCookie*> CookiesList;
+	CookiesList m_Cookies;
 };
 
 #endif //__XN_INT_PROPERTY_SYNCHRONIZER_H__

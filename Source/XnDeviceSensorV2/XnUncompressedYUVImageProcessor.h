@@ -34,7 +34,7 @@
 class XnUncompressedYUVImageProcessor : public XnImageProcessor
 {
 public:
-	XnUncompressedYUVImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper);
+	XnUncompressedYUVImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager);
 	~XnUncompressedYUVImageProcessor();
 
 	//---------------------------------------------------------------------------

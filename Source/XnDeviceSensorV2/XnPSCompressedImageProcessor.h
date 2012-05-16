@@ -34,7 +34,7 @@
 class XnPSCompressedImageProcessor : public XnImageProcessor
 {
 public:
-	XnPSCompressedImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper);
+	XnPSCompressedImageProcessor(XnSensorImageStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager);
 	~XnPSCompressedImageProcessor();
 
 	XnStatus Init();

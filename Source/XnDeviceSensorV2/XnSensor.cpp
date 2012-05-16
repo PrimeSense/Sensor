@@ -39,7 +39,7 @@
 #define XN_SENSOR_MAX_STREAM_COUNT						5
 #define XN_SENSOR_FRAME_SYNC_MAX_DIFF					3
 #define XN_SENSOR_DEFAULT_CLOSE_STREAMS_ON_SHUTDOWN		TRUE
-#define XN_SENSOR_DEFAULT_ENABLE_MULTI_USERS			FALSE
+#define XN_SENSOR_DEFAULT_HOST_TIMESTAMPS				FALSE
 #define XN_GLOBAL_CONFIG_FILE_NAME						"GlobalDefaults.ini"
 
 // on weak platforms (Arm), we prefer to use BULK
@@ -62,12 +62,12 @@ typedef struct XnWaitForSycnhedFrameData
 //---------------------------------------------------------------------------
 // Code
 //---------------------------------------------------------------------------
-XnSensor::XnSensor() :
+XnSensor::XnSensor(XnBool bResetOnStartup /* = TRUE */, XnBool bLeanInit /* = FALSE */) :
 	XnDeviceBase(XN_DEVICE_NAME, TRUE),
 	m_ErrorState(XN_MODULE_PROPERTY_ERROR_STATE, XN_STATUS_OK),
-	m_ResetSensorOnStartup(XN_MODULE_PROPERTY_RESET_SENSOR_ON_STARTUP, TRUE),
-	m_Interface(XN_MODULE_PROPERTY_USB_INTERFACE, XN_SENSOR_DEFAULT_USB_INTERFACE),
-	m_NumberOfBuffers(XN_MODULE_PROPERTY_NUMBER_OF_BUFFERS, 6),
+	m_ResetSensorOnStartup(XN_MODULE_PROPERTY_RESET_SENSOR_ON_STARTUP, bResetOnStartup),
+	m_LeanInit(XN_MODULE_PROPERTY_LEAN_INIT, bLeanInit),
+	m_Interface(XN_MODULE_PROPERTY_USB_INTERFACE, bResetOnStartup ? XN_SENSOR_DEFAULT_USB_INTERFACE : XN_SENSOR_USB_INTERFACE_DEFAULT),
 	m_ReadFromEP1(XN_MODULE_PROPERTY_READ_ENDPOINT_1, TRUE),
 	m_ReadFromEP2(XN_MODULE_PROPERTY_READ_ENDPOINT_2, TRUE),
 	m_ReadFromEP3(XN_MODULE_PROPERTY_READ_ENDPOINT_3, TRUE),
@@ -81,19 +81,23 @@ XnSensor::XnSensor() :
 	m_Version(XN_MODULE_PROPERTY_VERSION, &m_DevicePrivateData.Version, sizeof(m_DevicePrivateData.Version), NULL),
 	m_FixedParam(XN_MODULE_PROPERTY_FIXED_PARAMS, NULL),
 	m_CloseStreamsOnShutdown(XN_MODULE_PROPERTY_CLOSE_STREAMS_ON_SHUTDOWN, XN_SENSOR_DEFAULT_CLOSE_STREAMS_ON_SHUTDOWN),
+	m_HostTimestamps(XN_MODULE_PROPERTY_HOST_TIMESTAMPS, XN_SENSOR_DEFAULT_HOST_TIMESTAMPS),
 	m_ID(XN_MODULE_PROPERTY_ID),
 	m_InstancePointer(XN_SENSOR_PROPERTY_INSTANCE_POINTER),
 	m_USBPath(XN_MODULE_PROPERTY_USB_PATH),
 	m_DeviceName(XN_MODULE_PROPERTY_PHYSICAL_DEVICE_NAME),
 	m_VendorSpecificData(XN_MODULE_PROPERTY_VENDOR_SPECIFIC_DATA),
-	m_AllowOtherUsers(XN_MODULE_PROPERTY_ENABLE_MULTI_USERS, XN_SENSOR_DEFAULT_ENABLE_MULTI_USERS),
+	m_PlatformString(XN_MODULE_PROPERTY_SENSOR_PLATFORM_STRING),
 	m_AudioSupported(XN_MODULE_PROPERTY_AUDIO_SUPPORTED),
+	m_ImageSupported(XN_MODULE_PROPERTY_IMAGE_SUPPORTED),
+	m_ImageControl(XN_MODULE_PROPERTY_IMAGE_CONTROL, NULL),
+	m_DepthControl(XN_MODULE_PROPERTY_DEPTH_CONTROL, NULL),
+	m_AHB(XN_MODULE_PROPERTY_AHB, NULL),
 	m_Firmware(&m_DevicePrivateData),
-	m_FixedParams(&m_Firmware, &m_DevicePrivateData),
 	m_SensorIO(&m_DevicePrivateData.SensorHandle),
 	m_FPS(),
 	m_CmosInfo(&m_Firmware, &m_DevicePrivateData),
-	m_Objects(&m_Firmware, &m_DevicePrivateData, &m_FixedParams, &m_FPS, &m_CmosInfo),
+	m_Objects(&m_Firmware, &m_DevicePrivateData, &m_FPS, &m_CmosInfo),
 	m_FrameSyncDump(NULL),
 	m_bInitialized(FALSE)
 {
@@ -102,9 +106,8 @@ XnSensor::XnSensor() :
 	m_strGlobalConfigFile[0] = '\0';
 
 	m_ResetSensorOnStartup.UpdateSetCallbackToDefault();
+	m_LeanInit.UpdateSetCallbackToDefault();
 	m_Interface.UpdateSetCallback(SetInterfaceCallback, this);
-	m_AllowOtherUsers.UpdateSetCallback(SetAllowOtherUsersCallback, this);
-	m_NumberOfBuffers.UpdateSetCallback(SetNumberOfBuffersCallback, this);
 	m_ReadFromEP1.UpdateSetCallback(SetReadEndpoint1Callback, this);
 	m_ReadFromEP2.UpdateSetCallback(SetReadEndpoint2Callback, this);
 	m_ReadFromEP3.UpdateSetCallback(SetReadEndpoint3Callback, this);
@@ -121,8 +124,16 @@ XnSensor::XnSensor() :
 	m_FirmwareMode.UpdateGetCallback(GetFirmwareModeCallback, this);
 	m_FixedParam.UpdateGetCallback(GetFixedParamsCallback, this);
 	m_CloseStreamsOnShutdown.UpdateSetCallbackToDefault();
+	m_HostTimestamps.UpdateSetCallbackToDefault();
 	m_AudioSupported.UpdateGetCallback(GetAudioSupportedCallback, this);
+	m_ImageSupported.UpdateGetCallback(GetImageSupportedCallback, this);
 	m_InstancePointer.UpdateGetCallback(GetInstanceCallback, this);
+	m_ImageControl.UpdateSetCallback(SetImageCmosRegisterCallback, this);
+	m_ImageControl.UpdateGetCallback(GetImageCmosRegisterCallback, this);
+	m_DepthControl.UpdateSetCallback(SetDepthCmosRegisterCallback, this);
+	m_DepthControl.UpdateGetCallback(GetDepthCmosRegisterCallback, this);
+	m_AHB.UpdateSetCallback(WriteAHBCallback, this);
+	m_AHB.UpdateGetCallback(ReadAHBCallback, this);
 
 }
 
@@ -164,13 +175,13 @@ XnStatus XnSensor::InitImpl(const XnDeviceConfig *pDeviceConfig)
 
 	// Frame Sync
 	XnCallbackHandle hCallbackDummy;
-	nRetVal = m_FrameSync.OnChangeEvent().Register(FrameSyncPropertyChangedCallback, this, &hCallbackDummy);
+	nRetVal = m_FrameSync.OnChangeEvent().Register(FrameSyncPropertyChangedCallback, this, hCallbackDummy);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = GetFirmware()->GetParams()->m_Stream0Mode.OnChangeEvent().Register(FrameSyncPropertyChangedCallback, this, &hCallbackDummy);
+	nRetVal = GetFirmware()->GetParams()->m_Stream0Mode.OnChangeEvent().Register(FrameSyncPropertyChangedCallback, this, hCallbackDummy);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = GetFirmware()->GetParams()->m_Stream1Mode.OnChangeEvent().Register(FrameSyncPropertyChangedCallback, this, &hCallbackDummy);
+	nRetVal = GetFirmware()->GetParams()->m_Stream1Mode.OnChangeEvent().Register(FrameSyncPropertyChangedCallback, this, hCallbackDummy);
 	XN_IS_STATUS_OK(nRetVal);
 
 	// other stuff
@@ -206,8 +217,6 @@ XnStatus XnSensor::InitSensor(const XnDeviceConfig* pDeviceConfig)
 
 	xnOSMemSet(pDevicePrivateData->cpSensorID, 0, XN_SENSOR_PROTOCOL_SENSOR_ID_LENGTH);
 
-	pDevicePrivateData->bSyncAudio = TRUE;
-
 	switch (pDeviceConfig->DeviceMode)
 	{
 	case XN_DEVICE_MODE_READ:
@@ -236,43 +245,36 @@ XnStatus XnSensor::InitSensor(const XnDeviceConfig* pDeviceConfig)
 	XN_IS_STATUS_OK(nRetVal);
 
 	// init firmware
-	nRetVal = m_Firmware.Init((XnBool)m_ResetSensorOnStartup.GetValue());
+	nRetVal = m_Firmware.Init((XnBool)m_ResetSensorOnStartup.GetValue(), (XnBool)m_LeanInit.GetValue());
 	XN_IS_STATUS_OK(nRetVal);
 	m_bInitialized = TRUE;
 
 	m_ResetSensorOnStartup.UpdateSetCallback(NULL, NULL);
+	m_LeanInit.UpdateSetCallback(NULL, NULL);
 
-	// Init modules
-	nRetVal = m_FixedParams.Init();
+	// update device info properties
+	nRetVal = m_DeviceName.UnsafeUpdateValue(GetFixedParams()->GetDeviceName());
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = m_VendorSpecificData.UnsafeUpdateValue(GetFixedParams()->GetVendorData());
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = m_ID.UnsafeUpdateValue(GetFixedParams()->GetSensorSerial());
+	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = m_PlatformString.UnsafeUpdateValue(GetFixedParams()->GetPlatformString());
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnDeviceInformation deviceInfo;
-	strcpy(deviceInfo.strDeviceName, "PrimeSense Sensor");
-	strcpy(deviceInfo.strVendorData, "");
+	// Add supported streams
+	AddSupportedStream(XN_STREAM_TYPE_DEPTH);
+	AddSupportedStream(XN_STREAM_TYPE_IR);
 
-	// try to take device information (only supported from 5.3.25)
-	if (pDevicePrivateData->Version.nMajor > 5 ||
-		(pDevicePrivateData->Version.nMajor == 5 && pDevicePrivateData->Version.nMinor > 3) ||
-		(pDevicePrivateData->Version.nMajor == 5 && pDevicePrivateData->Version.nMinor == 3 && pDevicePrivateData->Version.nBuild >= 25))
+	if (GetFirmware()->GetInfo()->bImageSupported)
 	{
-		nRetVal = XnHostProtocolAlgorithmParams(pDevicePrivateData, XN_HOST_PROTOCOL_ALGORITHM_DEVICE_INFO, 
-			&deviceInfo, sizeof(deviceInfo), (XnResolutions)0, 0);
-		XN_IS_STATUS_OK(nRetVal);
+		AddSupportedStream(XN_STREAM_TYPE_IMAGE);
 	}
 
-	nRetVal = m_DeviceName.UnsafeUpdateValue(deviceInfo.strDeviceName);
-	XN_IS_STATUS_OK(nRetVal);
-	nRetVal = m_VendorSpecificData.UnsafeUpdateValue(deviceInfo.strVendorData);
-	XN_IS_STATUS_OK(nRetVal);
-
-	// update serial number
-	nRetVal = m_ID.UnsafeUpdateValue(m_FixedParams.GetSensorSerial());
-	XN_IS_STATUS_OK(nRetVal);
-
-	AddSupportedStream(XN_STREAM_TYPE_DEPTH);
-	AddSupportedStream(XN_STREAM_TYPE_IMAGE);
-	AddSupportedStream(XN_STREAM_TYPE_IR);
-	AddSupportedStream(XN_STREAM_TYPE_AUDIO);
+	if (GetFirmware()->GetInfo()->bAudioSupported)
+	{
+		AddSupportedStream(XN_STREAM_TYPE_AUDIO);
+	}
 
 	return XN_STATUS_OK;
 }
@@ -295,13 +297,6 @@ XnStatus XnSensor::Destroy()
 	m_SensorIO.CloseDevice();
 	m_bInitialized = FALSE;
 
-
-	// close critical sections
-	if (pDevicePrivateData->hAudioBufferCriticalSection != NULL)
-	{
-		xnOSCloseCriticalSection(&pDevicePrivateData->hAudioBufferCriticalSection);
-		pDevicePrivateData->hAudioBufferCriticalSection = NULL;
-	}
 
 	if (pDevicePrivateData->hEndPointsCS != NULL)
 	{
@@ -349,11 +344,12 @@ XnStatus XnSensor::CreateDeviceModule(XnDeviceModuleHolder** ppModuleHolder)
 	XnDeviceModule* pModule = (*ppModuleHolder)->GetModule();
 	XnProperty* pProps[] = 
 	{ 
-		&m_ErrorState, &m_ResetSensorOnStartup, &m_Interface, &m_ReadFromEP1,
-		&m_ReadFromEP2, &m_ReadFromEP3, &m_ReadData, &m_NumberOfBuffers, &m_FirmwareParam, 
+		&m_ErrorState, &m_ResetSensorOnStartup, &m_LeanInit, &m_Interface, &m_ReadFromEP1,
+		&m_ReadFromEP2, &m_ReadFromEP3, &m_ReadData, &m_FirmwareParam, 
 		&m_CmosBlankingUnits, &m_CmosBlankingTime, &m_Reset, &m_FirmwareMode, &m_Version, 
 		&m_FixedParam, &m_FrameSync, &m_CloseStreamsOnShutdown, &m_InstancePointer, &m_ID,
-		&m_USBPath, &m_DeviceName, &m_VendorSpecificData, &m_AllowOtherUsers, &m_AudioSupported,
+		&m_USBPath, &m_DeviceName, &m_VendorSpecificData, &m_AudioSupported, &m_ImageSupported,
+		&m_ImageControl, &m_DepthControl, &m_AHB, &m_HostTimestamps, &m_PlatformString,
 	};
 
 	nRetVal = pModule->AddProperties(pProps, sizeof(pProps)/sizeof(XnProperty*));
@@ -406,21 +402,21 @@ XnStatus XnSensor::CreateStreamModule(const XnChar* StreamType, const XnChar* St
 	if (strcmp(StreamType, XN_STREAM_TYPE_DEPTH) == 0)
 	{
 		XnSensorDepthStream* pDepthStream;
-		XN_VALIDATE_NEW(pDepthStream, XnSensorDepthStream, GetUSBPath(), StreamName, &m_Objects, (XnUInt32)m_NumberOfBuffers.GetValue(), AreOtherUsersAllowed());
+		XN_VALIDATE_NEW(pDepthStream, XnSensorDepthStream, StreamName, &m_Objects);
 		pStream = pDepthStream;
 		pHelper = pDepthStream->GetHelper();
 	}
 	else if (strcmp(StreamType, XN_STREAM_TYPE_IMAGE) == 0)
 	{
 		XnSensorImageStream* pImageStream;
-		XN_VALIDATE_NEW(pImageStream, XnSensorImageStream, GetUSBPath(), StreamName, &m_Objects, (XnUInt32)m_NumberOfBuffers.GetValue(), AreOtherUsersAllowed());
+		XN_VALIDATE_NEW(pImageStream, XnSensorImageStream, StreamName, &m_Objects);
 		pStream = pImageStream;
 		pHelper = pImageStream->GetHelper();
 	}
 	else if (strcmp(StreamType, XN_STREAM_TYPE_IR) == 0)
 	{
 		XnSensorIRStream* pIRStream;
-		XN_VALIDATE_NEW(pIRStream, XnSensorIRStream, GetUSBPath(), StreamName, &m_Objects, (XnUInt32)m_NumberOfBuffers.GetValue(), AreOtherUsersAllowed());
+		XN_VALIDATE_NEW(pIRStream, XnSensorIRStream, StreamName, &m_Objects);
 		pStream = pIRStream;
 		pHelper = pIRStream->GetHelper();
 	}
@@ -431,8 +427,9 @@ XnStatus XnSensor::CreateStreamModule(const XnChar* StreamType, const XnChar* St
 			XN_LOG_WARNING_RETURN(XN_STATUS_UNSUPPORTED_STREAM, XN_MASK_DEVICE_SENSOR, "Audio is not supported by this FW!");
 		}
 
+		// TODO: use the allow other users property when constructing the audio stream
 		XnSensorAudioStream* pAudioStream;
-		XN_VALIDATE_NEW(pAudioStream, XnSensorAudioStream, GetUSBPath(), StreamName, &m_Objects, AreOtherUsersAllowed());
+		XN_VALIDATE_NEW(pAudioStream, XnSensorAudioStream, GetUSBPath(), StreamName, &m_Objects, FALSE);
 		pStream = pAudioStream;
 		pHelper = pAudioStream->GetHelper();
 	}
@@ -543,7 +540,7 @@ XnStatus XnSensor::ReadStream(XnStreamData* pStreamOutput)
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnSensor::GetSharedBufferPool(const XnChar* strStream, XnSharedMemoryBufferPool** ppBufferPool)
+XnStatus XnSensor::GetBufferPool(const XnChar* strStream, XnBufferPool** ppBufferPool)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
@@ -552,9 +549,36 @@ XnStatus XnSensor::GetSharedBufferPool(const XnChar* strStream, XnSharedMemoryBu
 	XN_IS_STATUS_OK(nRetVal);
 
 	XnSensorStreamHolder* pSensorStreamHolder = (XnSensorStreamHolder*)(pHolder);
-	*ppBufferPool = pSensorStreamHolder->GetSharedBufferPool();
+	XnDeviceStream* pStream = pSensorStreamHolder->GetStream();
+
+	XnUInt64 nFrameBased;
+	nRetVal = pStream->GetProperty(XN_STREAM_PROPERTY_IS_FRAME_BASED, &nFrameBased);
+	XN_IS_STATUS_OK(nRetVal);
+
+	if (nFrameBased == 0)
+	{
+		return XN_STATUS_BAD_TYPE;
+	}
+
+	XnFrameStream* pFrameStream = (XnFrameStream*)pStream;
+	*ppBufferPool = pFrameStream->GetBufferPool();
 	
 	return (XN_STATUS_OK);
+}
+
+
+XnStatus XnSensor::GetStream(const XnChar* strStream, XnDeviceStream** ppStream)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	XnDeviceModuleHolder* pHolder;
+	nRetVal = FindStream(strStream, &pHolder);
+	XN_IS_STATUS_OK(nRetVal);
+
+	XnSensorStreamHolder* pSensorStreamHolder = (XnSensorStreamHolder*)(pHolder);
+	*ppStream = pSensorStreamHolder->GetStream();
+
+	return XN_STATUS_OK;
 }
 
 XnBool XnSensor::HasSynchedFrameArrived(const XnChar* strDepthStream, const XnChar* strImageStream)
@@ -713,9 +737,6 @@ XnStatus XnSensor::LoadConfigFromFile(const XnChar* csINIFilePath, const XnChar*
 	nRetVal = m_Interface.ReadValueFromFile(csINIFilePath, XN_MODULE_NAME_DEVICE);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = m_NumberOfBuffers.ReadValueFromFile(csINIFilePath, XN_MODULE_NAME_DEVICE);
-	XN_IS_STATUS_OK(nRetVal);
-
 	nRetVal = m_ReadFromEP1.ReadValueFromFile(csINIFilePath, XN_MODULE_NAME_DEVICE);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -738,7 +759,7 @@ XnStatus XnSensor::LoadConfigFromFile(const XnChar* csINIFilePath, const XnChar*
 	nRetVal = GetStreamsList(streams);
 	XN_IS_STATUS_OK(nRetVal);
 
-	for (XnDeviceModuleHolderList::Iterator it = streams.begin(); it != streams.end(); ++it)
+	for (XnDeviceModuleHolderList::Iterator it = streams.Begin(); it != streams.End(); ++it)
 	{
 		XnDeviceModuleHolder* pHolder = *it;
 		nRetVal = pHolder->GetModule()->LoadConfigFromFile(csINIFilePath);
@@ -860,6 +881,26 @@ XnStatus XnSensor::GetFirmwareParam(XnInnerParamData* pParam)
 	return (XN_STATUS_OK);
 }
 
+XnStatus XnSensor::ReadAHB(XnAHBData* pAHB)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	nRetVal = XnHostProtocolReadAHB(&m_DevicePrivateData, pAHB->nRegister, pAHB->nValue);
+	XN_IS_STATUS_OK(nRetVal);
+
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensor::WriteAHB(const XnAHBData* pAHB)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	nRetVal = XnHostProtocolWriteAHB(&m_DevicePrivateData, pAHB->nRegister, pAHB->nValue, pAHB->nMask);
+	XN_IS_STATUS_OK(nRetVal);
+
+	return (XN_STATUS_OK);
+}
+
 
 XnStatus XnSensor::GetCmosBlankingUnits(XnCmosBlankingUnits* pBlanking)
 {
@@ -935,6 +976,42 @@ XnStatus XnSensor::GetFirmwareMode(XnParamCurrentMode* pnMode)
 	return (XN_STATUS_OK);
 }
 
+XnStatus XnSensor::GetDepthCmosRegister(XnControlProcessingData* pRegister)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	if (m_Firmware.GetInfo()->nFWVer >= XN_SENSOR_FW_VER_3_0)
+	{
+		nRetVal = XnHostProtocolGetCMOSRegisterI2C(&m_DevicePrivateData, XN_CMOS_TYPE_DEPTH, pRegister->nRegister, pRegister->nValue);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+	else
+	{
+		nRetVal = XnHostProtocolGetCMOSRegister(&m_DevicePrivateData, XN_CMOS_TYPE_DEPTH, pRegister->nRegister, pRegister->nValue);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensor::GetImageCmosRegister(XnControlProcessingData* pRegister)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	if (m_Firmware.GetInfo()->nFWVer >= XN_SENSOR_FW_VER_3_0)
+	{
+		nRetVal = XnHostProtocolGetCMOSRegisterI2C(&m_DevicePrivateData, XN_CMOS_TYPE_IMAGE, pRegister->nRegister, pRegister->nValue);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+	else
+	{
+		nRetVal = XnHostProtocolGetCMOSRegister(&m_DevicePrivateData, XN_CMOS_TYPE_IMAGE, pRegister->nRegister, pRegister->nValue);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+
+	return (XN_STATUS_OK);
+}
+
 
 XnStatus XnSensor::GetFixedParams(XnDynamicSizeBuffer* pBuffer)
 {
@@ -996,41 +1073,19 @@ XnStatus XnSensor::SetInterface(XnSensorUsbInterface nInterface)
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnSensor::SetAllowOtherUsers(XnBool bAllowOtherUsers)
+XnStatus XnSensor::SetHostTimestamps(XnBool bHostTimestamps)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	// we only allow changing this *before* creating any streams
+	// we don't allow change if requested value is specific and different than current
 	if (m_ReadData.GetValue() == TRUE &&
-		m_AllowOtherUsers.GetValue() != bAllowOtherUsers)
+		bHostTimestamps != m_HostTimestamps.GetValue())
 	{
 		return (XN_STATUS_DEVICE_PROPERTY_READ_ONLY);
 	}
 
-	nRetVal = m_AllowOtherUsers.UnsafeUpdateValue(bAllowOtherUsers);
+	nRetVal = m_HostTimestamps.UnsafeUpdateValue(bHostTimestamps);
 	XN_IS_STATUS_OK(nRetVal);
-
-	return (XN_STATUS_OK);
-}
-
-XnStatus XnSensor::SetNumberOfBuffers(XnUInt32 nCount)
-{
-	XnStatus nRetVal = XN_STATUS_OK;
-
-	// This is a special func. It can only be changed BEFORE reading starts
-	if (m_ReadData.GetValue() == FALSE)
-	{
-		nRetVal = m_NumberOfBuffers.UnsafeUpdateValue(nCount);
-		XN_IS_STATUS_OK(nRetVal);
-	}
-	else
-	{
-		// check it's the same value
-		if (nCount != m_NumberOfBuffers.GetValue())
-		{
-			return (XN_STATUS_DEVICE_PROPERTY_READ_ONLY);
-		}
-	}
 
 	return (XN_STATUS_OK);
 }
@@ -1121,6 +1176,42 @@ XnStatus XnSensor::SetReadData(XnBool bRead)
 		m_ReadData.UpdateSetCallback(NULL, NULL);
 	}
 	
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensor::SetDepthCmosRegister(const XnControlProcessingData* pRegister)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	if (m_Firmware.GetInfo()->nFWVer >= XN_SENSOR_FW_VER_3_0)
+	{
+		nRetVal = XnHostProtocolSetCMOSRegisterI2C(&m_DevicePrivateData, XN_CMOS_TYPE_DEPTH, pRegister->nRegister, pRegister->nValue);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+	else
+	{
+		nRetVal = XnHostProtocolSetCMOSRegister(&m_DevicePrivateData, XN_CMOS_TYPE_DEPTH, pRegister->nRegister, pRegister->nValue);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensor::SetImageCmosRegister(const XnControlProcessingData* pRegister)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	if (m_Firmware.GetInfo()->nFWVer >= XN_SENSOR_FW_VER_3_0)
+	{
+		nRetVal = XnHostProtocolSetCMOSRegisterI2C(&m_DevicePrivateData, XN_CMOS_TYPE_IMAGE, pRegister->nRegister, pRegister->nValue);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+	else
+	{
+		nRetVal = XnHostProtocolSetCMOSRegister(&m_DevicePrivateData, XN_CMOS_TYPE_IMAGE, pRegister->nRegister, pRegister->nValue);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+
 	return (XN_STATUS_OK);
 }
 
@@ -1243,16 +1334,10 @@ XnStatus XN_CALLBACK_TYPE XnSensor::SetInterfaceCallback(XnActualIntProperty* /*
 	return pThis->XnSensor::SetInterface((XnSensorUsbInterface)nValue);
 }
 
-XnStatus XN_CALLBACK_TYPE XnSensor::SetAllowOtherUsersCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
+XnStatus XN_CALLBACK_TYPE XnSensor::SetHostTimestampsCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnSensor* pThis = (XnSensor*)pCookie;
-	return pThis->XnSensor::SetAllowOtherUsers(nValue == 1);
-}
-
-XnStatus XN_CALLBACK_TYPE XnSensor::SetNumberOfBuffersCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
-{
-	XnSensor* pThis = (XnSensor*)pCookie;
-	return pThis->SetNumberOfBuffers((XnUInt32)nValue);
+	return pThis->XnSensor::SetHostTimestamps(nValue == 1);
 }
 
 XnStatus XN_CALLBACK_TYPE XnSensor::SetReadEndpoint1Callback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
@@ -1351,6 +1436,13 @@ XnStatus XN_CALLBACK_TYPE XnSensor::GetAudioSupportedCallback(const XnIntPropert
 	return XN_STATUS_OK;
 }
 
+XnStatus XN_CALLBACK_TYPE XnSensor::GetImageSupportedCallback(const XnIntProperty* /*pSender*/, XnUInt64* pnValue, void* pCookie)
+{
+	XnSensor* pThis = (XnSensor*)pCookie;
+	*pnValue = pThis->m_Firmware.GetInfo()->bImageSupported;
+	return XN_STATUS_OK;
+}
+
 XnStatus XN_CALLBACK_TYPE XnSensor::FrameSyncPropertyChangedCallback(const XnProperty* /*pSender*/, void* pCookie)
 {
 	XnSensor* pThis = (XnSensor*)pCookie;
@@ -1391,5 +1483,47 @@ XnStatus XN_CALLBACK_TYPE XnSensor::GetInstanceCallback(const XnGeneralProperty*
 
 	*(void**)gbValue.pData = pCookie;
 	return XN_STATUS_OK;
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensor::SetDepthCmosRegisterCallback(XnGeneralProperty* /*pSender*/, const XnGeneralBuffer& gbValue, void* pCookie)
+{
+	XN_VALIDATE_GENERAL_BUFFER_TYPE(gbValue, XnControlProcessingData);
+	XnSensor* pThis = (XnSensor*)pCookie;
+	return pThis->SetDepthCmosRegister((const XnControlProcessingData*)gbValue.pData);
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensor::SetImageCmosRegisterCallback(XnGeneralProperty* /*pSender*/, const XnGeneralBuffer& gbValue, void* pCookie)
+{
+	XN_VALIDATE_GENERAL_BUFFER_TYPE(gbValue, XnControlProcessingData);
+	XnSensor* pThis = (XnSensor*)pCookie;
+	return pThis->SetImageCmosRegister((const XnControlProcessingData*)gbValue.pData);
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensor::GetDepthCmosRegisterCallback(const XnGeneralProperty* /*pSender*/, const XnGeneralBuffer& gbValue, void* pCookie)
+{
+	XN_VALIDATE_GENERAL_BUFFER_TYPE(gbValue, XnControlProcessingData);
+	XnSensor* pThis = (XnSensor*)pCookie;
+	return pThis->GetDepthCmosRegister((XnControlProcessingData*)gbValue.pData);
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensor::GetImageCmosRegisterCallback(const XnGeneralProperty* /*pSender*/, const XnGeneralBuffer& gbValue, void* pCookie)
+{
+	XN_VALIDATE_GENERAL_BUFFER_TYPE(gbValue, XnControlProcessingData);
+	XnSensor* pThis = (XnSensor*)pCookie;
+	return pThis->GetImageCmosRegister((XnControlProcessingData*)gbValue.pData);
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensor::WriteAHBCallback(XnGeneralProperty* /*pSender*/, const XnGeneralBuffer& gbValue, void* pCookie)
+{
+	XN_VALIDATE_GENERAL_BUFFER_TYPE(gbValue, XnAHBData);
+	XnSensor* pThis = (XnSensor*)pCookie;
+	return pThis->WriteAHB((const XnAHBData*)gbValue.pData);
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensor::ReadAHBCallback(const XnGeneralProperty* /*pSender*/, const XnGeneralBuffer& gbValue, void* pCookie)
+{
+	XN_VALIDATE_GENERAL_BUFFER_TYPE(gbValue, XnAHBData);
+	XnSensor* pThis = (XnSensor*)pCookie;
+	return pThis->ReadAHB((XnAHBData*)gbValue.pData);
 }
 

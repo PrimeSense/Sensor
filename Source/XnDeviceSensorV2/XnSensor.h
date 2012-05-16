@@ -50,7 +50,7 @@ class XnSensor : public XnDeviceBase
 	friend class XnServerSensorInvoker;
 
 public:
-	XnSensor();
+	XnSensor(XnBool bResetOnStartup = TRUE, XnBool bLeanInit = FALSE);
 	~XnSensor();
 
 	static XnStatus GetDefinition(XnDeviceDefinition* pDeviceDefinition);
@@ -68,7 +68,7 @@ public:
 	virtual XnStatus LoadConfigFromFile(const XnChar* csINIFilePath, const XnChar* csSectionName);
 
 public:
-	inline const XnSensorFixedParams* GetFixedParams() const { return &m_FixedParams; }
+	inline XnSensorFixedParams* GetFixedParams() { return GetFirmware()->GetFixedParams(); }
 	inline XnSensorFirmware* GetFirmware() { return &m_Firmware; }
 	inline XnSensorFPS* GetFPSCalculator() { return &m_FPS; }
 
@@ -82,7 +82,8 @@ public:
 	inline XnBool IsMiscSupported() const { return m_SensorIO.IsMiscEndpointSupported(); }
 	inline XnBool IsLowBandwidth() const { return m_SensorIO.IsLowBandwidth(); }
 
-	XnStatus GetSharedBufferPool(const XnChar* strStream, XnSharedMemoryBufferPool** ppBufferPool);
+	XnStatus GetBufferPool(const XnChar* strStream, XnBufferPool** ppBufferPool);
+	XnStatus GetStream(const XnChar* strStream, XnDeviceStream** ppStream);
 
 	inline XnStatus GetErrorState() { return (XnStatus)m_ErrorState.GetValue(); }
 	XnStatus SetErrorState(XnStatus errorState);
@@ -92,7 +93,8 @@ public:
 	XnStatus ConfigureModuleFromGlobalFile(const XnChar* strModule, const XnChar* strSection = NULL);
 
 	const XnChar* GetUSBPath() { return m_USBPath.GetValue(); }
-	XnBool AreOtherUsersAllowed() { return (m_AllowOtherUsers.GetValue() == TRUE); }
+	XnBool ShouldUseHostTimestamps() { return (m_HostTimestamps.GetValue() == TRUE); }
+	XnBool HasReadingStarted() { return (m_ReadData.GetValue() == TRUE); }
 
 
 protected:
@@ -127,13 +129,16 @@ private:
 	XnStatus GetFirmwareMode(XnParamCurrentMode* pnMode);
 	XnStatus GetLastRawFrame(const XnChar* strStream, XnUChar* pBuffer, XnUInt32 nDataSize);
 	XnStatus GetFixedParams(XnDynamicSizeBuffer* pBuffer);
+	XnStatus GetDepthCmosRegister(XnControlProcessingData* pRegister);
+	XnStatus GetImageCmosRegister(XnControlProcessingData* pRegister);
+	XnStatus ReadAHB(XnAHBData* pData);
 
 
 	//---------------------------------------------------------------------------
 	// Setters
 	//---------------------------------------------------------------------------
 	XnStatus SetInterface(XnSensorUsbInterface nInterface);
-	XnStatus SetAllowOtherUsers(XnBool bAllowOtherUsers);
+	XnStatus SetHostTimestamps(XnBool bHostTimestamps);
 	XnStatus SetNumberOfBuffers(XnUInt32 nCount);
 	XnStatus SetReadEndpoint1(XnBool bRead);
 	XnStatus SetReadEndpoint2(XnBool bRead);
@@ -144,12 +149,16 @@ private:
 	XnStatus SetCmosBlankingTime(const XnCmosBlankingTime* pBlanking);
 	XnStatus Reset(XnParamResetType nType);
 	XnStatus SetFirmwareMode(XnParamCurrentMode nMode);
+	XnStatus SetDepthCmosRegister(const XnControlProcessingData* pRegister);
+	XnStatus SetImageCmosRegister(const XnControlProcessingData* pRegister);
+	XnStatus WriteAHB(const XnAHBData* pData);
+
 
 	//---------------------------------------------------------------------------
 	// Callbacks
 	//---------------------------------------------------------------------------
 	static XnStatus XN_CALLBACK_TYPE SetInterfaceCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
-	static XnStatus XN_CALLBACK_TYPE SetAllowOtherUsersCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE SetHostTimestampsCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE SetNumberOfBuffersCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE SetReadEndpoint1Callback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE SetReadEndpoint2Callback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
@@ -169,6 +178,13 @@ private:
 	static XnStatus XN_CALLBACK_TYPE GetCmosBlankingTimeCallback(const XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE GetFirmwareModeCallback(const XnIntProperty* pSender, XnUInt64* pnValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE GetAudioSupportedCallback(const XnIntProperty* pSender, XnUInt64* pnValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE GetImageSupportedCallback(const XnIntProperty* pSender, XnUInt64* pnValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE SetDepthCmosRegisterCallback(XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE SetImageCmosRegisterCallback(XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE GetDepthCmosRegisterCallback(const XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE GetImageCmosRegisterCallback(const XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE ReadAHBCallback(const XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE WriteAHBCallback(XnGeneralProperty* pSender, const XnGeneralBuffer& gbValue, void* pCookie);
 
 
 	//---------------------------------------------------------------------------
@@ -176,14 +192,15 @@ private:
 	//---------------------------------------------------------------------------
 	XnActualIntProperty m_ErrorState;
 	XnActualIntProperty m_ResetSensorOnStartup;
+	XnActualIntProperty m_LeanInit;
 	XnActualIntProperty m_Interface;
-	XnActualIntProperty m_NumberOfBuffers;
 	XnActualIntProperty m_ReadFromEP1;
 	XnActualIntProperty m_ReadFromEP2;
 	XnActualIntProperty m_ReadFromEP3;
 	XnActualIntProperty m_ReadData;
 	XnActualIntProperty m_FrameSync;
 	XnActualIntProperty m_CloseStreamsOnShutdown;
+	XnActualIntProperty m_HostTimestamps;
 	XnGeneralProperty m_FirmwareParam;
 	XnGeneralProperty m_CmosBlankingUnits;
 	XnGeneralProperty m_CmosBlankingTime;
@@ -197,12 +214,16 @@ private:
 	XnActualStringProperty m_USBPath;
 	XnActualStringProperty m_DeviceName;
 	XnActualStringProperty m_VendorSpecificData;
-	XnActualIntProperty m_AllowOtherUsers;
+	XnActualStringProperty m_PlatformString;
 	XnIntProperty m_AudioSupported;
+	XnIntProperty m_ImageSupported;
+	XnGeneralProperty m_ImageControl;
+	XnGeneralProperty m_DepthControl;
+	XnGeneralProperty m_AHB;
+
 
 	XnSensorFirmware m_Firmware;
 	XnDevicePrivateData m_DevicePrivateData;
-	XnSensorFixedParams m_FixedParams;
 	XnSensorFPS m_FPS;
 	XnCmosInfo m_CmosInfo;
 	XnSensorIO m_SensorIO;

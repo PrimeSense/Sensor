@@ -27,7 +27,7 @@
 //---------------------------------------------------------------------------
 #include "XnSensorGenerator.h"
 #include "XnExportedSensorGenerator.h"
-#include <XnList.h>
+#include <XnListT.h>
 
 //---------------------------------------------------------------------------
 // Types
@@ -60,7 +60,7 @@ protected:
 	virtual void FilterProperties(XnActualPropertiesHash* pHash);
 
 private:
-	XN_DECLARE_LIST(XnWaveOutputMode, XnWaveOutputModeList);
+	typedef XnListT<XnWaveOutputMode> XnWaveOutputModeList;
 
 	XnWaveOutputModeList m_SupportedModes;
 };

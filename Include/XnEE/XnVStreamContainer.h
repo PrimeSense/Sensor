@@ -60,8 +60,8 @@ public:
 	virtual XnStatus SetProperty(const XnChar* strModule, const XnChar* strProperty, const XnChar* csValue) = 0;
 	virtual XnStatus SetProperty(const XnChar* strModule, const XnChar* strProperty, const XnGeneralBuffer& gbValue) = 0;
 
-	virtual XnStatus RegisterForPropertyChangedEvent(const XnChar* strModule, const XnChar* strProperty, XnVModulePropertyChangedHandler* pHandler, XnCallbackHandle* phCallback) = 0;
-	virtual XnStatus RegisterForStreamCollectionChangedEvent(XnVStreamCollectionChangedHandler* pHandler, XnCallbackHandle* phCallback) = 0;
+	virtual XnStatus RegisterForPropertyChangedEvent(const XnChar* strModule, const XnChar* strProperty, XnVModulePropertyChangedHandler* pHandler, XnCallbackHandle& hCallback) = 0;
+	virtual XnStatus RegisterForStreamCollectionChangedEvent(XnVStreamCollectionChangedHandler* pHandler, XnCallbackHandle& hCallback) = 0;
 	virtual XnStatus UnregisterFromPropertyChangedEvent(const XnChar* strModule, const XnChar* strProperty, XnCallbackHandle hCallback) = 0;
 	virtual XnStatus UnregisterFromStreamCollectionChangedEvent(XnCallbackHandle hCallback) = 0;
 

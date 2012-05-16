@@ -34,7 +34,7 @@
 class XnUncompressedDepthProcessor : public XnDepthProcessor
 {
 public:
-	XnUncompressedDepthProcessor(XnSensorDepthStream* pStream, XnSensorStreamHelper* pHelper);
+	XnUncompressedDepthProcessor(XnSensorDepthStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager);
 	virtual ~XnUncompressedDepthProcessor();
 
 protected:
