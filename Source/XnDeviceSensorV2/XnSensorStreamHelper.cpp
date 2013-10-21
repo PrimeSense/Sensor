@@ -1,53 +1,29 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
 #include "XnSensorStreamHelper.h"
 #include "XnStreamProcessor.h"
 #include <XnLog.h>
-
-//---------------------------------------------------------------------------
-// Types
-//---------------------------------------------------------------------------
-class XnSensorStreamHelperCookie
-{
-public:
-	XnSensorStreamHelperCookie(XnActualIntProperty* pStreamProp, XnActualIntProperty* pFirmwareProp, XnBool bAllowWhileOpen, XnSensorStreamHelper::ConvertCallback pStreamToFirmwareFunc) :
-		pStreamProp(pStreamProp), pFirmwareProp(pFirmwareProp), bAllowWhileOpen(bAllowWhileOpen), pStreamToFirmwareFunc(pStreamToFirmwareFunc), bProcessorProp(FALSE)
-	{}
-
-	XnActualIntProperty* pStreamProp;
-	XnActualIntProperty* pFirmwareProp;
-	XnBool bAllowWhileOpen;
-	XnSensorStreamHelper::ConvertCallback pStreamToFirmwareFunc;
-	XnBool bProcessorProp;
-
-	struct
-	{
-		XnBool bShouldOpen;
-		XnBool bChooseProcessor;
-	} CurrentTransaction;
-};
 
 //---------------------------------------------------------------------------
 // Code
@@ -83,12 +59,6 @@ XnStatus XnSensorStreamHelper::Free()
 	if (m_pStream != NULL)
 	{
 		GetFirmware()->GetStreams()->ReleaseStream(m_pStream->GetType(), m_pStream);
-	}
-
-	for (XnHash::Iterator it = m_FirmwareProperties.begin(); it != m_FirmwareProperties.end(); ++it)
-	{
-		XnSensorStreamHelperCookie* pCookie = (XnSensorStreamHelperCookie*)it.Value();
-		XN_DELETE(pCookie);
 	}
 
 	m_FirmwareProperties.Clear();
@@ -158,6 +128,13 @@ XnStatus XnSensorStreamHelper::Open()
 	nRetVal = Configure();
 	XN_IS_STATUS_OK(nRetVal);
 
+	// Update frequency (it might change on specific stream configuration)
+	XnFrequencyInformation FrequencyInformation;
+	nRetVal = XnHostProtocolAlgorithmParams(m_pObjects->pDevicePrivateData, XN_HOST_PROTOCOL_ALGORITHM_FREQUENCY, &FrequencyInformation, sizeof(XnFrequencyInformation), (XnResolutions)0, 0);
+	XN_IS_STATUS_OK(nRetVal);
+
+	m_pObjects->pDevicePrivateData->fDeviceFrequency = XN_PREPARE_VAR_FLOAT_IN_BUFFER(FrequencyInformation.fDeviceFrequency);
+
 	// and now turn it on
 	nRetVal = FinalOpen();
 	XN_IS_STATUS_OK(nRetVal);
@@ -185,11 +162,10 @@ XnStatus XnSensorStreamHelper::RegisterDataProcessorProperty(XnActualIntProperty
 	XnStatus nRetVal = XN_STATUS_OK;
 
 	// mark it so
-	XnValue val;
-	nRetVal = m_FirmwareProperties.Get(&Property, val);
+	XnSensorStreamHelperCookie* pCookie;
+	nRetVal = m_FirmwareProperties.Get(&Property, pCookie);
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnSensorStreamHelperCookie* pCookie = (XnSensorStreamHelperCookie*)val;
 	pCookie->bProcessorProp = TRUE;
 
 	return (XN_STATUS_OK);
@@ -200,16 +176,11 @@ XnStatus XnSensorStreamHelper::MapFirmwareProperty(XnActualIntProperty& Property
 	XnStatus nRetVal = XN_STATUS_OK;
 	
 	// init data
-	XnSensorStreamHelperCookie* pCookie;
-	XN_VALIDATE_NEW(pCookie, XnSensorStreamHelperCookie, &Property, &FirmwareProperty, bAllowChangeWhileOpen, pStreamToFirmwareFunc);
+	XnSensorStreamHelperCookie cookie(&Property, &FirmwareProperty, bAllowChangeWhileOpen, pStreamToFirmwareFunc);
 
 	// add it to the list
-	nRetVal = m_FirmwareProperties.Set(&Property, pCookie);
-	if (nRetVal != XN_STATUS_OK)
-	{
-		XN_DELETE(pCookie);
-		return (nRetVal);
-	}
+	nRetVal = m_FirmwareProperties.Set(&Property, cookie);
+	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);
 }
@@ -218,12 +189,10 @@ XnStatus XnSensorStreamHelper::ConfigureFirmware(XnActualIntProperty& Property)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	XnHash::Iterator it = m_FirmwareProperties.end();
-	nRetVal = m_FirmwareProperties.Find(&Property, it);
+	XnSensorStreamHelperCookie* pPropData = NULL;
+	nRetVal = m_FirmwareProperties.Get(&Property, pPropData);
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnSensorStreamHelperCookie* pPropData = (XnSensorStreamHelperCookie*)it.Value();
-	
 	XnUInt64 nFirmwareValue = Property.GetValue();
 
 	if (pPropData->pStreamToFirmwareFunc != NULL)
@@ -242,11 +211,9 @@ XnStatus XnSensorStreamHelper::BeforeSettingFirmwareParam(XnActualIntProperty& P
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	XnHash::Iterator it = m_FirmwareProperties.end();
-	nRetVal = m_FirmwareProperties.Find(&Property, it);
+	XnSensorStreamHelperCookie* pPropData = NULL;
+	nRetVal = m_FirmwareProperties.Get(&Property, pPropData);
 	XN_IS_STATUS_OK(nRetVal);
-
-	XnSensorStreamHelperCookie* pPropData = (XnSensorStreamHelperCookie*)it.Value();
 
 	pPropData->CurrentTransaction.bShouldOpen = FALSE;
 	pPropData->CurrentTransaction.bChooseProcessor = FALSE;
@@ -300,11 +267,9 @@ XnStatus XnSensorStreamHelper::AfterSettingFirmwareParam(XnActualIntProperty& Pr
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	XnHash::Iterator it = m_FirmwareProperties.end();
-	nRetVal = m_FirmwareProperties.Find(&Property, it);
+	XnSensorStreamHelperCookie* pPropData = NULL;
+	nRetVal = m_FirmwareProperties.Get(&Property, pPropData);
 	XN_IS_STATUS_OK(nRetVal);
-
-	XnSensorStreamHelperCookie* pPropData = (XnSensorStreamHelperCookie*)it.Value();
 	
 	if (pPropData->CurrentTransaction.bShouldOpen)
 	{
@@ -382,11 +347,10 @@ XnStatus XnSensorStreamHelper::UpdateFromFirmware(XnActualIntProperty& Property)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	XnHash::Iterator it = m_FirmwareProperties.end();
-	nRetVal = m_FirmwareProperties.Find(&Property, it);
+	XnSensorStreamHelperCookie* pPropData = NULL;
+	nRetVal = m_FirmwareProperties.Get(&Property, pPropData);
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnSensorStreamHelperCookie* pPropData = (XnSensorStreamHelperCookie*)it.Value();
 	nRetVal = pPropData->pStreamProp->UnsafeUpdateValue(pPropData->pFirmwareProp->GetValue());
 	XN_IS_STATUS_OK(nRetVal);
 	
@@ -402,13 +366,12 @@ XnStatus XnSensorStreamHelper::BatchConfig(const XnActualPropertiesHash& props)
 	if (m_pStream->IsOpen())
 	{
 		// check if one of the properties requires to close the stream
-		for (XnHash::Iterator it = m_FirmwareProperties.begin(); it != m_FirmwareProperties.end(); ++it)
+		for (FirmareProperties::Iterator it = m_FirmwareProperties.Begin(); it != m_FirmwareProperties.End(); ++it)
 		{
-			XnSensorStreamHelperCookie* pPropData = (XnSensorStreamHelperCookie*)it.Value();
-			if (!pPropData->bAllowWhileOpen)
+			if (!it->Value().bAllowWhileOpen)
 			{
 				XnProperty* pProp;
-				if (XN_STATUS_OK == props.Get(pPropData->pStreamProp->GetName(), pProp))
+				if (XN_STATUS_OK == props.Get(it->Value().pStreamProp->GetName(), pProp))
 				{
 					bShouldClose = TRUE;
 					break;
@@ -435,4 +398,22 @@ XnStatus XnSensorStreamHelper::BatchConfig(const XnActualPropertiesHash& props)
 	}
 	
 	return (XN_STATUS_OK);
+}
+
+XnFirmwareCroppingMode XnSensorStreamHelper::GetFirmwareCroppingMode(XnCroppingMode nValue, XnBool bEnabled)
+{
+	if (!bEnabled)
+		return XN_FIRMWARE_CROPPING_MODE_DISABLED;
+
+	switch (nValue)
+	{
+	case XN_CROPPING_MODE_NORMAL:
+		return XN_FIRMWARE_CROPPING_MODE_NORMAL;
+	case XN_CROPPING_MODE_INCREASED_FPS:
+		return GetFirmware()->GetInfo()->bIncreasedFpsCropSupported ? XN_FIRMWARE_CROPPING_MODE_INCREASED_FPS : XN_FIRMWARE_CROPPING_MODE_NORMAL;
+	case XN_CROPPING_MODE_SOFTWARE_ONLY:
+		return XN_FIRMWARE_CROPPING_MODE_DISABLED;
+	default:
+		return XN_FIRMWARE_CROPPING_MODE_NORMAL;
+	}
 }

@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 #ifndef __XN_SERVER_SENSOR_INVOKER_H__
 #define __XN_SERVER_SENSOR_INVOKER_H__
 
@@ -27,16 +26,23 @@
 //---------------------------------------------------------------------------
 #include "XnSensor.h"
 #include <XnGeneralBuffer.h>
-#include <XnEvent.h>
+#include <XnEventT.h>
 
 //---------------------------------------------------------------------------
 // Types
 //---------------------------------------------------------------------------
-
 class XnServerSensorInvoker
 {
+public:
+	typedef struct NewStreamDataEventArgs
+	{
+		const XnChar* strStreamName;
+		XnUInt64 nTimestamp;
+		XnUInt32 nFrameID;
+	} NewStreamDataEventArgs;
+
 private:
-	XN_DECLARE_EVENT_3ARG(NewStreamDataEvent, INewStreamDataEvent, const XnChar*, strStreamName, XnUInt64, nTimestamp, XnUInt32, nFrameID);
+	typedef XnEventT<NewStreamDataEventArgs> NewStreamDataEvent;
 
 public:
 	XnServerSensorInvoker();
@@ -68,8 +74,8 @@ public:
 	XnStatus GetStream(const XnChar* strType, const XnPropertySet* pInitialValues);
 	XnStatus ReleaseStream(const XnChar* strType);
 
-	typedef INewStreamDataEvent::HandlerPtr NewStreamDataHandler;
-	XnStatus OpenStream(const XnChar* strName, NewStreamDataHandler pNewDataHandler, void* pCookie, XnCallbackHandle* phCallback);
+	typedef NewStreamDataEvent::HandlerPtr NewStreamDataHandler;
+	XnStatus OpenStream(const XnChar* strName, NewStreamDataHandler pNewDataHandler, void* pCookie, XnCallbackHandle& hCallback);
 	XnStatus CloseStream(const XnChar* strName, XnCallbackHandle hCallback);
 
 	XnStatus AddRefFrameBuffer(const XnChar* strStreamName, XnBuffer* pBuffer);
@@ -77,8 +83,8 @@ public:
 
 	XnStatus ReadStream(XnStreamData* pStreamData, XnUInt32* pnOffset);
 
-	XN_DECLARE_EVENT_1ARG(PropChangeEvent, IPropChangeEvent, const XnProperty*, pProp);
-	IPropChangeEvent& PropChangedEvent() { return m_propChangedEvent; }
+	typedef XnEvent1Arg<const XnProperty*> PropChangeEvent;
+	PropChangeEvent::TInterface& PropChangedEvent() { return m_propChangedEvent; }
 
 private:
 	// Types
@@ -90,9 +96,14 @@ private:
 		XnStreamData* pStreamData;
 		XnBool bNewData;
 		NewStreamDataEvent* pNewDataEvent;
+		XnBool bFrameStream;
+		XN_SHARED_MEMORY_HANDLE hSharedMemory;
+		XnBool bAllowOtherUsers;
+		XnUChar* pSharedMemoryAddress;
+		XnActualStringProperty* pSharedMemoryName;
 	} SensorInvokerStream;
 
-	XN_DECLARE_STRINGS_HASH(SensorInvokerStream, _XnServerStreamsHash);
+	typedef XnStringsHashT<SensorInvokerStream> _XnServerStreamsHash;
 
 	class XnServerStreamsHash;
 
@@ -111,14 +122,14 @@ private:
 			return *this;
 		}
 
-		inline _XnServerStreamsHash::Iterator begin()
+		inline _XnServerStreamsHash::Iterator Begin()
 		{
-			return m_hash.begin();
+			return m_hash.Begin();
 		}
 
-		inline _XnServerStreamsHash::Iterator end()
+		inline _XnServerStreamsHash::Iterator End()
 		{
-			return m_hash.end();
+			return m_hash.End();
 		}
 
 		typedef _XnServerStreamsHash::Iterator Iterator;
@@ -181,16 +192,22 @@ private:
 	// Functions
 	XnStatus RegisterToProps(XnPropertySet* pProps);
 
+	XnStatus SetNumberOfBuffers(XnUInt32 nCount);
+	XnStatus SetAllowOtherUsers(XnBool bAllowOtherUsers);
 	XnStatus OnPropertyChanged(const XnProperty* pProp);
 	XnStatus OnStreamAdded(const XnChar* StreamName);
 	XnStatus OnStreamRemoved(const XnChar* StreamName);
 	XnStatus OnStreamCollectionChanged(const XnChar* StreamName, XnStreamsChangeEventType EventType);
 	XnStatus OnNewStreamData(const XnChar* StreamName);
 	XnStatus ReadStreams();
+	XnStatus SetStreamSharedMemory(SensorInvokerStream* pStream);
+	XnStatus GetStreamMaxResolution(SensorInvokerStream* pStream, XnUInt32& nMaxNumPixels);
 
+	static XnStatus XN_CALLBACK_TYPE SetNumberOfBuffersCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
+	static XnStatus XN_CALLBACK_TYPE SetAllowOtherUsersCallback(XnActualIntProperty* pSender, XnUInt64 nValue, void* pCookie);
 	static XnStatus XN_CALLBACK_TYPE PropertyChangedCallback(const XnProperty* pProp, void* pCookie);
-	static void XN_CALLBACK_TYPE StreamCollectionChangedCallback(XnDeviceHandle DeviceHandle, const XnChar* StreamName, XnStreamsChangeEventType EventType, void* pCookie);
-	static void XN_CALLBACK_TYPE NewStreamDataCallback(XnDeviceHandle DeviceHandle, const XnChar* StreamName, void* pCookie);
+	static void XN_CALLBACK_TYPE StreamCollectionChangedCallback(const XnStreamCollectionChangedEventArgs& args, void* pCookie);
+	static void XN_CALLBACK_TYPE NewStreamDataCallback(const XnNewStreamDataEventArgs& args, void* pCookie);
 	static XN_THREAD_PROC ReaderThread(XN_THREAD_PARAM pThreadParam);
 
 	// Members
@@ -200,6 +217,9 @@ private:
 	XN_EVENT_HANDLE m_hNewDataEvent;
 	volatile XnBool m_bShouldRun;
 	XnStatus m_errorState;
+
+	XnActualIntProperty m_numberOfBuffers;
+	XnActualIntProperty m_allowOtherUsers;
 
 	PropChangeEvent m_propChangedEvent;
 	XnServerStreamsHash m_streams;

@@ -28,7 +28,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="xcopy /D /Y ..\..\..\..\Source\XnCommon\XnCommon.h ..\..\..\..\Include"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -111,7 +111,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="xcopy /D /Y ..\..\..\..\Source\XnCommon\XnCommon.h ..\..\..\..\Include"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -196,7 +196,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="xcopy /D /Y ..\..\..\..\Source\XnCommon\XnCommon.h ..\..\..\..\Include"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -289,7 +289,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="xcopy /D /Y ..\..\..\..\Source\XnCommon\XnCommon.h ..\..\..\..\Include"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -392,7 +392,7 @@
 				Name="Core"
 				>
 				<File
-					RelativePath="..\..\..\..\Source\XnCommon\XnCommon.h"
+					RelativePath="..\..\..\..\Include\XnCommon.h"
 					>
 				</File>
 				<File

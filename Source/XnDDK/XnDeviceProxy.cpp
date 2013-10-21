@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -26,7 +25,7 @@
 #include <XnDeviceProxy.h>
 #include "XnDeviceManager.h"
 #include <XnOS.h>
-#include <XnHash.h>
+#include <XnHashT.h>
 #include "XnDeviceInterfaceAdapter.h"
 #include <XnPsVersion.h>
 
@@ -46,11 +45,13 @@ typedef struct XnDeviceProxyDeviceHandle
 	XnDeviceHandle ActualDevice;
 } XnDeviceProxyDeviceHandle;
 
+typedef XnHashT<XnStreamData*, XnDeviceDescriptor*> XnStreamOutputHash;
+
 //---------------------------------------------------------------------------
 // Global Variables
 //---------------------------------------------------------------------------
 /** Stores a hash of streamoutput objects to their creating device name. */
-XnHash g_StreamOutputHash;
+XnStreamOutputHash g_StreamOutputHash;
 
 //---------------------------------------------------------------------------
 // XnDeviceProxy functions
@@ -380,11 +381,11 @@ XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(DoesModuleExist)(const XnDeviceHandle 
 	return pHandle->pDesc->Interface.DoesModuleExist(pHandle->ActualDevice, ModuleName, pbDoesExist);
 }
 
-XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(RegisterToStreamsChange)(const XnDeviceHandle DeviceHandle, XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(RegisterToStreamsChange)(const XnDeviceHandle DeviceHandle, XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 {
 	XN_VALIDATE_INPUT_PTR(DeviceHandle);
 	XnDeviceProxyDeviceHandle* pHandle = (XnDeviceProxyDeviceHandle*)DeviceHandle;
-	return pHandle->pDesc->Interface.RegisterToStreamsChange(pHandle->ActualDevice, Handler, pCookie, phCallback);
+	return pHandle->pDesc->Interface.RegisterToStreamsChange(pHandle->ActualDevice, Handler, pCookie, hCallback);
 }
 
 XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(UnregisterFromStreamsChange)(const XnDeviceHandle DeviceHandle, XnCallbackHandle hCallback)
@@ -426,7 +427,7 @@ XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(DestroyStreamData)(XnStreamData** ppSt
 
 	// find descriptor of the device that created this object
 	XnDeviceDescriptor* pDesc = NULL;
-	nRetVal = g_StreamOutputHash.Get(*ppStreamData, (XnValue&)pDesc);
+	nRetVal = g_StreamOutputHash.Get(*ppStreamData, pDesc);
 	XN_IS_STATUS_OK(nRetVal);
 
 	// destroy the object
@@ -434,16 +435,16 @@ XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(DestroyStreamData)(XnStreamData** ppSt
 	XN_IS_STATUS_OK(nRetVal);
 
 	// and remove it from map
-	g_StreamOutputHash.Remove(pObject, (XnValue&)pDesc);
+	g_StreamOutputHash.Remove(pObject);
 
 	return (XN_STATUS_OK);
 }
 
-XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(RegisterToNewStreamData)(const XnDeviceHandle DeviceHandle, XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(RegisterToNewStreamData)(const XnDeviceHandle DeviceHandle, XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 {
 	XN_VALIDATE_INPUT_PTR(DeviceHandle);
 	XnDeviceProxyDeviceHandle* pHandle = (XnDeviceProxyDeviceHandle*)DeviceHandle;
-	return pHandle->pDesc->Interface.RegisterToNewStreamData(pHandle->ActualDevice, Handler, pCookie, phCallback);
+	return pHandle->pDesc->Interface.RegisterToNewStreamData(pHandle->ActualDevice, Handler, pCookie, hCallback);
 }
 
 XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(UnregisterFromNewStreamData)(const XnDeviceHandle DeviceHandle, XnCallbackHandle hCallback)
@@ -607,11 +608,11 @@ XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(GetAllProperties)(const XnDeviceHandle
 	return pHandle->pDesc->Interface.GetAllProperties(pHandle->ActualDevice, pPropertySet, bNoStreams, strModule);
 }
 
-XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(RegisterToPropertyChange)(const XnDeviceHandle DeviceHandle, const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(RegisterToPropertyChange)(const XnDeviceHandle DeviceHandle, const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 {
 	XN_VALIDATE_INPUT_PTR(DeviceHandle);
 	XnDeviceProxyDeviceHandle* pHandle = (XnDeviceProxyDeviceHandle*)DeviceHandle;
-	return pHandle->pDesc->Interface.RegisterToPropertyChange(pHandle->ActualDevice, Module, PropertyName, Handler, pCookie, phCallback);
+	return pHandle->pDesc->Interface.RegisterToPropertyChange(pHandle->ActualDevice, Module, PropertyName, Handler, pCookie, hCallback);
 }
 
 XN_DDK_API XnStatus XN_DEVICE_PROXY_PROTO(UnregisterFromPropertyChange)(const XnDeviceHandle DeviceHandle, const XnChar* Module, const XnChar* PropertyName, XnCallbackHandle hCallback)

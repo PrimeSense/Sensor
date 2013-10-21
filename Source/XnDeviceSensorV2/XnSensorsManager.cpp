@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -36,11 +35,12 @@
 XnSensorsManager::XnSensorsManager(const XnChar* strGlobalConfigFile) :
 	m_noClientTimeout(XN_MODULE_PROPERTY_SERVER_NO_CLIENTS_TIMEOUT, XN_SENSOR_DEFAULT_SERVER_WAIT_FOR_CLIENT_TIME),
 	m_startNewLog(XN_MODULE_PROPERTY_SERVER_START_NEW_LOG_FILE),
+	m_logFile(XN_MODULE_PROPERTY_SERVER_LOG_FILE, NULL),
 	m_hLock(NULL)
 {
 	m_noClientTimeout.UpdateSetCallbackToDefault();
 	m_startNewLog.UpdateSetCallback(StartNewLogCallback, this);
-
+	m_logFile.UpdateGetCallback(GetLogCallback, this);
 	strcpy(m_strGlobalConfigFile, strGlobalConfigFile);
 }
 
@@ -66,9 +66,9 @@ XnStatus XnSensorsManager::Init()
 void XnSensorsManager::Free()
 {
 	// close all sensors
-	while (m_sensors.begin() != m_sensors.end())
+	while (m_sensors.Begin() != m_sensors.End())
 	{
-		ReferencedSensor& sensor = m_sensors.begin().Value();
+		ReferencedSensor& sensor = m_sensors.Begin()->Value();
 		XN_DELETE(sensor.pInvoker);
 	}
 
@@ -96,7 +96,7 @@ XnStatus XnSensorsManager::GetSensor(const XnChar* strDevicePath, XnServerSensor
 		sensor.nRefCount = 0;
 		XN_VALIDATE_NEW(sensor.pInvoker, XnServerSensorInvoker);
 
-		XnProperty* aAdditionalProps[] = { &m_noClientTimeout, &m_startNewLog };
+		XnProperty* aAdditionalProps[] = { &m_noClientTimeout, &m_startNewLog, &m_logFile };
 		nRetVal = sensor.pInvoker->Init(strDevicePath, m_strGlobalConfigFile, sizeof(aAdditionalProps)/sizeof(XnProperty*), aAdditionalProps);
 		XN_IS_STATUS_OK(nRetVal);
 
@@ -162,18 +162,25 @@ void XnSensorsManager::CleanUp()
 
 	XnUInt64 nNow;
 	xnOSGetTimeStamp(&nNow);
-	XnSensorsHash::Iterator it = m_sensors.begin();
-	while (it != m_sensors.end())
+	XnSensorsHash::Iterator it = m_sensors.Begin();
+	while (it != m_sensors.End())
 	{
 		XnSensorsHash::Iterator curr = it;
 		++it;
 
-		ReferencedSensor& sensor = curr.Value();
-		if (sensor.nRefCount == 0 && (nNow - sensor.nNoClientsTime) > m_noClientTimeout.GetValue())
+		ReferencedSensor& sensor = curr->Value();
+		if (sensor.nRefCount == 0)
 		{
-			xnLogInfo(XN_MASK_SENSOR_SERVER, "No session holding sensor '%s' for %u ms. Shutting down...", curr.Key(), m_noClientTimeout.GetValue());
-			XN_DELETE(sensor.pInvoker);
-			m_sensors.Remove(curr);
+			// if timeout have passed, or the device was disconnected, remote this sensor
+			XnUInt64 nErrorState = XN_STATUS_OK;
+			sensor.pInvoker->GetIntProperty(XN_MODULE_NAME_DEVICE, XN_MODULE_PROPERTY_ERROR_STATE, &nErrorState);
+
+			if (nErrorState == XN_STATUS_DEVICE_NOT_CONNECTED || (nNow - sensor.nNoClientsTime) > m_noClientTimeout.GetValue())
+			{
+				xnLogInfo(XN_MASK_SENSOR_SERVER, "No session holding sensor '%s'. Shutting down the sensor...", curr->Key(), m_noClientTimeout.GetValue());
+				XN_DELETE(sensor.pInvoker);
+				m_sensors.Remove(curr);
+			}
 		}
 	}
 }
@@ -182,5 +189,10 @@ XnStatus XN_CALLBACK_TYPE XnSensorsManager::StartNewLogCallback(XnIntProperty* /
 {
 	xnLogVerbose(XN_MASK_SENSOR_SERVER, "Closing current log file...");
 	return xnLogStartNewFile();
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensorsManager::GetLogCallback(const XnStringProperty* /*pSender*/, XnChar* csValue, void* /*pCookie*/)
+{
+	return xnLogGetFileName(csValue, XN_DEVICE_MAX_STRING_LENGTH);
 }
 

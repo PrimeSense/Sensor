@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -51,26 +50,6 @@ typedef struct XnWaitForStreamData
 	XnDeviceBase* pThis;
 	XnDeviceStream* pStream;
 } XnWaitForStreamData;
-
-typedef struct XnPropertyCallback
-{
-	XnPropertyCallback(XnDeviceHandle DeviceHandle, const XnChar* strModule, const XnChar* strProp, XnDeviceOnPropertyChangedEventHandler pHandler, void* pCookie) :
-		DeviceHandle(DeviceHandle),
-		pHandler(pHandler),
-		pCookie(pCookie)
-	{
-		strcpy(this->strModule, strModule);
-		strcpy(this->strProp, strProp);
-	}
-
-	XnDeviceHandle DeviceHandle;
-	XnChar strModule[XN_DEVICE_MAX_STRING_LENGTH];
-	XnChar strProp[XN_DEVICE_MAX_STRING_LENGTH];
-	XnDeviceOnPropertyChangedEventHandler pHandler;
-	void* pCookie;
-	XnCallbackHandle hCallback;
-
-} XnPropertyCallback;
 
 //---------------------------------------------------------------------------
 // Public Methods
@@ -174,7 +153,7 @@ XnStatus XnDeviceBase::Destroy()
 	// free all modules
 	while (m_Modules.Size() != 0)
 	{
-		XnDeviceModuleHolder* pModuleHolder = (XnDeviceModuleHolder*)m_Modules.begin().Value();
+		XnDeviceModuleHolder* pModuleHolder = m_Modules.Begin()->Value();
 		if (IsStream(pModuleHolder->GetModule()))
 		{
 			XnChar strName[XN_DEVICE_MAX_STRING_LENGTH];
@@ -185,11 +164,11 @@ XnStatus XnDeviceBase::Destroy()
 		else
 		{
 			// free memory of registered properties to this module
-			FreeModuleRegisteredProperties(m_Modules.begin().Key());
+			FreeModuleRegisteredProperties(m_Modules.Begin()->Key());
 
 			pModuleHolder->GetModule()->Free();
 			DestroyModule(pModuleHolder);
-			m_Modules.Remove(m_Modules.begin());
+			m_Modules.Remove(m_Modules.Begin());
 		}
 	}
 
@@ -286,9 +265,9 @@ XnStatus XnDeviceBase::SetMirror(XnBool bMirror)
 	XnStatus nRetVal = XN_STATUS_OK;
 	
 	// change all streams
-	for (XnStringsHash::Iterator it = m_Modules.begin(); it != m_Modules.end(); ++it)
+	for (ModuleHoldersHash::Iterator it = m_Modules.Begin(); it != m_Modules.End(); ++it)
 	{
-		XnDeviceModuleHolder* pModuleHolder = (XnDeviceModuleHolder*)it.Value();
+		XnDeviceModuleHolder* pModuleHolder = it->Value();
 		if (IsStream(pModuleHolder->GetModule()))
 		{
 			XnDeviceStream* pStream = (XnDeviceStream*)pModuleHolder->GetModule();
@@ -331,9 +310,9 @@ XnStatus XnDeviceBase::GetSupportedStreams(const XnChar** aStreamNames, XnUInt32
 
 	// now copy values
 	nStreamsCount = 0;
-	for (XnStringsHash::Iterator it = m_SupportedStreams.begin(); it != m_SupportedStreams.end(); ++it)
+	for (XnStringsSet::Iterator it = m_SupportedStreams.Begin(); it != m_SupportedStreams.End(); ++it)
 	{
-		aStreamNames[nStreamsCount] = it.Key();
+		aStreamNames[nStreamsCount] = it->Key();
 		nStreamsCount++;
 	}
 
@@ -392,9 +371,9 @@ XnStatus XnDeviceBase::OpenAllStreams()
 	xnLogVerbose(XN_MASK_DDK, "Opening all streams...");
 
 	// go over modules list, and look for closed streams
-	for (XnStringsHash::Iterator it = m_Modules.begin(); it != m_Modules.end(); ++it)
+	for (ModuleHoldersHash::Iterator it = m_Modules.Begin(); it != m_Modules.End(); ++it)
 	{
-		XnDeviceModuleHolder* pModuleHolder = (XnDeviceModuleHolder*)it.Value();
+		XnDeviceModuleHolder* pModuleHolder = it->Value();
 		if (IsStream(pModuleHolder->GetModule()))
 		{
 			XnDeviceStream* pStream = (XnDeviceStream*)pModuleHolder->GetModule();
@@ -418,9 +397,9 @@ XnStatus XnDeviceBase::CloseAllStreams()
 	xnLogVerbose(XN_MASK_DDK, "Closing all streams...");
 
 	// go over modules list, and look for closed streams
-	for (XnStringsHash::Iterator it = m_Modules.begin(); it != m_Modules.end(); ++it)
+	for (ModuleHoldersHash::Iterator it = m_Modules.Begin(); it != m_Modules.End(); ++it)
 	{
-		XnDeviceModuleHolder* pModuleHolder = (XnDeviceModuleHolder*)it.Value();
+		XnDeviceModuleHolder* pModuleHolder = it->Value();
 		if (IsStream(pModuleHolder->GetModule()))
 		{
 			XnDeviceStream* pStream = (XnDeviceStream*)pModuleHolder->GetModule();
@@ -442,9 +421,9 @@ XnStatus XnDeviceBase::GetStreamNames(const XnChar** pstrNames, XnUInt32* pnName
 	// first we need to count them
 	XnUInt32 nCount = 0;
 
-	for (XnStringsHash::Iterator it = m_Modules.begin(); it != m_Modules.end(); ++it)
+	for (ModuleHoldersHash::Iterator it = m_Modules.Begin(); it != m_Modules.End(); ++it)
 	{
-		XnDeviceModuleHolder* pModuleHolder = (XnDeviceModuleHolder*)it.Value();
+		XnDeviceModuleHolder* pModuleHolder = it->Value();
 		if (IsStream(pModuleHolder->GetModule()))
 		{
 			nCount++;
@@ -459,12 +438,12 @@ XnStatus XnDeviceBase::GetStreamNames(const XnChar** pstrNames, XnUInt32* pnName
 
 	// OK. we have enough space. Copy into it
 	nCount = 0;
-	for (XnStringsHash::Iterator it = m_Modules.begin(); it != m_Modules.end(); ++it)
+	for (ModuleHoldersHash::Iterator it = m_Modules.Begin(); it != m_Modules.End(); ++it)
 	{
-		XnDeviceModuleHolder* pModuleHolder = (XnDeviceModuleHolder*)it.Value();
+		XnDeviceModuleHolder* pModuleHolder = it->Value();
 		if (IsStream(pModuleHolder->GetModule()))
 		{
-			pstrNames[nCount] = it.Key();
+			pstrNames[nCount] = it->Key();
 			nCount++;
 		}
 	}
@@ -497,11 +476,11 @@ XnStatus XnDeviceBase::DoesModuleExist(const XnChar* ModuleName, XnBool* pbDoesE
 	return XN_STATUS_OK;
 }
 
-XnStatus XnDeviceBase::RegisterToStreamsChange(XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+XnStatus XnDeviceBase::RegisterToStreamsChange(XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 {
 	XN_VALIDATE_INPUT_PTR(Handler);
 
-	return m_OnStreamsChangeEvent.Register((StreamCollectionChangedEvent::HandlerPtr)Handler, pCookie, phCallback);
+	return m_OnStreamsChangeEvent.Register((StreamCollectionChangedEvent::HandlerPtr)Handler, pCookie, hCallback);
 }
 
 XnStatus XnDeviceBase::UnregisterFromStreamsChange(XnCallbackHandle hCallback)
@@ -537,11 +516,11 @@ XnStatus XnDeviceBase::DestroyStreamData(XnStreamData** ppStreamData)
 	return XnStreamDataDestroy(ppStreamData);
 }
 
-XnStatus XnDeviceBase::RegisterToNewStreamData(XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+XnStatus XnDeviceBase::RegisterToNewStreamData(XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 {
 	XN_VALIDATE_INPUT_PTR(Handler);
 
-	return m_OnNewStreamDataEvent.Register(Handler, pCookie, phCallback);
+	return m_OnNewStreamDataEvent.Register(Handler, pCookie, hCallback);
 }
 
 XnStatus XnDeviceBase::UnregisterFromNewStreamData(XnCallbackHandle hCallback)
@@ -1027,14 +1006,14 @@ XnStatus XnDeviceBase::BatchConfig(const XnPropertySet* pChangeSet)
 	nRetVal = StartTransaction();
 	XN_IS_STATUS_OK(nRetVal);
 
-	for (XnPropertySetData::ConstIterator itModule = pChangeSet->pData->begin(); itModule != pChangeSet->pData->end(); ++itModule)
+	for (XnPropertySetData::ConstIterator itModule = pChangeSet->pData->Begin(); itModule != pChangeSet->pData->End(); ++itModule)
 	{
 		// find this module
 		XnDeviceModule* pModule = NULL;
-		nRetVal = FindModule(itModule.Key(), &pModule);
+		nRetVal = FindModule(itModule->Key(), &pModule);
 		XN_CHECK_RC_ROLLBACK(nRetVal);
 
-		nRetVal = pModule->BatchConfig(*itModule.Value());
+		nRetVal = pModule->BatchConfig(*itModule->Value());
 		XN_CHECK_RC_ROLLBACK(nRetVal);
 	}
 
@@ -1066,9 +1045,9 @@ XnStatus XnDeviceBase::GetAllProperties(XnPropertySet* pSet, XnBool bNoStreams /
 	else
 	{
 		// enumerate over modules
-		for (XnStringsHash::Iterator it = m_Modules.begin(); it != m_Modules.end(); ++it)
+		for (ModuleHoldersHash::Iterator it = m_Modules.Begin(); it != m_Modules.End(); ++it)
 		{
-			XnDeviceModuleHolder* pModuleHolder = (XnDeviceModuleHolder*)it.Value();
+			XnDeviceModuleHolder* pModuleHolder = it->Value();
 
 			if (bNoStreams && IsStream(pModuleHolder->GetModule()))
 				continue;
@@ -1081,7 +1060,7 @@ XnStatus XnDeviceBase::GetAllProperties(XnPropertySet* pSet, XnBool bNoStreams /
 	return XN_STATUS_OK;
 }
 
-XnStatus XnDeviceBase::RegisterToPropertyChange(const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+XnStatus XnDeviceBase::RegisterToPropertyChange(const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
@@ -1089,11 +1068,11 @@ XnStatus XnDeviceBase::RegisterToPropertyChange(const XnChar* Module, const XnCh
 	nRetVal = FindModule(Module, &pModule);
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnPropertyCallback* pRealCookie;
+	XnPropertyCallback* pRealCookie = NULL;
 	XN_VALIDATE_NEW(pRealCookie, XnPropertyCallback, GetDeviceHandle(), Module, PropertyName, Handler, pCookie);
 
 	// register
-	nRetVal = pModule->RegisterForOnPropertyValueChanged(PropertyName, PropertyValueChangedCallback, pRealCookie, &pRealCookie->hCallback);
+	nRetVal = pModule->RegisterForOnPropertyValueChanged(PropertyName, PropertyValueChangedCallback, pRealCookie, pRealCookie->hCallback);
 	if (nRetVal != XN_STATUS_OK)
 	{
 		XN_DELETE(pRealCookie);
@@ -1102,7 +1081,7 @@ XnStatus XnDeviceBase::RegisterToPropertyChange(const XnChar* Module, const XnCh
 
 	m_PropertyCallbacks.AddLast(pRealCookie);
 
-	*phCallback = pRealCookie;
+	hCallback = pRealCookie;
 	
 	return (XN_STATUS_OK);
 }
@@ -1125,9 +1104,8 @@ XnStatus XnDeviceBase::UnregisterFromPropertyChange(const XnChar* Module, const 
 	nRetVal = pModule->UnregisterFromOnPropertyValueChanged(PropertyName, pRealCookie->hCallback);
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnValue val = pRealCookie;
-	XnList::Iterator it = m_PropertyCallbacks.Find(val);
-	if (it != m_PropertyCallbacks.end())
+	PropertiesCallbacks::Iterator it = m_PropertyCallbacks.Find(pRealCookie);
+	if (it != m_PropertyCallbacks.End())
 	{
 		m_PropertyCallbacks.Remove(it);
 	}
@@ -1147,8 +1125,7 @@ XnStatus XnDeviceBase::AddModule(XnDeviceModuleHolder* pModuleHolder)
 	XnDeviceModule* pModule = pModuleHolder->GetModule();
 
 	// make sure module doesn't exist yet
-	XnStringsHash::Iterator it = m_Modules.end();
-	if (XN_STATUS_OK == m_Modules.Find(pModule->GetName(), it))
+	if (m_Modules.Find(pModule->GetName()) != m_Modules.End())
 	{
 		xnLogError(XN_MASK_DEVICE, "A module with the name %s already exists!", pModule->GetName());
 		return XN_STATUS_ERROR;
@@ -1164,8 +1141,7 @@ XnStatus XnDeviceBase::AddModule(XnDeviceModuleHolder* pModuleHolder)
 XnStatus XnDeviceBase::RemoveModule(const XnChar* ModuleName)
 {
 	// remove it
-	XnValue props;
-	XnStatus nRetVal = m_Modules.Remove(ModuleName, props);
+	XnStatus nRetVal = m_Modules.Remove(ModuleName);
 	XN_IS_STATUS_OK(nRetVal);
 
 	return XN_STATUS_OK;
@@ -1186,15 +1162,15 @@ XnStatus XnDeviceBase::FindModule(const XnChar* ModuleName, XnDeviceModule** ppM
 
 XnStatus XnDeviceBase::FindModule(const XnChar* ModuleName, XnDeviceModuleHolder** ppModuleHolder)
 {
-	XnStringsHash::Iterator it = m_Modules.end();
-	XnStatus nRetVal = m_Modules.Find(ModuleName, it);
-	if (nRetVal == XN_STATUS_NO_MATCH)
+	XnStatus nRetVal = XN_STATUS_OK;
+	ModuleHoldersHash::Iterator it = m_Modules.Find(ModuleName);
+	if (it == m_Modules.End())
 	{
 		return (XN_STATUS_DEVICE_MODULE_NOT_FOUND);
 	}
 	XN_IS_STATUS_OK(nRetVal);
 
-	*ppModuleHolder = (XnDeviceModuleHolder*)it.Value();
+	*ppModuleHolder = it->Value();
 
 	return XN_STATUS_OK;
 }
@@ -1253,7 +1229,7 @@ XnStatus XnDeviceBase::FindStream(const XnChar* StreamName, XnDeviceModuleHolder
 XnStatus XnDeviceBase::AddSupportedStream(const XnChar* StreamType)
 {
 	// make sure stream doesn't exist yet
-	XnStringsHash::Iterator it = m_SupportedStreams.end();
+	XnStringsSet::Iterator it = m_SupportedStreams.End();
 	if (XN_STATUS_OK == m_SupportedStreams.Find(StreamType, it))
 	{
 		xnLogError(XN_MASK_DEVICE, "A stream with the name %s already exists!", StreamType);
@@ -1261,7 +1237,7 @@ XnStatus XnDeviceBase::AddSupportedStream(const XnChar* StreamType)
 	}
 
 	// add it to the list
-	XnStatus nRetVal = m_SupportedStreams.Set(StreamType, NULL);
+	XnStatus nRetVal = m_SupportedStreams.Set(StreamType);
 	XN_IS_STATUS_OK(nRetVal);
 
 	return XN_STATUS_OK;
@@ -1285,16 +1261,16 @@ XnStatus XnDeviceBase::CreateStreams(const XnPropertySet* pSet)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	for (XnPropertySetData::ConstIterator it = pSet->pData->begin(); it != pSet->pData->end(); ++it)
+	for (XnPropertySetData::ConstIterator it = pSet->pData->Begin(); it != pSet->pData->End(); ++it)
 	{
 		// check if this module is a stream
-		XnActualPropertiesHash* pModule = it.Value();
+		XnActualPropertiesHash* pModule = it->Value();
 
-		XnActualPropertiesHash::ConstIterator itProp = pModule->end();
+		XnActualPropertiesHash::ConstIterator itProp = pModule->End();
 		if (XN_STATUS_OK == pModule->Find(XN_STREAM_PROPERTY_TYPE, itProp))
 		{
 			// create a copy of the properties
-			XnActualPropertiesHash streamProps(it.Key());
+			XnActualPropertiesHash streamProps(it->Key());
 			nRetVal = streamProps.CopyFrom(*pModule);
 			XN_IS_STATUS_OK(nRetVal);
 
@@ -1303,8 +1279,8 @@ XnStatus XnDeviceBase::CreateStreams(const XnPropertySet* pSet)
 			XN_IS_STATUS_OK(nRetVal);
 
 			// and create the stream
-			XnActualStringProperty* pActualProp = (XnActualStringProperty*)itProp.Value();
-			nRetVal = CreateStreamImpl(pActualProp->GetValue(), it.Key(), &streamProps);
+			XnActualStringProperty* pActualProp = (XnActualStringProperty*)itProp->Value();
+			nRetVal = CreateStreamImpl(pActualProp->GetValue(), it->Key(), &streamProps);
 			XN_IS_STATUS_OK(nRetVal);
 		}
 	}
@@ -1314,18 +1290,18 @@ XnStatus XnDeviceBase::CreateStreams(const XnPropertySet* pSet)
 
 XnStatus XnDeviceBase::ValidateOnlyModule(const XnPropertySet* pSet, const XnChar* StreamName)
 {
-	XnPropertySetData::ConstIterator it = pSet->pData->begin();
-	if (it == pSet->pData->end())
+	XnPropertySetData::ConstIterator it = pSet->pData->Begin();
+	if (it == pSet->pData->End())
 	{
 		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DDK, "Property set did not contain any stream!");
 	}
 
-	if (strcmp(it.Key(), StreamName) != 0)
+	if (strcmp(it->Key(), StreamName) != 0)
 	{
 		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DDK, "Property set module name does not match stream name!");
 	}
 
-	if (++it != pSet->pData->end())
+	if (++it != pSet->pData->End())
 	{
 		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DDK, "Property set contains more than one module!");
 	}
@@ -1349,7 +1325,7 @@ XnStatus XnDeviceBase::CreateStream(const XnChar* StreamType, const XnChar* Stre
 		nRetVal = ValidateOnlyModule(pInitialValues, StreamName);
 		XN_IS_STATUS_OK(nRetVal);
 
-		pInitialValuesHash = pInitialValues->pData->begin().Value();
+		pInitialValuesHash = pInitialValues->pData->Begin()->Value();
 	}
 
 	nRetVal = CreateStreamImpl(StreamType, StreamName, pInitialValuesHash);
@@ -1412,7 +1388,7 @@ XnStatus XnDeviceBase::CreateStreamImpl(const XnChar* strType, const XnChar* str
 
 		if (pInitialSet != NULL)
 		{
-			XnActualPropertiesHash::ConstIterator it = pInitialSet->end();
+			XnActualPropertiesHash::ConstIterator it = pInitialSet->End();
 			if (XN_STATUS_OK == pInitialSet->Find(XN_MODULE_PROPERTY_MIRROR, it))
 			{
 				bSetMirror = FALSE;
@@ -1457,7 +1433,11 @@ XnStatus XnDeviceBase::StreamAdded(XnDeviceStream* pStream)
 	}
 
 	// raise the change event
-	m_OnStreamsChangeEvent.Raise(GetDeviceHandle(), pStream->GetName(), XN_DEVICE_STREAM_ADDED);
+	XnStreamCollectionChangedEventArgs eventArgs;
+	eventArgs.deviceHandle = GetDeviceHandle();
+	eventArgs.strStreamName = pStream->GetName();
+	eventArgs.eventType = XN_DEVICE_STREAM_ADDED;
+	m_OnStreamsChangeEvent.Raise(eventArgs);
 	
 	return (XN_STATUS_OK);
 }
@@ -1465,13 +1445,13 @@ XnStatus XnDeviceBase::StreamAdded(XnDeviceStream* pStream)
 void XnDeviceBase::FreeModuleRegisteredProperties(const XnChar* strModule)
 {
 	// free memory of registered properties to this stream
-	XnList::Iterator it = m_PropertyCallbacks.begin();
-	while (it != m_PropertyCallbacks.end())
+	PropertiesCallbacks::Iterator it = m_PropertyCallbacks.Begin();
+	while (it != m_PropertyCallbacks.End())
 	{
-		XnList::Iterator cur = it;
+		PropertiesCallbacks::Iterator cur = it;
 		it++;
 
-		XnPropertyCallback* pRealCallback = (XnPropertyCallback*)*cur;
+		XnPropertyCallback* pRealCallback = *cur;
 		if (strcmp(pRealCallback->strModule, strModule) == 0)
 		{
 			m_PropertyCallbacks.Remove(cur);
@@ -1506,7 +1486,12 @@ XnStatus XnDeviceBase::DestroyStream(const XnChar* StreamName)
 	FreeModuleRegisteredProperties(StreamName);
 
 	// raise event
-	m_OnStreamsChangeEvent.Raise(GetDeviceHandle(), strStreamName, XN_DEVICE_STREAM_DELETED);
+	// raise the change event
+	XnStreamCollectionChangedEventArgs eventArgs;
+	eventArgs.deviceHandle = GetDeviceHandle();
+	eventArgs.strStreamName = strStreamName;
+	eventArgs.eventType = XN_DEVICE_STREAM_DELETED;
+	m_OnStreamsChangeEvent.Raise(eventArgs);
 
 	xnLogVerbose(XN_MASK_DDK, "'%s' stream destroyed.", strStreamName);
 
@@ -1517,9 +1502,9 @@ XnStatus XnDeviceBase::GetModulesList(XnDeviceModuleHolder** apModules, XnUInt32
 {
 	XnUInt32 nCount = 0;
 
-	for (XnStringsHash::Iterator it = m_Modules.begin(); it != m_Modules.end(); ++it)
+	for (ModuleHoldersHash::Iterator it = m_Modules.Begin(); it != m_Modules.End(); ++it)
 	{
-		apModules[nCount] = (XnDeviceModuleHolder*)it.Value();
+		apModules[nCount] = it->Value();
 		nCount++;
 	}
 
@@ -1532,9 +1517,9 @@ XnStatus XnDeviceBase::GetModulesList(XnDeviceModuleHolderList& list)
 {
 	list.Clear();
 
-	for (XnStringsHash::Iterator it = m_Modules.begin(); it != m_Modules.end(); ++it)
+	for (ModuleHoldersHash::Iterator it = m_Modules.Begin(); it != m_Modules.End(); ++it)
 	{
-		list.AddLast((XnDeviceModuleHolder*)it.Value());
+		list.AddLast(it->Value());
 	}
 
 	return (XN_STATUS_OK);
@@ -1544,9 +1529,9 @@ XnStatus XnDeviceBase::GetStreamsList(XnDeviceModuleHolderList& list)
 {
 	list.Clear();
 
-	for (XnStringsHash::Iterator it = m_Modules.begin(); it != m_Modules.end(); ++it)
+	for (ModuleHoldersHash::Iterator it = m_Modules.Begin(); it != m_Modules.End(); ++it)
 	{
-		XnDeviceModuleHolder* pModuleHolder = (XnDeviceModuleHolder*)it.Value();
+		XnDeviceModuleHolder* pModuleHolder = it->Value();
 		if (IsStream(pModuleHolder->GetModule()))
 		{
 			list.AddLast(pModuleHolder);
@@ -1558,7 +1543,10 @@ XnStatus XnDeviceBase::GetStreamsList(XnDeviceModuleHolderList& list)
 
 XnStatus XnDeviceBase::RaiseNewStreamDataEvent(const XnChar* StreamName)
 {
-	m_OnNewStreamDataEvent.Raise(GetDeviceHandle(), StreamName);
+	XnNewStreamDataEventArgs eventArgs;
+	eventArgs.deviceHandle = GetDeviceHandle();
+	eventArgs.strStreamName = StreamName;
+	m_OnNewStreamDataEvent.Raise(eventArgs);
 
 	return XN_STATUS_OK;
 }
@@ -1739,3 +1727,11 @@ XnStatus XN_CALLBACK_TYPE XnDeviceBase::SetHighresTimestampsCallback(XnActualInt
 	return pThis->SetHighresTimestamps((XnBool)nValue);
 }
 
+XnDeviceBase::XnPropertyCallback::XnPropertyCallback(XnDeviceHandle DeviceHandle, const XnChar* strModule, const XnChar* strProp, XnDeviceOnPropertyChangedEventHandler pHandler, void* pCookie) :
+	DeviceHandle(DeviceHandle),
+	pHandler(pHandler),
+	pCookie(pCookie)
+{
+	strcpy(this->strModule, strModule);
+	strcpy(this->strProp, strProp);
+}

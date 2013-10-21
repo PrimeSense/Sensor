@@ -1,3 +1,6 @@
+ifndef _COMMON_DEFS_MAKE_
+_COMMON_DEFS_MAKE_=1
+
 # some defaults
 ifndef CFG
     CFG = Release
@@ -55,3 +58,5 @@ OSTYPE := $(shell uname -s)
 
 # platform specific args
 include $(COMMON_MAK_DIR)Platform.$(PLATFORM)
+
+endif # _COMMON_DEFS_MAKE_

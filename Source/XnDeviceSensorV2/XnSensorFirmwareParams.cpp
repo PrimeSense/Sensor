@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -49,7 +48,7 @@ XnSensorFirmwareParams::XnSensorFirmwareParams(XnFirmwareInfo* pInfo, XnFirmware
 	m_ImageCropSizeY("ImageCropSizeY"),
 	m_ImageCropOffsetX("ImageCropOffsetX"),
 	m_ImageCropOffsetY("ImageCropOffsetY"),
-	m_ImageCropEnabled("ImageCropEnabled"),
+	m_ImageCropMode("ImageCropEnabled"),
 	m_DepthFormat("DepthFormat"),
 	m_DepthResolution("DepthResolution"),
 	m_DepthFPS("DepthFPS"),
@@ -61,7 +60,7 @@ XnSensorFirmwareParams::XnSensorFirmwareParams(XnFirmwareInfo* pInfo, XnFirmware
 	m_DepthCropSizeY("DepthCropSizeY"),
 	m_DepthCropOffsetX("DepthCropOffsetX"),
 	m_DepthCropOffsetY("DepthCropOffsetY"),
-	m_DepthCropEnabled("DepthCropEnabled"),
+	m_DepthCropMode("DepthCropEnabled"),
 	m_IRFormat("IRFormat"),
 	m_IRResolution("IRResolution"),
 	m_IRFPS("IRFPS"),
@@ -69,7 +68,7 @@ XnSensorFirmwareParams::XnSensorFirmwareParams(XnFirmwareInfo* pInfo, XnFirmware
 	m_IRCropSizeY("IRCropSizeY"),
 	m_IRCropOffsetX("IRCropOffsetX"),
 	m_IRCropOffsetY("IRCropOffsetY"),
-	m_IRCropEnabled("IRCropEnabled"),
+	m_IRCropMode("IRCropEnabled"),
 	m_DepthWhiteBalance("DepthWhiteBalance"),
 	m_ImageMirror("ImageMirror"),
 	m_IRMirror("IRMirror"),
@@ -83,6 +82,7 @@ XnSensorFirmwareParams::XnSensorFirmwareParams(XnFirmwareInfo* pInfo, XnFirmware
 	m_ImageExposureBar("ImageExposureBar"),
 	m_ImageLowLightCompensation("ImageLowLightCompensation"),
 	m_ImageGain("ImageGain"),
+	m_DepthCloseRange("CloseRange"),
 	m_pInfo(pInfo),
 	m_pCommands(pCommands),
 	m_bInTransaction(FALSE)
@@ -136,7 +136,7 @@ XnStatus XnSensorFirmwareParams::Init()
 	XN_IS_STATUS_OK(nRetVal);
 	nRetVal = AddFirmwareParam(		m_ImageCropOffsetY,			PARAM_IMAGE_CROP_OFFSET_Y,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0);
 	XN_IS_STATUS_OK(nRetVal);
-	nRetVal = AddFirmwareParam(		m_ImageCropEnabled,			PARAM_IMAGE_CROP_ENABLE,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
+	nRetVal = AddFirmwareParam(		m_ImageCropMode,			PARAM_IMAGE_CROP_MODE,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
 	XN_IS_STATUS_OK(nRetVal);
 	nRetVal = AddFirmwareParam(		m_DepthFormat,				PARAM_DEPTH_FORMAT);
 	XN_IS_STATUS_OK(nRetVal);
@@ -160,7 +160,7 @@ XnStatus XnSensorFirmwareParams::Init()
 	XN_IS_STATUS_OK(nRetVal);
 	nRetVal = AddFirmwareParam(		m_DepthCropOffsetY,			PARAM_DEPTH_CROP_OFFSET_Y,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0);
 	XN_IS_STATUS_OK(nRetVal);
-	nRetVal = AddFirmwareParam(		m_DepthCropEnabled,			PARAM_DEPTH_CROP_ENABLE,					XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
+	nRetVal = AddFirmwareParam(		m_DepthCropMode,			PARAM_DEPTH_CROP_MODE,						XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
 	XN_IS_STATUS_OK(nRetVal);
 	nRetVal = AddFirmwareParam(		m_IRFormat,					PARAM_IR_FORMAT);
 	XN_IS_STATUS_OK(nRetVal);
@@ -176,7 +176,7 @@ XnStatus XnSensorFirmwareParams::Init()
 	XN_IS_STATUS_OK(nRetVal);
 	nRetVal = AddFirmwareParam(		m_IRCropOffsetY,			PARAM_IR_CROP_OFFSET_Y,						XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	0);
 	XN_IS_STATUS_OK(nRetVal);
-	nRetVal = AddFirmwareParam(		m_IRCropEnabled,			PARAM_IR_CROP_ENABLE,						XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
+	nRetVal = AddFirmwareParam(		m_IRCropMode,			PARAM_IR_CROP_MODE,						XN_SENSOR_FW_VER_5_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
 	XN_IS_STATUS_OK(nRetVal);
 	nRetVal = AddFirmwareParam(		m_DepthWhiteBalance,		PARAM_DEPTH_WHITE_BALANCE_ENABLE,			XN_SENSOR_FW_VER_4_0,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
 	XN_IS_STATUS_OK(nRetVal);
@@ -196,29 +196,30 @@ XnStatus XnSensorFirmwareParams::Init()
 	XN_IS_STATUS_OK(nRetVal);
 	nRetVal = AddFirmwareParam(		m_ImageAutoExposure,		PARAM_IMAGE_AUTO_EXPOSURE_MODE,				XN_SENSOR_FW_VER_5_4,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
 	XN_IS_STATUS_OK(nRetVal);
-	nRetVal = AddFirmwareParam(		m_ImageExposureBar,			PARAM_IMAGE_EXPOSURE_BAR,				XN_SENSOR_FW_VER_5_4,	XN_SENSOR_FW_VER_UNKNOWN,	0);
+	nRetVal = AddFirmwareParam(		m_ImageExposureBar,			PARAM_IMAGE_EXPOSURE_BAR,					XN_SENSOR_FW_VER_5_4,	XN_SENSOR_FW_VER_UNKNOWN,	0);
 	XN_IS_STATUS_OK(nRetVal);
 	nRetVal = AddFirmwareParam(		m_ImageLowLightCompensation,PARAM_IMAGE_LOW_LIGHT_COMPENSATION_MODE,	XN_SENSOR_FW_VER_5_4,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
 	XN_IS_STATUS_OK(nRetVal);
 	nRetVal = AddFirmwareParam(		m_ImageGain,				PARAM_IMAGE_AGC,							XN_SENSOR_FW_VER_5_4,	XN_SENSOR_FW_VER_UNKNOWN,	0);
 	XN_IS_STATUS_OK(nRetVal);
+	nRetVal = AddFirmwareParam(		m_DepthCloseRange,			PARAM_DEPTH_CLOSE_RANGE,					XN_SENSOR_FW_VER_5_6,	XN_SENSOR_FW_VER_UNKNOWN,	FALSE);
+	XN_IS_STATUS_OK(nRetVal);
 
 	// override some props
-	m_ImageResolution.UpdateSetCallback(SetImageResolutionCallback, this);
 	m_ImageFormat.UpdateSetCallback(SetImageFormatCallback, this);
 
 	// register for some interesting changes
 	XnCallbackHandle hCallbackDummy;
-	nRetVal = m_Stream0Mode.OnChangeEvent().Register(ReferenceResolutionPropertyValueChanged, this, &hCallbackDummy);
+	nRetVal = m_Stream0Mode.OnChangeEvent().Register(ReferenceResolutionPropertyValueChanged, this, hCallbackDummy);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = m_Stream1Mode.OnChangeEvent().Register(ReferenceResolutionPropertyValueChanged, this, &hCallbackDummy);
+	nRetVal = m_Stream1Mode.OnChangeEvent().Register(ReferenceResolutionPropertyValueChanged, this, hCallbackDummy);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = m_IRResolution.OnChangeEvent().Register(ReferenceResolutionPropertyValueChanged, this, &hCallbackDummy);
+	nRetVal = m_IRResolution.OnChangeEvent().Register(ReferenceResolutionPropertyValueChanged, this, hCallbackDummy);
 	XN_IS_STATUS_OK(nRetVal);
 
-	nRetVal = m_DepthFPS.OnChangeEvent().Register(ReferenceResolutionPropertyValueChanged, this, &hCallbackDummy);
+	nRetVal = m_DepthFPS.OnChangeEvent().Register(ReferenceResolutionPropertyValueChanged, this, hCallbackDummy);
 	XN_IS_STATUS_OK(nRetVal);
 
 	nRetVal = RecalculateReferenceResolution();
@@ -275,9 +276,9 @@ XnStatus XnSensorFirmwareParams::UpdateAllProperties()
 
 	xnLogVerbose(XN_MASK_DEVICE_SENSOR, "Reading all params from firmware...");
 
-	for (XnFirmwareParamsHash::Iterator it = m_AllFirmwareParams.begin(); it != m_AllFirmwareParams.end(); ++it)
+	for (XnFirmwareParamsHash::Iterator it = m_AllFirmwareParams.Begin(); it != m_AllFirmwareParams.End(); ++it)
 	{
-		XnFirmwareParam& param = it.Value();
+		XnFirmwareParam& param = it->Value();
 		nRetVal = UpdateProperty(&param);
 		XN_IS_STATUS_OK(nRetVal);
 	}
@@ -313,7 +314,7 @@ XnStatus XnSensorFirmwareParams::CommitTransaction()
 	// we are no longer in transaction, even if we fail to commit.
 	m_bInTransaction = FALSE;
 
-	for (XnActualIntPropertyList::Iterator it = m_TransactionOrder.begin(); it != m_TransactionOrder.end(); ++it)
+	for (XnActualIntPropertyList::Iterator it = m_TransactionOrder.Begin(); it != m_TransactionOrder.End(); ++it)
 	{
 		XnActualIntProperty* pProp = *it;
 
@@ -358,7 +359,7 @@ XnStatus XnSensorFirmwareParams::CommitTransactionAsBatch()
 
 		XnUInt32 nCount = 0;
 
-		for (XnActualIntPropertyList::Iterator it = m_TransactionOrder.begin(); it != m_TransactionOrder.end(); ++it)
+		for (XnActualIntPropertyList::Iterator it = m_TransactionOrder.Begin(); it != m_TransactionOrder.End(); ++it)
 		{
 			XnActualIntProperty* pProp = *it;
 
@@ -397,7 +398,7 @@ XnStatus XnSensorFirmwareParams::CommitTransactionAsBatch()
 		XN_IS_STATUS_OK(nRetVal);
 
 		// and update their props
-		for (XnActualIntPropertyList::Iterator it = m_TransactionOrder.begin(); it != m_TransactionOrder.end(); ++it)
+		for (XnActualIntPropertyList::Iterator it = m_TransactionOrder.Begin(); it != m_TransactionOrder.End(); ++it)
 		{
 			XnActualIntProperty* pProp = *it;
 
@@ -498,48 +499,16 @@ XnStatus XnSensorFirmwareParams::SetFirmwareAudioParam(XnActualIntProperty* pPro
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnSensorFirmwareParams::SetImageResolution(XnUInt64 nValue)
-{
-	XnStatus nRetVal = XN_STATUS_OK;
-
-	if (m_pInfo->nFWVer < XN_SENSOR_FW_VER_5_4)
-	{
-		switch (nValue)
-		{
-		case XN_RESOLUTION_QVGA:
-		case XN_RESOLUTION_VGA:
-			break;
-		case XN_RESOLUTION_SXGA:
-			if (m_pInfo->nFWVer < XN_SENSOR_FW_VER_5_3)
-			{
-				XN_LOG_WARNING_RETURN(XN_STATUS_IO_INVALID_STREAM_IMAGE_RESOLUTION, XN_MASK_DEVICE_SENSOR, "Image resolution is not supported by this firmware!");
-			}
-			break;
-		case XN_RESOLUTION_UXGA:
-			if (m_pInfo->nFWVer < XN_SENSOR_FW_VER_5_1)
-			{
-				XN_LOG_WARNING_RETURN(XN_STATUS_IO_INVALID_STREAM_IMAGE_RESOLUTION, XN_MASK_DEVICE_SENSOR, "Image resolution is not supported by this firmware!");
-			}
-			break;
-		default:
-			XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Unsupported image resolution: %d", nValue);
-		}
-	}
-
-	nRetVal = SetFirmwareParam(&m_ImageResolution, nValue);
-	XN_IS_STATUS_OK(nRetVal);
-	
-	return (XN_STATUS_OK);
-}
-
 XnStatus XnSensorFirmwareParams::SetImageFormat(XnUInt64 nValue)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-	
+
+/*	
 	if (nValue == XN_IO_IMAGE_FORMAT_UNCOMPRESSED_BAYER)
 	{
 		nValue = XN_IO_IMAGE_FORMAT_BAYER;
 	}
+*/
 
 	nRetVal = SetFirmwareParam(&m_ImageFormat, nValue);
 	XN_IS_STATUS_OK(nRetVal);
@@ -650,12 +619,6 @@ XnStatus XN_CALLBACK_TYPE XnSensorFirmwareParams::SetFirmwareAudioParamCallback(
 {
 	XnSensorFirmwareParams* pThis = (XnSensorFirmwareParams*)pCookie;
 	return pThis->SetFirmwareAudioParam(pSender, nValue);
-}
-
-XnStatus XN_CALLBACK_TYPE XnSensorFirmwareParams::SetImageResolutionCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
-{
-	XnSensorFirmwareParams* pThis = (XnSensorFirmwareParams*)pCookie;
-	return pThis->SetImageResolution(nValue);
 }
 
 XnStatus XN_CALLBACK_TYPE XnSensorFirmwareParams::SetImageFormatCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)

@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 #ifndef __XN_PROPERTY_H__
 #define __XN_PROPERTY_H__
 
@@ -26,10 +25,10 @@
 // Includes
 //---------------------------------------------------------------------------
 #include <XnDevice.h>
-#include <XnList.h>
-#include <XnStringsHash.h>
+#include <XnListT.h>
+#include <XnStringsHashT.h>
 #include <XnLog.h>
-#include <XnEvent.h>
+#include <XnEventT.h>
 
 //---------------------------------------------------------------------------
 // Types
@@ -42,6 +41,9 @@
 class XN_DDK_CPP_API XnProperty
 {
 public:
+	typedef XnStatus (XN_CALLBACK_TYPE* OnValueChangedHandler)(const XnProperty* pSender, void* pCookie);
+	typedef XnEventInterfaceT<OnValueChangedHandler> ChangeEventInterface;
+
 	/**
 	* Creates a new property. 
 	*
@@ -59,8 +61,6 @@ public:
 	inline XnBool IsReadOnly() const { return (m_pGetCallback == NULL); }
 	inline XnPropertyType GetType() const { return m_Type; }
 
-	XN_DECLARE_EVENT_1ARG_RETVAL(ChangeEvent, ChangeEventInterface, const XnProperty*, pSender);
-
 	inline ChangeEventInterface& OnChangeEvent() { return m_OnChangeEvent; }
 
 	/** Updates property name. */
@@ -68,8 +68,6 @@ public:
 
 	/** Updates the value of the property according to an INI file. */
 	virtual XnStatus ReadValueFromFile(const XnChar* csINIFile, const XnChar* csSection) = 0;
-
-	typedef XnStatus (XN_CALLBACK_TYPE* OnValueChangedHandler)(const XnProperty* pSender, void* pCookie);
 
 	/** Adds this property to the property set. */
 	virtual XnStatus AddToPropertySet(XnPropertySet* pSet) = 0;
@@ -109,6 +107,12 @@ protected:
 	inline void* Value() const { return m_pValueHolder; }
 
 private:
+	class ChangeEvent : public XnEventInterfaceT<OnValueChangedHandler>
+	{
+	public:
+		XnStatus Raise(const XnProperty* pSender);
+	};
+
 	XnChar m_strModule[XN_DEVICE_MAX_STRING_LENGTH]; // module name
 	XnChar m_strName[XN_DEVICE_MAX_STRING_LENGTH]; // property name
 	XnPropertyType m_Type; // property type
@@ -130,9 +134,9 @@ private:
 };
 
 /** A property list */
-XN_DECLARE_LIST_DECL(XN_DDK_CPP_API, XnProperty*, XnPropertiesList)
+typedef XnListT<XnProperty*> XnPropertiesList;
 
 /** A hash table, mapping property name to the property */
-XN_DECLARE_STRINGS_HASH_DECL(XN_DDK_CPP_API, XnProperty*, XnPropertiesHash)
+typedef XnStringsHashT<XnProperty*> XnPropertiesHash;
 
 #endif //__XN_PROPERTY_H__

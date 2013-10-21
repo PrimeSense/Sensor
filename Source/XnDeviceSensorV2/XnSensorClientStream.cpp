@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -166,6 +165,53 @@ XnStatus XnSensorClientFrameStream::CreateStreamData(XnStreamData** ppStreamData
 }
 
 //---------------------------------------------------------------------------
+// Client Depth Stream
+//---------------------------------------------------------------------------
+XnSensorClientDepthStream::XnSensorClientDepthStream(XnSensorClient* pClient, const XnChar* strType, const XnChar* strName) :
+	XnSensorClientFrameStream(pClient, strType, strName)
+{}
+
+XnSensorClientDepthStream::~XnSensorClientDepthStream()
+{}
+
+
+XnStatus XnSensorClientDepthStream::ReadImpl(XnStreamData* pStreamOutput)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+	
+	nRetVal = XnSensorClientFrameStream::ReadImpl(pStreamOutput);
+	XN_IS_STATUS_OK(nRetVal);
+
+	m_pLastFrameShiftsMapOffset = (XnUInt16*)(((XnUInt8*)pStreamOutput->pData) + pStreamOutput->nDataSize);
+
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensorClientDepthStream::GetProperty(const XnChar* strName, const XnGeneralBuffer& gbValue) const
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+	
+	if (strcmp(strName, XN_STREAM_PROPERTY_SHIFTS_MAP) == 0)
+	{
+		// shifts-map is at the end of the depth map
+		if (gbValue.nDataSize != sizeof(m_pLastFrameShiftsMapOffset))	
+		{
+			return XN_STATUS_DEVICE_PROPERTY_SIZE_DONT_MATCH;
+		}
+
+		const XnUInt16** ppShiftsMap = (const XnUInt16**)gbValue.pData;
+		*ppShiftsMap = m_pLastFrameShiftsMapOffset;
+	}
+	else
+	{
+		nRetVal = XnSensorClientFrameStream::GetProperty(strName, gbValue);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+
+	return (XN_STATUS_OK);
+}
+
+//---------------------------------------------------------------------------
 // Client Audio Stream
 //---------------------------------------------------------------------------
 XnSensorClientAudioStream::XnSensorClientAudioStream(XnSensorClient* pClient, const XnChar* strType, const XnChar* strName) :
@@ -281,3 +327,4 @@ XnStatus XnSensorClientAudioStream::ReadImpl(XnStreamData* pStreamOutput)
 
 	return (XN_STATUS_OK);
 }
+

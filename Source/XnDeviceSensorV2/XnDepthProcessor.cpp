@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -34,11 +33,12 @@
 //---------------------------------------------------------------------------
 // Code
 //---------------------------------------------------------------------------
-XnDepthProcessor::XnDepthProcessor(XnSensorDepthStream* pStream, XnSensorStreamHelper* pHelper) :
-	XnFrameStreamProcessor(pStream, pHelper, XN_SENSOR_PROTOCOL_RESPONSE_DEPTH_START, XN_SENSOR_PROTOCOL_RESPONSE_DEPTH_END),
+XnDepthProcessor::XnDepthProcessor(XnSensorDepthStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager) :
+	XnFrameStreamProcessor(pStream, pHelper, pBufferManager, XN_SENSOR_PROTOCOL_RESPONSE_DEPTH_START, XN_SENSOR_PROTOCOL_RESPONSE_DEPTH_END),
 	m_pShiftToDepthTable(pStream->GetShiftToDepthTable()),
 	m_nPaddingPixelsOnEnd(0),
-	m_bShiftToDepthAllocated(FALSE)
+	m_bShiftToDepthAllocated(FALSE),
+	m_nExpectedFrameSize(0)
 {
 }
 
@@ -86,6 +86,8 @@ void XnDepthProcessor::OnStartOfFrame(const XnSensorProtocolResponseHeader* pHea
 	// call base
 	XnFrameStreamProcessor::OnStartOfFrame(pHeader);
 
+	m_nExpectedFrameSize = CalculateExpectedSize();
+
 	if (m_pDevicePrivateData->FWInfo.nFWVer >= XN_SENSOR_FW_VER_5_1 && pHeader->nTimeStamp != 0)
 	{
 		// PATCH: starting with v5.1, the timestamp field of the SOF packet, is the number of pixels
@@ -102,7 +104,7 @@ XnUInt32 XnDepthProcessor::CalculateExpectedSize()
 	XnUInt32 nExpectedDepthBufferSize = GetStream()->GetXRes() * GetStream()->GetYRes();
 
 	// when cropping is turned on, actual depth size is smaller
-	if (GetStream()->m_FirmwareCropEnabled.GetValue() == TRUE)
+	if (GetStream()->m_FirmwareCropMode.GetValue() != XN_FIRMWARE_CROPPING_MODE_DISABLED)
 	{
 		nExpectedDepthBufferSize = (XnUInt32)(GetStream()->m_FirmwareCropSizeX.GetValue() * GetStream()->m_FirmwareCropSizeY.GetValue());
 	}
@@ -121,12 +123,14 @@ void XnDepthProcessor::OnEndOfFrame(const XnSensorProtocolResponseHeader* pHeade
 		m_nPaddingPixelsOnEnd = 0 ;
 	}
 
-	XnUInt32 nExpectedSize = CalculateExpectedSize();
-	if (GetWriteBuffer()->GetSize() != nExpectedSize)
+	if (GetWriteBuffer()->GetSize() != GetExpectedSize())
 	{
-		xnLogWarning(XN_MASK_SENSOR_READ, "Read: Depth buffer is corrupt. Size is %u (!= %u)", GetWriteBuffer()->GetSize(), nExpectedSize);
+		xnLogWarning(XN_MASK_SENSOR_READ, "Read: Depth buffer is corrupt. Size is %u (!= %u)", GetWriteBuffer()->GetSize(), GetExpectedSize());
 		FrameIsCorrupted();
 	}
+
+	// now add the size of the shifts map (appended at the end)
+	GetWriteBuffer()->UnsafeUpdateSize(GetWriteBuffer()->GetSize());
 
 	// call base
 	XnFrameStreamProcessor::OnEndOfFrame(pHeader);
@@ -137,17 +141,20 @@ void XnDepthProcessor::PadPixels(XnUInt32 nPixels)
 	XnBuffer* pWriteBuffer = GetWriteBuffer();
 
 	// check for overflow
-	if (!CheckWriteBufferForOverflow(nPixels * sizeof(XnDepthPixel)))
+	if (!CheckDepthBufferForOverflow(nPixels * sizeof(XnDepthPixel)))
 	{
 		return;
 	}
 
-	XnDepthPixel* pWrite = (XnDepthPixel*)pWriteBuffer->GetUnsafeWritePointer();
+	XnDepthPixel* pDepth = GetDepthOutputBuffer();
+	XnDepthPixel* pShift = GetShiftsOutputBuffer();
 
 	// place the no-depth value
-	for (XnUInt32 i = 0; i < nPixels; ++i, ++pWrite)
-		*pWrite = GetStream()->GetNoDepthValue();
-
+	for (XnUInt32 i = 0; i < nPixels; ++i, ++pDepth, ++pShift)
+    {
+		*pDepth = GetStream()->GetNoDepthValue();
+		*pShift = 0;
+    }
 	pWriteBuffer->UnsafeUpdateSize(nPixels * sizeof(XnDepthPixel));
 }
 
@@ -156,33 +163,4 @@ void XnDepthProcessor::OnFrameReady(XnUInt32 nFrameID, XnUInt64 nFrameTS)
 	XnFrameStreamProcessor::OnFrameReady(nFrameID, nFrameTS);
 
 	m_pDevicePrivateData->pSensor->GetFPSCalculator()->MarkInputDepth(nFrameID, nFrameTS);
-}
-
-void XnDepthProcessor::WriteShifts(XnUInt16* pShifts, XnUInt32 nCount)
-{
-	XnUInt32 nOutputSize = nCount * sizeof(XnDepthPixel);
-
-	// make sure we have enough room
-	if (CheckWriteBufferForOverflow(nOutputSize))
-	{
-		UnsafeWriteShifts(pShifts, nCount);
-	}
-}
-
-void XnDepthProcessor::UnsafeWriteShifts(XnUInt16* pShifts, XnUInt32 nCount)
-{
-	XnBuffer* pWriteBuffer = GetWriteBuffer();
-
-	XnDepthPixel* pWriteBuf = (XnDepthPixel*)pWriteBuffer->GetUnsafeWritePointer();
-	XnUInt16* pRaw = pShifts;
-	XnUInt16* pRawEnd = pShifts + nCount;
-
-	while (pRaw != pRawEnd)
-	{
-		*pWriteBuf = m_pShiftToDepthTable[*pRaw];
-		++pRaw;
-		++pWriteBuf;
-	}
-
-	pWriteBuffer->UnsafeUpdateSize(nCount * sizeof(XnDepthPixel));
 }

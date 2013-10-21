@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -56,9 +55,9 @@ XN_DDK_API XnStatus XnStreamDataSetDestroy(XnStreamDataSet** ppStreamOutputSet)
 	XnStreamDataSet* pSet = (*ppStreamOutputSet);
 	if (pSet != NULL)
 	{
-		for (XnStreamDataHash::Iterator it = pSet->pHash->begin(); it != pSet->pHash->end(); ++it)
+		for (XnStreamDataHash::Iterator it = pSet->pHash->Begin(); it != pSet->pHash->End(); ++it)
 		{
-			XnStreamData* pStreamData = it.Value();
+			XnStreamData* pStreamData = it->Value();
 			XnStreamDataDestroy(&pStreamData);
 		}
 
@@ -78,7 +77,7 @@ XN_DDK_API XnStatus XnStreamDataSetAdd(XnStreamDataSet* pStreamOutputSet, XnStre
 	XN_VALIDATE_INPUT_PTR(pStreamOutput);
 
 	// make sure another object of this stream is not already in set
-	XnStreamDataHash::Iterator it = pStreamOutputSet->pHash->end();
+	XnStreamDataHash::Iterator it = pStreamOutputSet->pHash->End();
 	if (XN_STATUS_NO_MATCH != pStreamOutputSet->pHash->Find(pStreamOutput->StreamName, it))
 		return XN_STATUS_STREAM_OUTPUT_SET_ALREADY_IN_SET;
 
@@ -90,9 +89,9 @@ XN_DDK_API XnStatus XnStreamDataSetRemove(XnStreamDataSet* pStreamOutputSet, XnS
 	XN_VALIDATE_INPUT_PTR(pStreamOutputSet);
 	XN_VALIDATE_INPUT_PTR(pStreamOutput);
 
-	for (XnStreamDataHash::Iterator it = pStreamOutputSet->pHash->begin(); it != pStreamOutputSet->pHash->end(); ++it)
+	for (XnStreamDataHash::Iterator it = pStreamOutputSet->pHash->Begin(); it != pStreamOutputSet->pHash->End(); ++it)
 	{
-		if (pStreamOutput == it.Value())
+		if (pStreamOutput == it->Value())
 		{
 			pStreamOutputSet->pHash->Remove(it);
 			break;
@@ -145,9 +144,9 @@ XN_DDK_API XnStatus XnStreamDataSetCopyToArray(const XnStreamDataSet* pStreamOut
 
 	// now copy
 	XnUInt32 nIndex = 0;
-	for (XnStreamDataHash::Iterator it = pStreamOutputSet->pHash->begin(); it != pStreamOutputSet->pHash->end(); ++it)
+	for (XnStreamDataHash::Iterator it = pStreamOutputSet->pHash->Begin(); it != pStreamOutputSet->pHash->End(); ++it)
 	{
-		apStreamOutputs[nIndex] = it.Value();
+		apStreamOutputs[nIndex] = it->Value();
 		nIndex++;
 	}
 

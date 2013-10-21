@@ -5,6 +5,8 @@
 #*   Copyright (C) 2010 PrimeSense Ltd.                                        *
 #*                                                                             *
 #******************************************************************************/
+include Common/CommonDefs.mak
+
 # default config is Release
 ifndef CFG
     CFG = Release

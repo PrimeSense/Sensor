@@ -1,30 +1,30 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
 #include "XnFrameStream.h"
 #include "XnStreamDataInternal.h"
 #include "XnSimpleBufferPool.h"
+#include "XnExternalBufferPool.h"
 
 //---------------------------------------------------------------------------
 // Code
@@ -34,6 +34,7 @@ XnFrameStream::XnFrameStream(const XnChar* csType, const XnChar* csName) :
 	m_IsFrameStream(XN_STREAM_PROPERTY_IS_FRAME_BASED, TRUE),
 	m_FPS(XN_STREAM_PROPERTY_FPS, 0),
 	m_LastRawFrame(XN_STREAM_PROPERTY_LAST_RAW_FRAME),
+	m_externalBufferPool(XN_STREAM_PROPERTY_EXTERNAL_BUFFER_POOL),
 	m_nLastReadFrame(0),
 	m_bTripleBufferReallocated(FALSE),
 	m_pBufferManager(NULL),
@@ -42,18 +43,7 @@ XnFrameStream::XnFrameStream(const XnChar* csType, const XnChar* csName) :
 {
 	m_FPS.UpdateSetCallback(SetFPSCallback, this);
 	m_LastRawFrame.UpdateGetCallback(GetLastRawFrameCallback, this);
-}
-
-XnStatus XnFrameStream::SetBufferPool(XnBufferPool* pBufferPool)
-{
-	// we only allow this if no buffer pool exists
-	if (m_pBufferPool != NULL)
-	{
-		return XN_STATUS_ERROR;
-	}
-
-	m_pBufferPool = pBufferPool;
-	return (XN_STATUS_OK);
+	m_externalBufferPool.UpdateSetCallback(SetExternalBufferPoolCallback, this);
 }
 
 XnStatus XnFrameStream::Init()
@@ -64,29 +54,47 @@ XnStatus XnFrameStream::Init()
 	nRetVal = XnDeviceStream::Init();
 	XN_IS_STATUS_OK(nRetVal);
 
-	XN_VALIDATE_ADD_PROPERTIES(this, &m_IsFrameStream, &m_FPS, &m_LastRawFrame);
+	XN_VALIDATE_ADD_PROPERTIES(this, &m_IsFrameStream, &m_FPS, &m_LastRawFrame, &m_externalBufferPool );
 
 	XnCallbackHandle hDummy;
 
 	// be notified when required size changes
-	nRetVal = RequiredSizeProperty().OnChangeEvent().Register(RequiredSizeChangedCallback, this, &hDummy);
+	nRetVal = RequiredSizeProperty().OnChangeEvent().Register(RequiredSizeChangedCallback, this, hDummy);
 	XN_IS_STATUS_OK(nRetVal);
 
-	if (m_pBufferPool == NULL)
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnFrameStream::GetTripleBuffer(XnFrameBufferManager** pBufferManager)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+	
+	// lazy initialization (this allows us to set buffer pool after initialization of the stream
+	// and before data actually arrives (or stream data is allocated)
+	if (m_pBufferManager == NULL)
 	{
-		XN_VALIDATE_NEW(m_pBufferPool, XnSimpleBufferPool, 3);
-		m_bPoolAllocated = TRUE;
+		if (m_pBufferPool == NULL)
+		{
+			XN_VALIDATE_NEW(m_pBufferPool, XnSimpleBufferPool, 3);
+			m_bPoolAllocated = TRUE;
+
+			nRetVal = m_pBufferPool->Init(GetRequiredDataSize());
+			XN_IS_STATUS_OK(nRetVal);
+		}
+
+		// allocate buffer manager
+		XN_VALIDATE_NEW(m_pBufferManager, XnFrameBufferManager, m_pBufferPool);
+
+		nRetVal = m_pBufferManager->Init(GetRequiredDataSize());
+		XN_IS_STATUS_OK(nRetVal);
+
+		// register for new data events
+		XnCallbackHandle hDummy;
+		nRetVal = m_pBufferManager->OnNewFrameEvent().Register(OnTripleBufferNewData, this, hDummy);
+		XN_IS_STATUS_OK(nRetVal);
 	}
 
-	// allocate buffer manager
-	XN_VALIDATE_NEW(m_pBufferManager, XnFrameBufferManager, m_pBufferPool);
-
-	nRetVal = m_pBufferManager->Init(GetRequiredDataSize());
-	XN_IS_STATUS_OK(nRetVal);
-
-	// register for new data events
-	nRetVal = m_pBufferManager->OnNewFrameEvent().Register(OnTripleBufferNewData, this, &hDummy);
-	XN_IS_STATUS_OK(nRetVal);
+	*pBufferManager = m_pBufferManager;
 
 	return (XN_STATUS_OK);
 }
@@ -116,21 +124,34 @@ XnStatus XnFrameStream::CreateStreamData(XnStreamData** ppStreamData)
 	
 	XnStreamData* pStreamData;
 
-	// we create a StreamData object with no buffer allocated. The buffer will just be 
-	// a pointer to the triple buffer
-	nRetVal = XnStreamDataCreateNoBuffer(&pStreamData, GetName());
-	XN_IS_STATUS_OK(nRetVal);
+	// NOTE: in any case, we must make sure data is not null, because some old applications
+	// counts on it (they might read the data before the first frame).
 
-	// However, we don't want the user to get a null pointer, even if no new frame yet,
-	// so we'll initialize the data with one of the buffers
-	nRetVal = m_pBufferPool->GetBuffer(&pStreamData->pInternal->pLockedBuffer);
-	if (nRetVal != XN_STATUS_OK)
+	// check if the buffer pool has been set yet
+	if (m_pBufferPool == NULL)
 	{
-		XnStreamDataDestroy(&pStreamData);
-		return (nRetVal);
+		// Create it with a buffer. This buffer will be later on freed when buffers from 
+		// the buffer pool will be used.
+		nRetVal = XnStreamDataCreate(&pStreamData, GetName(), GetRequiredDataSize());
+		XN_IS_STATUS_OK(nRetVal);
 	}
+	else
+	{
+		// we create a StreamData object with no buffer allocated. The buffer will just be 
+		// a pointer from the buffer pool
+		nRetVal = XnStreamDataCreateNoBuffer(&pStreamData, GetName());
+		XN_IS_STATUS_OK(nRetVal);
 
-	pStreamData->pData = (void*)pStreamData->pInternal->pLockedBuffer->GetData();
+		// take a buffer from the pool
+		nRetVal = m_pBufferPool->GetBuffer(&pStreamData->pInternal->pLockedBuffer);
+		if (nRetVal != XN_STATUS_OK)
+		{
+			XnStreamDataDestroy(&pStreamData);
+			return (nRetVal);
+		}
+
+		pStreamData->pData = (void*)pStreamData->pInternal->pLockedBuffer->GetData();
+	}
 
 	*ppStreamData = pStreamData;
 	
@@ -151,6 +172,10 @@ XnStatus XnFrameStream::OnRequiredSizeChanging()
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
+	// if the stream already notified it has new data, this must be undone, as we don't want
+	// the application getting frames of unexpected size
+	ResetNewDataAvailableFlag();
+
 	nRetVal = ReallocTripleFrameBuffer();
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -161,10 +186,13 @@ XnStatus XnFrameStream::ReallocTripleFrameBuffer()
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	nRetVal = m_pBufferManager->Reallocate(GetRequiredDataSize());
-	XN_IS_STATUS_OK(nRetVal);
+	if (m_pBufferManager != NULL)
+	{
+		nRetVal = m_pBufferManager->Reallocate(GetRequiredDataSize());
+		XN_IS_STATUS_OK(nRetVal);
 
-	m_bTripleBufferReallocated = TRUE;
+		m_bTripleBufferReallocated = TRUE;
+	}
 
 	return (XN_STATUS_OK);
 }
@@ -186,7 +214,17 @@ XnStatus XnFrameStream::ReadImpl(XnStreamData* pStreamOutput)
 	XnStatus nRetVal = XN_STATUS_OK;
 
 	// release previous buffer
-	m_pBufferPool->DecRef(pStreamOutput->pInternal->pLockedBuffer);
+	if (pStreamOutput->pInternal->pLockedBuffer != NULL)
+	{
+		m_pBufferPool->DecRef(pStreamOutput->pInternal->pLockedBuffer);
+	}
+	else if (pStreamOutput->pInternal->nAllocSize > 0)
+	{
+		// no need for this buffer, we're replacing it with a pointer to the 
+		// buffer pool
+		nRetVal = XnStreamDataUpdateSize(pStreamOutput, 0);
+		XN_IS_STATUS_OK(nRetVal);
+	}
 
 	m_pBufferManager->ReadLastStableBuffer(
 		&pStreamOutput->pInternal->pLockedBuffer, 
@@ -213,6 +251,38 @@ XnStatus XnFrameStream::GetLastRawFrame(XnDynamicSizeBuffer* pBuffer)
 	return (XN_STATUS_OK);
 }
 
+XnStatus XnFrameStream::SetExternalBufferPool(XnUInt32 nCount, XnGeneralBuffer* aBuffers)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+	
+	if (m_pBufferPool != NULL)
+	{
+		xnLogError(XN_MASK_DDK, "Cannot change buffer pool.");
+		return XN_STATUS_DEVICE_PROPERTY_READ_ONLY;
+	}
+
+	XnExternalBufferPool* pExternalBufferPool;
+	XN_VALIDATE_NEW(pExternalBufferPool, XnExternalBufferPool);
+
+	nRetVal = pExternalBufferPool->SetBuffers(nCount, aBuffers);
+	if (nRetVal != XN_STATUS_OK)
+	{
+		XN_DELETE(pExternalBufferPool);
+		return (nRetVal);
+	}
+
+	nRetVal = pExternalBufferPool->Init(GetRequiredDataSize());
+	if (nRetVal != XN_STATUS_OK)
+	{
+		XN_DELETE(pExternalBufferPool);
+		return (nRetVal);
+	}
+
+	m_pBufferPool = pExternalBufferPool;
+
+	return (XN_STATUS_OK);
+}
+
 XnStatus XN_CALLBACK_TYPE XnFrameStream::SetFPSCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
 {
 	XnFrameStream* pThis = (XnFrameStream*)pCookie;
@@ -225,10 +295,10 @@ XnStatus XN_CALLBACK_TYPE XnFrameStream::RequiredSizeChangedCallback(const XnPro
 	return pThis->OnRequiredSizeChanging();
 }
 
-void XN_CALLBACK_TYPE XnFrameStream::OnTripleBufferNewData(XnFrameBufferManager* /*pTripleBuffer*/, XnUInt64 nTimestamp, void* pCookie)
+void XN_CALLBACK_TYPE XnFrameStream::OnTripleBufferNewData(const XnFrameBufferManager::NewFrameEventArgs& args, void* pCookie)
 {
 	XnFrameStream* pThis = (XnFrameStream*)pCookie;
-	pThis->NewDataAvailable(nTimestamp, pThis->m_nLastReadFrame + 1);
+	pThis->NewDataAvailable(args.nTimestamp, pThis->m_nLastReadFrame + 1);
 }
 
 XnStatus XN_CALLBACK_TYPE XnFrameStream::GetLastRawFrameCallback(const XnGeneralProperty* /*pSender*/, const XnGeneralBuffer& gbValue, void* pCookie)
@@ -237,4 +307,10 @@ XnStatus XN_CALLBACK_TYPE XnFrameStream::GetLastRawFrameCallback(const XnGeneral
 	XnFrameStream* pThis = (XnFrameStream*)pCookie;
 	XnDynamicSizeBuffer* pBuffer = (XnDynamicSizeBuffer*)gbValue.pData;
 	return pThis->GetLastRawFrame(pBuffer);
+}
+
+XnStatus XN_CALLBACK_TYPE XnFrameStream::SetExternalBufferPoolCallback(XnGeneralProperty* /*pSender*/, const XnGeneralBuffer& gbValue, void* pCookie)
+{
+	XnFrameStream* pThis = (XnFrameStream*)pCookie;
+	return pThis->SetExternalBufferPool(gbValue.nDataSize / sizeof(XnGeneralBuffer), (XnGeneralBuffer*)gbValue.pData);
 }

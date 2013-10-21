@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 #ifndef _XN_STREAM_PARAMS_H_
 #define _XN_STREAM_PARAMS_H_
 
@@ -117,6 +116,8 @@
 #define XN_STREAM_PROPERTY_INPUT_FORMAT				"InputFormat"
 /** XnDynamicSizeBuffer */
 #define XN_STREAM_PROPERTY_LAST_RAW_FRAME			"LastRawFrame"
+/** XnGeneralBuffer array */
+#define XN_STREAM_PROPERTY_EXTERNAL_BUFFER_POOL		"ExternalBufferPool"
 
 //---------------------------------------------------------------------------
 // Pixel-Based Stream Properties (Depth, Image, IR)
@@ -131,6 +132,8 @@
 #define XN_STREAM_PROPERTY_BYTES_PER_PIXEL			"BytesPerPixel"
 /** XnCropping */ 
 #define XN_STREAM_PROPERTY_CROPPING					"Cropping"
+/** XnCroppingMode */
+#define XN_STREAM_PROPERTY_CROPPING_MODE			"CroppingMode"
 
 /** Boolean */
 #define XN_STREAM_PROPERTY_WHITE_BALANCE_ENABLED	"WhiteBalancedEnabled"
@@ -186,6 +189,12 @@
 #define XN_STREAM_PROPERTY_DCMOS_RCMOS_DISTANCE		"DCRCDIS"
 /** Boolean */
 #define XN_STREAM_PROPERTY_GMC_MODE					"GmcMode"
+/** Boolean */
+#define XN_STREAM_PROPERTY_CLOSE_RANGE				"CloseRange"
+/** XnUInt16* (general) */
+#define XN_STREAM_PROPERTY_SHIFTS_MAP				"ShiftsMap"
+/** XnPixelRegistration - get only */
+#define XN_STREAM_PROPERTY_PIXEL_REGISTRATION		"PixelRegistration"
 
 //---------------------------------------------------------------------------
 // Shifts Properties (up to v3.6)
@@ -248,6 +257,8 @@
 #define XN_STREAM_PROPERTY_ZOOM						XN_CAPABILITY_ZOOM
 /** Integer (in microseconds) */
 #define XN_STREAM_PROPERTY_EXPOSURE					XN_CAPABILITY_EXPOSURE
+/** Boolean */
+#define XN_STREAM_PROPERTY_AUTO_EXPOSURE			XN_CAPABILITY_AUTO_EXPOSURE
 /** Float */
 #define XN_STREAM_PROPERTY_PAN						XN_CAPABILITY_PAN
 /** Float */
@@ -300,6 +311,8 @@
 #define XN_MODULE_PROPERTY_READ_ENDPOINT_3			"ReadEndpoint3"
 /** Boolean */
 #define XN_MODULE_PROPERTY_RESET_SENSOR_ON_STARTUP	"ResetSensorOnStartup"
+/** Boolean */
+#define XN_MODULE_PROPERTY_LEAN_INIT				"LeanInit"
 /** String */
 #define XN_MODULE_PROPERTY_ID						"ID"
 /** String */ 
@@ -333,11 +346,15 @@
 /** Boolean */
 #define XN_MODULE_PROPERTY_HIGH_RES_TIMESTAMPS		"HighResTimestamps"
 /** Boolean */
+#define XN_MODULE_PROPERTY_HOST_TIMESTAMPS			"HostTimestamps"
+/** Boolean */
 #define XN_MODULE_PROPERTY_CLOSE_STREAMS_ON_SHUTDOWN	"CloseStreamsOnShutdown"
 /** Integer */
 #define XN_MODULE_PROPERTY_SERVER_NO_CLIENTS_TIMEOUT	"ServerNoClientsTimeout"
 /** Integer */
 #define XN_MODULE_PROPERTY_SERVER_START_NEW_LOG_FILE	"ServerStartNewLogFile"
+/** String */
+#define XN_MODULE_PROPERTY_SERVER_LOG_FILE			"ServerLogFile"
 /** Integer */
 #define XN_MODULE_PROPERTY_ERROR_STATE				"ErrorState"
 /** Boolean */
@@ -348,8 +365,19 @@
 #define XN_MODULE_PROPERTY_PHYSICAL_DEVICE_NAME		"PhysicalDeviceName"
 /** String */
 #define XN_MODULE_PROPERTY_VENDOR_SPECIFIC_DATA		"VendorSpecificData"
+/** String */
+#define XN_MODULE_PROPERTY_SENSOR_PLATFORM_STRING	"SensorPlatformString"
 /** Boolean */
 #define XN_MODULE_PROPERTY_AUDIO_SUPPORTED			"AudioSupported"
+/** Boolean */
+#define XN_MODULE_PROPERTY_IMAGE_SUPPORTED			"ImageSupported"
+#define XN_MODULE_PROPERTY_IMAGE_CONTROL			"ImageControl"
+#define XN_MODULE_PROPERTY_DEPTH_CONTROL			"DepthControl"
+#define XN_MODULE_PROPERTY_AHB						"AHB"
+/** XnLedState */
+#define XN_MODULE_PROPERTY_LED_STATE				"LedState"
+/** Boolean */
+#define XN_MODULE_PROPERTY_EMITTER_STATE			"EmitterState"
 
 
 //---------------------------------------------------------------------------
@@ -371,6 +399,7 @@
 #define XN_UXGA_X_RES	1600
 #define XN_UXGA_Y_RES	1200
 
+#define XN_IO_MAX_I2C_BUFFER_SIZE 10
 
 //---------------------------------------------------------------------------
 // Enums - values of various properties
@@ -411,6 +440,8 @@ typedef enum
 	XN_SENSOR_FW_VER_5_4 = 10,
 	XN_SENSOR_FW_VER_5_5 = 11,
 	XN_SENSOR_FW_VER_5_6 = 12,
+	XN_SENSOR_FW_VER_5_7 = 13,
+	XN_SENSOR_FW_VER_5_8 = 14,
 } XnFWVer;
 
 typedef enum
@@ -433,13 +464,17 @@ typedef enum {
 	XN_SENSOR_HW_VER_FPDB_10 = 1,
 	XN_SENSOR_HW_VER_CDB_10  = 2,
 	XN_SENSOR_HW_VER_RD_3  = 3,
-	XN_SENSOR_HW_VER_RD_5  = 4
+	XN_SENSOR_HW_VER_RD_5  = 4,
+	XN_SENSOR_HW_VER_RD1081  = 5,
+	XN_SENSOR_HW_VER_RD1082  = 6,
+	XN_SENSOR_HW_VER_RD109  = 7	
 } XnHWVer;
 
 typedef enum {
 	XN_SENSOR_CHIP_VER_UNKNOWN = 0,
 	XN_SENSOR_CHIP_VER_PS1000 = 1,
-	XN_SENSOR_CHIP_VER_PS1080 = 2
+	XN_SENSOR_CHIP_VER_PS1080 = 2,
+	XN_SENSOR_CHIP_VER_PS1080A6 = 3
 } XnChipVer;
 
 typedef enum
@@ -505,6 +540,35 @@ typedef enum XnProcessingType
 	XN_PROCESSING_HARDWARE = 1,
 	XN_PROCESSING_SOFTWARE = 2,
 } XnProcessingType;
+
+typedef enum XnFirmwareCroppingMode
+{
+	XN_FIRMWARE_CROPPING_MODE_DISABLED = 0,
+	XN_FIRMWARE_CROPPING_MODE_NORMAL = 1,
+	XN_FIRMWARE_CROPPING_MODE_INCREASED_FPS = 2,
+} XnFirmwareCroppingMode;
+
+typedef enum XnCroppingMode
+{
+	XN_CROPPING_MODE_NORMAL = 1,
+	XN_CROPPING_MODE_INCREASED_FPS = 2,
+	XN_CROPPING_MODE_SOFTWARE_ONLY = 3,
+} XnCroppingMode;
+
+typedef enum XnDepthCMOSType
+{
+    XN_DEPTH_CMOS_NONE = 0,
+    XN_DEPTH_CMOS_MT9M001 = 1,
+    XN_DEPTH_CMOS_AR130 = 2,
+} XnDepthCMOSType;
+
+typedef enum XnImageCMOSType
+{
+    XN_IMAGE_CMOS_NONE = 0,
+    XN_IMAGE_CMOS_MT9M112 = 1,
+    XN_IMAGE_CMOS_MT9D131 = 2,
+    XN_IMAGE_CMOS_MT9M114 = 3,
+} XnImageCMOSType;
 
 
 //---------------------------------------------------------------------------
@@ -577,6 +641,54 @@ typedef struct XnCmosPreset
 	XnUInt16 nResolution;
 	XnUInt16 nFPS;
 } XnCmosPreset;
+
+typedef struct XnI2CWriteData
+{
+	XnUInt16 nBus;
+	XnUInt16 nSlaveAddress;
+	XnUInt16 cpWriteBuffer[XN_IO_MAX_I2C_BUFFER_SIZE];
+	XnUInt16 nWriteSize;
+} XnI2CWriteData;
+
+typedef struct XnI2CReadData
+{
+	XnUInt16 nBus;
+	XnUInt16 nSlaveAddress;
+	XnUInt16 cpReadBuffer[XN_IO_MAX_I2C_BUFFER_SIZE];
+	XnUInt16 cpWriteBuffer[XN_IO_MAX_I2C_BUFFER_SIZE];
+	XnUInt16 nReadSize;
+	XnUInt16 nWriteSize;
+} XnI2CReadData;
+
+typedef struct XnControlProcessingData
+{
+	XnUInt16 nRegister;
+	XnUInt16 nValue;
+} XnControlProcessingData;
+
+typedef struct XnAHBData
+{
+	XnUInt32 nRegister;
+	XnUInt32 nValue;
+	XnUInt32 nMask;
+} XnAHBData;
+
+typedef struct XnPixelRegistration
+{
+	XnUInt32 nDepthX;
+	XnUInt32 nDepthY;
+	XnDepthPixel nDepthValue;
+	XnUInt32 nImageXRes;
+	XnUInt32 nImageYRes;
+	XnUInt32 nImageX; // out
+	XnUInt32 nImageY; // out
+} XnPixelRegistration;
+
+typedef struct XnLedState
+{
+	XnUInt16 nLedID;
+	XnUInt16 nState;
+} XnLedState;
 
 
 #pragma pack (pop)

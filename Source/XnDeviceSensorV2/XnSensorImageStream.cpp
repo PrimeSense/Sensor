@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -39,11 +38,9 @@
 //---------------------------------------------------------------------------
 // XnSensorImageStream class
 //---------------------------------------------------------------------------
-XnSensorImageStream::XnSensorImageStream(const XnChar* strDeviceName, const XnChar* StreamName, XnSensorObjects* pObjects, XnUInt32 nBufferCount, XnBool bAllowOtherUsers) : 
+XnSensorImageStream::XnSensorImageStream(const XnChar* StreamName, XnSensorObjects* pObjects) : 
 	XnImageStream(StreamName, FALSE),
 	m_Helper(pObjects),
-	m_BufferPool(nBufferCount, strDeviceName, StreamName, GetMaxBufferSize(m_Helper.GetFirmwareVersion()), bAllowOtherUsers),
-	m_SharedBufferName(XN_STREAM_PROPERTY_SHARED_BUFFER_NAME, m_BufferPool.GetSharedMemoryName()),
 	m_InputFormat(XN_STREAM_PROPERTY_INPUT_FORMAT, XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT),
 	m_AntiFlicker(XN_STREAM_PROPERTY_FLICKER, XN_IMAGE_STREAM_DEFAULT_FLICKER),
 	m_ImageQuality(XN_STREAM_PROPERTY_QUALITY, XN_IMAGE_STREAM_DEFAULT_QUALITY),
@@ -56,19 +53,21 @@ XnSensorImageStream::XnSensorImageStream(const XnChar* strDeviceName, const XnCh
 	m_Gain(XN_STREAM_PROPERTY_GAIN, XN_IMAGE_STREAM_DEFAULT_GAIN),
 	m_Zoom(XN_STREAM_PROPERTY_ZOOM, XN_IMAGE_STREAM_DEFAULT_ZOOM),
 	m_Exposure(XN_STREAM_PROPERTY_EXPOSURE, XN_IMAGE_STREAM_DEFAULT_EXPOSURE_BAR),
+	m_AutoExposure(XN_STREAM_PROPERTY_AUTO_EXPOSURE, XN_IMAGE_STREAM_DEFAULT_AUTO_EXPOSURE),
 	m_Pan(XN_STREAM_PROPERTY_PAN, XN_IMAGE_STREAM_DEFAULT_PAN),
 	m_Tilt(XN_STREAM_PROPERTY_TILT, XN_IMAGE_STREAM_DEFAULT_TILT),
 	m_LowLightCompensation(XN_STREAM_PROPERTY_LOW_LIGHT_COMPENSATION, XN_IMAGE_STREAM_DEFAULT_LOW_LIGHT_COMP),
+	m_CroppingMode(XN_STREAM_PROPERTY_CROPPING_MODE, XN_CROPPING_MODE_NORMAL),
 	m_FirmwareMirror("FirmwareMirror", FALSE, StreamName),
 	m_FirmwareCropSizeX("FirmwareCropSizeX", 0, StreamName),
 	m_FirmwareCropSizeY("FirmwareCropSizeY", 0, StreamName),
 	m_FirmwareCropOffsetX("FirmwareCropOffsetX", 0, StreamName),
 	m_FirmwareCropOffsetY("FirmwareCropOffsetY", 0, StreamName),
-	m_FirmwareCropEnabled("FirmwareCropEnabled", FALSE, StreamName),
+	m_FirmwareCropMode("FirmwareCropMode", XN_FIRMWARE_CROPPING_MODE_DISABLED, StreamName),
 	m_FirmwareColorTemperature("FirmwareWhiteBalance", 0, StreamName),
-	m_FirmwareAutoWhiteBalance("FirmwareAutoWhiteBalance", 0, StreamName),
+	m_FirmwareAutoWhiteBalance("FirmwareAutoWhiteBalance", TRUE, StreamName),
 	m_FirmwareExposure("FirmwareExposure", 0, StreamName),
-	m_FirmwareAutoExposure("FirmwareAutoExposure", FALSE, StreamName),
+	m_FirmwareAutoExposure("FirmwareAutoExposure", TRUE, StreamName),
 	m_ActualRead(XN_STREAM_PROPERTY_ACTUAL_READ_DATA, FALSE)
 {
 	m_ActualRead.UpdateSetCallback(SetActualReadCallback, this);
@@ -84,8 +83,8 @@ XnStatus XnSensorImageStream::Init()
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	nRetVal = SetBufferPool(&m_BufferPool);
-	XN_IS_STATUS_OK(nRetVal);
+// 	nRetVal = SetBufferPool(&m_BufferPool);
+// 	XN_IS_STATUS_OK(nRetVal);
 
 	// init base
 	nRetVal = XnImageStream::Init();
@@ -105,14 +104,15 @@ XnStatus XnSensorImageStream::Init()
 	m_BackLightCompensation.UpdateSetCallback(SetBacklightCompensationCallback, this);
 	m_Gain.UpdateSetCallback(SetGainCallback, this);
 	m_Exposure.UpdateSetCallback(SetExposureCallback, this);
+	m_AutoExposure.UpdateSetCallback(SetAutoExposureCallback, this);
 	m_LowLightCompensation.UpdateSetCallback(SetLowLightCompensationCallback, this);
+	m_CroppingMode.UpdateSetCallback(SetCroppingModeCallback, this);
 
 	// add properties
 	XN_VALIDATE_ADD_PROPERTIES(this, &m_InputFormat, &m_AntiFlicker, &m_ImageQuality, 
-		&m_Brightness, &m_Contrast, &m_Saturation, &m_Sharpness,  
+		&m_Brightness, &m_Contrast, &m_Saturation, &m_Sharpness, &m_CroppingMode, 
 		&m_ColorTemperature, &m_BackLightCompensation, &m_Gain, &m_Zoom, 
-		&m_Exposure, &m_Pan, &m_Tilt, &m_LowLightCompensation,
-		&m_SharedBufferName, &m_ActualRead);
+		&m_Exposure, &m_AutoExposure, &m_Pan, &m_Tilt, &m_LowLightCompensation, &m_ActualRead);
 
 	// set base properties default values
 	nRetVal = ResolutionProperty().UnsafeUpdateValue(XN_IMAGE_STREAM_DEFAULT_RESOLUTION);
@@ -139,7 +139,7 @@ XnStatus XnSensorImageStream::Init()
 	XN_IS_STATUS_OK(nRetVal);
 
 	// register supported modes
-	if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_4)
+	if (m_Helper.GetFirmware()->GetInfo()->bGetPresetsSupported)
 	{
 		// ask the firmware
 		const XnUInt32 nAllocSize = 100;
@@ -154,132 +154,74 @@ XnStatus XnSensorImageStream::Init()
 			return XN_STATUS_DEVICE_UNSUPPORTED_PARAMETER;
 		}
 
-		// check if our current (default) configuration is valid
-		XnUInt16 nValidInputFormat = XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT;
-		XnBool bModeFound = FALSE;
-
-		for (XnUInt32 i = 0; i < nCount; ++i)
-		{
-			if (aSupportedModes[i].nResolution == XN_IMAGE_STREAM_DEFAULT_RESOLUTION &&
-				aSupportedModes[i].nFPS == XN_IMAGE_STREAM_DEFAULT_FPS)
-			{
-				// found
-				if (!bModeFound)
-				{
-					bModeFound = TRUE;
-					nValidInputFormat = aSupportedModes[i].nFormat;
-				}
-
-				if (aSupportedModes[i].nFormat == XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT)
-				{
-					nValidInputFormat = XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT;
-					break;					
-				}
-			}
-		}
-
-		if (!bModeFound)
-		{
-			xnLogWarning(XN_MASK_DEVICE_SENSOR, "Default mode (res + FPS) is not supported by device. Changing defaults...");
-
-			nRetVal = ResolutionProperty().UnsafeUpdateValue(aSupportedModes[0].nResolution);
-			XN_IS_STATUS_OK(nRetVal);
-			nRetVal = FPSProperty().UnsafeUpdateValue(aSupportedModes[0].nFPS);
-			XN_IS_STATUS_OK(nRetVal);
-			nRetVal = m_InputFormat.UnsafeUpdateValue(aSupportedModes[0].nFormat);
-			XN_IS_STATUS_OK(nRetVal);
-		}
-		else
-		{
-			// just update input format
-			nRetVal = m_InputFormat.UnsafeUpdateValue(nValidInputFormat);
-			XN_IS_STATUS_OK(nRetVal);
-		}
-
 		nRetVal = AddSupportedModes(aSupportedModes, nCount);
 		XN_IS_STATUS_OK(nRetVal);
 	}
 	else
 	{
-		XnArray<XnCmosPreset> supportedModes(30);
+		// Firmware doesn't support getting presets. Instead, we'll need to register presets
+		// we know according to firmware version
+		XnCmosPreset* pSupportedModes; 
+		XnUInt8 nSupportedModes;
+		XnUInt64 nDefaultInputFormat;
 
-		// Uncompressed modes are only supported in ISO (not BULK)
-		XnBool bUncompressedAllowed = m_Helper.GetPrivateData()->pSpecificImageUsb->pUsbConnection->bIsISO;
-
-		// start with common modes supported by all
-		nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_YUV422, XN_RESOLUTION_QVGA, 30);
-		XN_IS_STATUS_OK(nRetVal);
-		nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_YUV422, XN_RESOLUTION_QVGA, 60);
-		XN_IS_STATUS_OK(nRetVal);
-		nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_YUV422, XN_RESOLUTION_VGA, 30);
-		XN_IS_STATUS_OK(nRetVal);
-
-		// add uncompressed ones
-		if (bUncompressedAllowed)
+		if (m_Helper.GetPrivateData()->pSpecificImageUsb->pUsbConnection->bIsISO)
 		{
-			nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_QVGA, 30);
-			XN_IS_STATUS_OK(nRetVal);
-			nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_QVGA, 60);
-			XN_IS_STATUS_OK(nRetVal);
-			nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_VGA, 30);
-			XN_IS_STATUS_OK(nRetVal);
+			pSupportedModes = m_Helper.GetPrivateData()->FWInfo.imageIsoModes.GetData();
+			nSupportedModes = m_Helper.GetPrivateData()->FWInfo.imageIsoModes.GetSize();
+		}
+		else
+		{
+			pSupportedModes = m_Helper.GetPrivateData()->FWInfo.imageBulkModes.GetData();
+			nSupportedModes = m_Helper.GetPrivateData()->FWInfo.imageBulkModes.GetSize();
 		}
 
-		// starting with FW 5.2, 25 FPS is also supported
-		if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_2)
-		{
-			nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_YUV422, XN_RESOLUTION_QVGA, 25);
-			XN_IS_STATUS_OK(nRetVal);
-			nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_YUV422, XN_RESOLUTION_VGA, 25);
-			XN_IS_STATUS_OK(nRetVal);
+		nRetVal = AddSupportedModes(pSupportedModes, nSupportedModes);
+		XN_IS_STATUS_OK(nRetVal);
+	}
 
-			if (bUncompressedAllowed)
+	// check if our current (default) configuration is valid
+	XnUInt16 nValidInputFormat = XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT;
+	XnBool bModeFound = FALSE;
+
+	const XnArray<XnCmosPreset>& aSupportedModes = GetSupportedModes();
+
+	for (XnUInt32 i = 0; i < aSupportedModes.GetSize(); ++i)
+	{
+		if (aSupportedModes[i].nResolution == XN_IMAGE_STREAM_DEFAULT_RESOLUTION &&
+			aSupportedModes[i].nFPS == XN_IMAGE_STREAM_DEFAULT_FPS)
+		{
+			// found
+			if (!bModeFound)
 			{
-				nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_QVGA, 25);
-				XN_IS_STATUS_OK(nRetVal);
-				nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_VGA, 25);
-				XN_IS_STATUS_OK(nRetVal);
+				bModeFound = TRUE;
+				nValidInputFormat = aSupportedModes[i].nFormat;
+			}
+
+			if (aSupportedModes[i].nFormat == XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT)
+			{
+				nValidInputFormat = XN_IMAGE_STREAM_DEFAULT_INPUT_FORMAT;
+				break;					
 			}
 		}
+	}
 
-		// high-res
-		if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_3)
-		{
-			nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_BAYER, XN_RESOLUTION_SXGA, 30);
-			XN_IS_STATUS_OK(nRetVal);
+	if (!bModeFound)
+	{
+		xnLogWarning(XN_MASK_DEVICE_SENSOR, "Default mode (res + FPS) is not supported by device. Changing defaults...");
 
-			// starting with 5.3.28, YUV is also supported in high-res
-			if (m_Helper.GetPrivateData()->Version.nMajor > 5 ||
-				(m_Helper.GetPrivateData()->Version.nMajor == 5 && m_Helper.GetPrivateData()->Version.nMinor > 3) ||
-				(m_Helper.GetPrivateData()->Version.nMajor == 5 && m_Helper.GetPrivateData()->Version.nMinor == 3 && m_Helper.GetPrivateData()->Version.nBuild >= 28))
-			{
-				nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_YUV422, XN_RESOLUTION_SXGA, 30);
-				XN_IS_STATUS_OK(nRetVal);
-
-				if (bUncompressedAllowed)
-				{
-					nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422, XN_RESOLUTION_SXGA, 30);
-					XN_IS_STATUS_OK(nRetVal);
-				}
-			}
-		}
-		else if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_2)
-		{
-			// on 5.2, high-res was UXGA
-			nRetVal = AddSupportedMode(supportedModes, XN_IO_IMAGE_FORMAT_BAYER, XN_RESOLUTION_UXGA, 30);
-			XN_IS_STATUS_OK(nRetVal);
-		}
-
-		// Add all supported modes to the stream
-		nRetVal = AddSupportedModes(supportedModes.GetData(), supportedModes.GetSize());
+		nRetVal = ResolutionProperty().UnsafeUpdateValue(aSupportedModes[0].nResolution);
 		XN_IS_STATUS_OK(nRetVal);
-
-		if (!bUncompressedAllowed)
-		{
-			// update default input format
-			nRetVal = m_InputFormat.UnsafeUpdateValue(XN_IO_IMAGE_FORMAT_YUV422);
-			XN_IS_STATUS_OK(nRetVal);
-		}
+		nRetVal = FPSProperty().UnsafeUpdateValue(aSupportedModes[0].nFPS);
+		XN_IS_STATUS_OK(nRetVal);
+		nRetVal = m_InputFormat.UnsafeUpdateValue(aSupportedModes[0].nFormat);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+	else
+	{
+		// just update input format
+		nRetVal = m_InputFormat.UnsafeUpdateValue(nValidInputFormat);
+		XN_IS_STATUS_OK(nRetVal);
 	}
 
 	return (XN_STATUS_OK);
@@ -290,20 +232,6 @@ XnStatus XnSensorImageStream::Free()
 	m_Helper.Free();
 	XnImageStream::Free();
 	return (XN_STATUS_OK);
-}
-
-XnUInt32 XnSensorImageStream::GetMaxBufferSize(XnFWVer version)
-{
-	if (version >= XN_SENSOR_FW_VER_5_3)
-	{
-		// max resolution is only SXGA
-		return (XN_SXGA_X_RES * XN_SXGA_Y_RES * sizeof(XnRGB24Pixel));
-	}
-	else
-	{
-		// max resolution is UXGA
-		return (XN_UXGA_X_RES * XN_UXGA_Y_RES * sizeof(XnRGB24Pixel));
-	}
 }
 
 XnStatus XnSensorImageStream::MapPropertiesToFirmware()
@@ -330,7 +258,7 @@ XnStatus XnSensorImageStream::MapPropertiesToFirmware()
 	XN_IS_STATUS_OK(nRetVal);;
 	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropOffsetY, GetFirmwareParams()->m_ImageCropOffsetY, TRUE);
 	XN_IS_STATUS_OK(nRetVal);;
-	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropEnabled, GetFirmwareParams()->m_ImageCropEnabled, TRUE);
+	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropMode, GetFirmwareParams()->m_ImageCropMode, TRUE);
 	XN_IS_STATUS_OK(nRetVal);;
 	nRetVal = m_Helper.MapFirmwareProperty(m_Sharpness, GetFirmwareParams()->m_ImageSharpness, TRUE);
 	XN_IS_STATUS_OK(nRetVal);;
@@ -368,7 +296,8 @@ XnStatus XnSensorImageStream::ValidateMode()
 	case XN_OUTPUT_FORMAT_RGB24:
 		if (nInputFormat != XN_IO_IMAGE_FORMAT_YUV422 &&
 			nInputFormat != XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422 &&
-			nInputFormat != XN_IO_IMAGE_FORMAT_BAYER)
+			nInputFormat != XN_IO_IMAGE_FORMAT_BAYER &&
+			nInputFormat != XN_IO_IMAGE_FORMAT_UNCOMPRESSED_BAYER)
 		{
 			XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Input format %d cannot be converted to RGB24!", nInputFormat);
 		}
@@ -445,23 +374,13 @@ XnStatus XnSensorImageStream::ConfigureStreamImpl()
 		XN_IS_STATUS_OK(nRetVal);
 	}
 
-	if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_4)
+	if (m_Helper.GetFirmwareVersion() >= XN_SENSOR_FW_VER_5_8)
 	{
-		nRetVal = m_Helper.ConfigureFirmware(m_Sharpness);
-		XN_IS_STATUS_OK(nRetVal);
-		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareColorTemperature);
-		XN_IS_STATUS_OK(nRetVal);
-		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareAutoWhiteBalance);
+		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareAutoExposure);
 		XN_IS_STATUS_OK(nRetVal);
 		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareExposure);
 		XN_IS_STATUS_OK(nRetVal);
-		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareAutoExposure);
-		XN_IS_STATUS_OK(nRetVal);
-		nRetVal = m_Helper.ConfigureFirmware(m_BackLightCompensation);
-		XN_IS_STATUS_OK(nRetVal);
-		nRetVal = m_Helper.ConfigureFirmware(m_Gain);
-		XN_IS_STATUS_OK(nRetVal);
-		nRetVal = m_Helper.ConfigureFirmware(m_LowLightCompensation);
+		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareAutoWhiteBalance);
 		XN_IS_STATUS_OK(nRetVal);
 	}
 
@@ -502,7 +421,7 @@ XnStatus XnSensorImageStream::OpenStreamImpl()
 	XN_IS_STATUS_OK(nRetVal);
 
 	// Cropping
-	if (m_FirmwareCropEnabled.GetValue() == TRUE)
+	if (m_FirmwareCropMode.GetValue() != XN_FIRMWARE_CROPPING_MODE_DISABLED)
 	{
 		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropSizeX);
 		XN_IS_STATUS_OK(nRetVal);;
@@ -513,7 +432,7 @@ XnStatus XnSensorImageStream::OpenStreamImpl()
 		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropOffsetY);
 		XN_IS_STATUS_OK(nRetVal);;
 	}
-	nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropEnabled);
+	nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropMode);
 	XN_IS_STATUS_OK(nRetVal);;
 
 	nRetVal = XnImageStream::Open();
@@ -665,9 +584,11 @@ XnStatus XnSensorImageStream::SetImageQuality(XnUInt32 /*nQuality*/)
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnSensorImageStream::SetCropping(const XnCropping* pCropping)
+XnStatus XnSensorImageStream::SetCroppingImpl(const XnCropping* pCropping, XnCroppingMode mode)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
+
+	XnFirmwareCroppingMode firmwareMode = m_Helper.GetFirmwareCroppingMode(mode, pCropping->bEnabled);
 
 	nRetVal = ValidateCropping(pCropping);
 	XN_IS_STATUS_OK(nRetVal);
@@ -699,13 +620,13 @@ XnStatus XnSensorImageStream::SetCropping(const XnCropping* pCropping)
 
 		if (nRetVal == XN_STATUS_OK)
 		{
-			nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareCropEnabled, (XnUInt16)pCropping->bEnabled);
+			nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareCropMode, (XnUInt16)firmwareMode);
 		}
 
 		if (nRetVal != XN_STATUS_OK)
 		{
 			m_Helper.RollbackFirmwareTransaction();
-			m_Helper.UpdateFromFirmware(m_FirmwareCropEnabled);
+			m_Helper.UpdateFromFirmware(m_FirmwareCropMode);
 			m_Helper.UpdateFromFirmware(m_FirmwareCropOffsetX);
 			m_Helper.UpdateFromFirmware(m_FirmwareCropOffsetY);
 			m_Helper.UpdateFromFirmware(m_FirmwareCropSizeX);
@@ -717,7 +638,7 @@ XnStatus XnSensorImageStream::SetCropping(const XnCropping* pCropping)
 		nRetVal = m_Helper.CommitFirmwareTransactionAsBatch();
 		if (nRetVal != XN_STATUS_OK)
 		{
-			m_Helper.UpdateFromFirmware(m_FirmwareCropEnabled);
+			m_Helper.UpdateFromFirmware(m_FirmwareCropMode);
 			m_Helper.UpdateFromFirmware(m_FirmwareCropOffsetX);
 			m_Helper.UpdateFromFirmware(m_FirmwareCropOffsetY);
 			m_Helper.UpdateFromFirmware(m_FirmwareCropSizeX);
@@ -727,11 +648,36 @@ XnStatus XnSensorImageStream::SetCropping(const XnCropping* pCropping)
 		}
 	}
 
+	nRetVal = m_CroppingMode.UnsafeUpdateValue(mode);
+	XN_ASSERT(nRetVal == XN_STATUS_OK);
+
 	nRetVal = XnImageStream::SetCropping(pCropping);
 	xnOSLeaveCriticalSection(GetLock());
 	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensorImageStream::SetCropping(const XnCropping* pCropping)
+{
+	return SetCroppingImpl(pCropping, (XnCroppingMode)m_CroppingMode.GetValue());
+}
+
+XnStatus XnSensorImageStream::SetCroppingMode(XnCroppingMode mode)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	switch (mode)
+	{
+	case XN_CROPPING_MODE_NORMAL:
+	case XN_CROPPING_MODE_INCREASED_FPS:
+	case XN_CROPPING_MODE_SOFTWARE_ONLY:
+		break;
+	default:
+		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Bad cropping mode: %u", mode);
+	}
+
+	return SetCroppingImpl(GetCropping(), mode);
 }
 
 XnStatus XnSensorImageStream::SetSharpness( XnInt32 nValue )
@@ -749,13 +695,42 @@ XnStatus XnSensorImageStream::SetColorTemperature( XnInt32 nValue )
 	XnStatus nRetVal = XN_STATUS_OK;
 
 	XnBool bIsAuto = (nValue == XN_AUTO_CONTROL);
-	nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareAutoWhiteBalance, (XnUInt16)bIsAuto);
-	XN_IS_STATUS_OK(nRetVal);
+
+	if (m_Helper.GetFirmwareVersion() < XN_SENSOR_FW_VER_5_8)
+	{
+		XnUInt16 nCmosRegValue; 
+
+		nRetVal = XnHostProtocolSetCMOSRegisterI2C(m_Helper.GetPrivateData(), (XnCMOSType)0, 0xf0, 1);
+		XN_IS_STATUS_OK(nRetVal);
+
+		nRetVal = XnHostProtocolGetCMOSRegisterI2C(m_Helper.GetPrivateData(), (XnCMOSType)0, 0x6, nCmosRegValue);
+		XN_IS_STATUS_OK(nRetVal);
+
+		if(bIsAuto)
+		{
+			nCmosRegValue |= 0x2;	
+		}
+		else
+		{		
+			nCmosRegValue &= ~0x2;
+		}	
+
+		nRetVal = XnHostProtocolSetCMOSRegisterI2C(m_Helper.GetPrivateData(), (XnCMOSType)0, 0x6, nCmosRegValue);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+	else
+	{
+		nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareAutoWhiteBalance, (XnUInt16)bIsAuto);
+		XN_IS_STATUS_OK(nRetVal);
+	}
 
 	if (!bIsAuto)
 	{
-		nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareColorTemperature, (XnUInt16)nValue);
-		XN_IS_STATUS_OK(nRetVal);
+		if (nValue != XN_PAUSE_AUTO_CONTROL)
+		{
+			nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareColorTemperature, (XnUInt16)nValue);
+			XN_IS_STATUS_OK(nRetVal);
+		}
 	}
 
 	nRetVal = m_ColorTemperature.UnsafeUpdateValue(nValue);
@@ -789,16 +764,38 @@ XnStatus XnSensorImageStream::SetExposure( XnInt32 nValue )
 	XnStatus nRetVal = XN_STATUS_OK;
 
 	XnBool bIsAuto = (nValue == XN_AUTO_CONTROL);
-	nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareAutoExposure, (XnUInt16)bIsAuto);
-	XN_IS_STATUS_OK(nRetVal);
 
-	if (!bIsAuto)
+	if (m_Helper.GetFirmwareVersion() < XN_SENSOR_FW_VER_5_8)
+	{
+		// Implement me...
+	}
+	else
 	{
 		nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareExposure, (XnUInt16)nValue);
 		XN_IS_STATUS_OK(nRetVal);
 	}
 
 	nRetVal = m_Exposure.UnsafeUpdateValue(nValue);
+	XN_IS_STATUS_OK(nRetVal);
+
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensorImageStream::SetAutoExposure( XnInt32 nValue )
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	if (m_Helper.GetFirmwareVersion() < XN_SENSOR_FW_VER_5_8)
+	{
+		// Implement me...
+	}
+	else
+	{
+		nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareAutoExposure, (XnUInt16)nValue);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+
+	nRetVal = m_AutoExposure.UnsafeUpdateValue(nValue);
 	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);
@@ -853,7 +850,7 @@ XnStatus XnSensorImageStream::CropImpl(XnStreamData* pStreamOutput, const XnCrop
 	XnStatus nRetVal = XN_STATUS_OK;
 
 	// if firmware cropping is disabled, crop
-	if (m_FirmwareCropEnabled.GetValue() == FALSE)
+	if (m_FirmwareCropMode.GetValue() == XN_FIRMWARE_CROPPING_MODE_DISABLED)
 	{
 		nRetVal = XnImageStream::CropImpl(pStreamOutput, pCropping);
 		XN_IS_STATUS_OK(nRetVal);
@@ -910,24 +907,30 @@ XnUInt32 XnSensorImageStream::CalculateExpectedSize()
 
 XnStatus XnSensorImageStream::CreateDataProcessor(XnDataProcessor** ppProcessor)
 {
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	XnFrameBufferManager* pBufferManager;
+	nRetVal = GetTripleBuffer(&pBufferManager);
+	XN_IS_STATUS_OK(nRetVal);
+
 	XnStreamProcessor* pNew;
 
 	switch (m_InputFormat.GetValue())
 	{
 	case XN_IO_IMAGE_FORMAT_BAYER:
-		XN_VALIDATE_NEW_AND_INIT(pNew, XnBayerImageProcessor, this, &m_Helper);
+		XN_VALIDATE_NEW_AND_INIT(pNew, XnBayerImageProcessor, this, &m_Helper, pBufferManager);
 		break;
 	case XN_IO_IMAGE_FORMAT_YUV422:
-		XN_VALIDATE_NEW_AND_INIT(pNew, XnPSCompressedImageProcessor, this, &m_Helper);
+		XN_VALIDATE_NEW_AND_INIT(pNew, XnPSCompressedImageProcessor, this, &m_Helper, pBufferManager);
 		break;
 	case XN_IO_IMAGE_FORMAT_JPEG:
 		if (GetOutputFormat() == XN_OUTPUT_FORMAT_JPEG)
 		{
-			XN_VALIDATE_NEW_AND_INIT(pNew, XnJpegImageProcessor, this, &m_Helper);
+			XN_VALIDATE_NEW_AND_INIT(pNew, XnJpegImageProcessor, this, &m_Helper, pBufferManager);
 		}
 		else if (GetOutputFormat() == XN_OUTPUT_FORMAT_RGB24)
 		{
-			XN_VALIDATE_NEW_AND_INIT(pNew, XnJpegToRGBImageProcessor, this, &m_Helper);
+			XN_VALIDATE_NEW_AND_INIT(pNew, XnJpegToRGBImageProcessor, this, &m_Helper, pBufferManager);
 		}
 		else
 		{
@@ -937,19 +940,19 @@ XnStatus XnSensorImageStream::CreateDataProcessor(XnDataProcessor** ppProcessor)
 	case XN_IO_IMAGE_FORMAT_UNCOMPRESSED_YUV422:
 		if (GetOutputFormat() == XN_OUTPUT_FORMAT_YUV422)
 		{
-			XN_VALIDATE_NEW_AND_INIT(pNew, XnUncompressedYUVImageProcessor, this, &m_Helper);
+			XN_VALIDATE_NEW_AND_INIT(pNew, XnUncompressedYUVImageProcessor, this, &m_Helper, pBufferManager);
 		}
 		else if (GetOutputFormat() == XN_OUTPUT_FORMAT_RGB24)
 		{
-			XN_VALIDATE_NEW_AND_INIT(pNew, XnUncompressedYUVtoRGBImageProcessor, this, &m_Helper);
+			XN_VALIDATE_NEW_AND_INIT(pNew, XnUncompressedYUVtoRGBImageProcessor, this, &m_Helper, pBufferManager);
 		}
 		else
 		{
-			XN_LOG_WARNING_RETURN(XN_STATUS_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "invalid output format %d!", GetOutputFormat());
+			XN_LOG_WARNING_RETURN(XN_STATUS_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "invalid output format %d!", pBufferManager);
 		}
 		break;
 	case XN_IO_IMAGE_FORMAT_UNCOMPRESSED_BAYER:
-		XN_VALIDATE_NEW_AND_INIT(pNew, XnUncompressedBayerProcessor, this, &m_Helper);
+		XN_VALIDATE_NEW_AND_INIT(pNew, XnUncompressedBayerProcessor, this, &m_Helper, pBufferManager);
 		break;
 	default:
 		return XN_STATUS_IO_INVALID_STREAM_IMAGE_FORMAT;
@@ -1019,3 +1022,16 @@ XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetExposureCallback( XnActualIntP
 	XnSensorImageStream* pThis = (XnSensorImageStream*)pCookie;
 	return pThis->SetExposure((XnInt32)nValue);
 }
+
+XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetAutoExposureCallback( XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie )
+{
+	XnSensorImageStream* pThis = (XnSensorImageStream*)pCookie;
+	return pThis->SetAutoExposure((XnInt32)nValue);
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensorImageStream::SetCroppingModeCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
+{
+	XnSensorImageStream* pStream = (XnSensorImageStream*)pCookie;
+	return pStream->SetCroppingMode((XnCroppingMode)nValue);
+}
+

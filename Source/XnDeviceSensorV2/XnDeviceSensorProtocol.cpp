@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -115,7 +114,9 @@ XnBool XN_CALLBACK_TYPE XnDeviceSensorProtocolUsbEpCb(XnUChar* pBuffer, XnUInt32
 					break;
 				}
 				else
+				{
 					pBuffer++;
+				}
 			}
 
 			if (pBuffer == pBufEnd &&					// magic wasn't found
@@ -214,6 +215,7 @@ XnStatus XnDeviceSensorProtocolDumpLastRawFrameImpl(XnDevicePrivateData* pDevice
 	dsb.pData = xnOSMallocAligned((XnUInt32)nMaxDataSize, XN_DEFAULT_MEM_ALIGN);
 	XN_VALIDATE_ALLOC_PTR(dsb.pData);
 
+	
 	nRetVal = pDevicePrivateData->pSensor->GetProperty(strName, XN_STREAM_PROPERTY_LAST_RAW_FRAME, XN_PACK_GENERAL_BUFFER(dsb));
 	if (nRetVal != XN_STATUS_OK)
 	{
@@ -221,6 +223,12 @@ XnStatus XnDeviceSensorProtocolDumpLastRawFrameImpl(XnDevicePrivateData* pDevice
 		return (nRetVal);
 	}
 
+	// The real depth size is half of what's being reported because of special depth+shift memory packing format.
+	if (strType == XN_STREAM_TYPE_DEPTH)
+	{
+		dsb.nDataSize /= 2;
+	}
+	
 	xnOSSaveFile(strFileName, dsb.pData, dsb.nDataSize);
 
 	xnOSFreeAligned(dsb.pData);
@@ -245,5 +253,41 @@ XnStatus XnDeviceSensorProtocolDumpLastRawFrame(XnDevicePrivateData* pDevicePriv
 	}
 	
 	return (XN_STATUS_OK);
+}
+
+void FixDumpFileName (XnDevicePrivateData* pDevicePrivateData, XnChar* strFileName)
+{
+	XnChar strTempFileName[255];
+	XnChar* nFind = 0;
+
+	strcpy(strTempFileName, strFileName);
+
+	nFind = strstr(strFileName, "SNSNSN");
+	if (nFind != 0)
+	{
+		nFind[0] = 0;
+		sprintf (strTempFileName, "%s%s%s", strFileName, pDevicePrivateData->pSensor->GetFixedParams()->GetSensorSerial(), nFind+6);
+
+		strcpy(strFileName, strTempFileName);		
+	}
+
+	nFind = strstr(strFileName, "SETSET");
+	if (nFind != 0)
+	{
+		XnInt32 nSet = 1;		
+		XnBool bExists = TRUE;
+
+		nFind[0] = 0;
+
+		while (bExists == TRUE)
+		{
+			sprintf (strTempFileName, "%sSET%04d%s", strFileName, nSet, nFind+6);
+			nSet++;
+
+			xnOSDoesFileExist(strTempFileName, &bExists);
+		}
+			
+		strcpy(strFileName, strTempFileName);		
+	}
 }
 

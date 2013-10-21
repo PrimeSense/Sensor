@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -38,7 +37,7 @@ typedef struct XnLastStreamData
 	XnUInt64 nTimestamp;
 } XnLastStreamData;
 
-XN_DECLARE_STRINGS_HASH(XnLastStreamData, XnLastStreamDataHash);
+typedef XnStringsHashT<XnLastStreamData> XnLastStreamDataHash;
 
 //---------------------------------------------------------------------------
 // Code
@@ -71,7 +70,8 @@ XnStatus XnDeviceFileReader::InitImpl(const XnDeviceConfig* pDeviceConfig)
 	XN_IS_STATUS_OK(nRetVal);
 
 	// register to events
-	nRetVal = OnStreamCollectionChangedEvent().Register(StreamCollectionChangedCallback, this);
+	XnCallbackHandle hDummy = NULL;
+	nRetVal = OnStreamCollectionChangedEvent().Register(StreamCollectionChangedCallback, this, hDummy);
 	XN_IS_STATUS_OK(nRetVal);
 
 	// TODO: remove this
@@ -218,11 +218,11 @@ XnStatus XnDeviceFileReader::ReadInitialState(XnPropertySet *pSet)
 				nRetVal = GetDataPacker()->ReadProperty(strModule, strProp, &nValue);
 				XN_IS_STATUS_OK(nRetVal);
 
-				XnActualPropertiesHash* pModule;
+				XnActualPropertiesHash* pModule = NULL;
 				nRetVal = pSet->pData->Get(strModule, pModule);
 				XN_IS_STATUS_OK(nRetVal);
 
-				XnProperty* pProp;
+				XnProperty* pProp = NULL;
 				nRetVal = pModule->Get(strProp, pProp);
 				XN_IS_STATUS_OK(nRetVal);
 
@@ -313,8 +313,8 @@ XnStatus XnDeviceFileReader::HandleStreamRemoved(const XnChar* strName)
 	
 	// check for specific case: all streams are removed and then end-of-file is reached.
 	// in this case, we don't really want to destroy streams, just wrap around.
-	XnStringsHash StreamsToRemove;
-	nRetVal = StreamsToRemove.Set(strName, NULL);
+	XnStringsSet StreamsToRemove;
+	nRetVal = StreamsToRemove.Set(strName);
 	XN_IS_STATUS_OK(nRetVal);
 
 	XnPackedDataType nType = XN_PACKED_STREAM_REMOVED;
@@ -334,7 +334,7 @@ XnStatus XnDeviceFileReader::HandleStreamRemoved(const XnChar* strName)
 			nRetVal = GetDataPacker()->ReadStreamRemoved(strTempName);
 			XN_IS_STATUS_OK(nRetVal);
 
-			nRetVal = StreamsToRemove.Set(strTempName, NULL);
+			nRetVal = StreamsToRemove.Set(strTempName);
 			XN_IS_STATUS_OK(nRetVal);
 		}
 		else
@@ -346,9 +346,9 @@ XnStatus XnDeviceFileReader::HandleStreamRemoved(const XnChar* strName)
 	if (nType != XN_PACKED_END)
 	{
 		// Not the case we were looking for. Remove those streams.
-		for (XnStringsHash::Iterator it = StreamsToRemove.begin(); it != StreamsToRemove.end(); ++it)
+		for (XnStringsSet::Iterator it = StreamsToRemove.Begin(); it != StreamsToRemove.End(); ++it)
 		{
-			nRetVal = XnStreamReaderDevice::HandleStreamRemoved(it.Key());
+			nRetVal = XnStreamReaderDevice::HandleStreamRemoved(it->Key());
 			XN_IS_STATUS_OK(nRetVal);
 		}
 	}
@@ -390,7 +390,7 @@ XnStatus XnDeviceFileReader::HandleStreamData(XnStreamData* pDataProps, XnCompre
 	nRetVal = GetIOStream()->Tell(&nPosition);
 	XN_IS_STATUS_OK(nRetVal);
 
-	XnUIntHash::Iterator it = m_PositionsToIgnore.end();
+	XnUIntHash::Iterator it = m_PositionsToIgnore.End();
 	if (XN_STATUS_OK == m_PositionsToIgnore.Find(nPosition, it))
 	{
 		// ignore this one. Just update the frame ID
@@ -433,7 +433,7 @@ XnStatus XnDeviceFileReader::Rewind()
 	nRetVal = GetStreamsList(streams);
 	XN_IS_STATUS_OK(nRetVal);
 
-	for (XnDeviceModuleHolderList::Iterator it = streams.begin(); it != streams.end(); ++it)
+	for (XnDeviceModuleHolderList::Iterator it = streams.Begin(); it != streams.End(); ++it)
 	{
 		XnDeviceModuleHolder* pHolder = *it;
 
@@ -459,10 +459,10 @@ XnStatus XnDeviceFileReader::Rewind()
 	}
 
 	// now set state.
-	for (XnPropertySetData::Iterator it = state.pData->begin(); it != state.pData->end(); ++it)
+	for (XnPropertySetData::Iterator it = state.pData->Begin(); it != state.pData->End(); ++it)
 	{
-		const XnChar* strName = it.Key();
-		XnActualPropertiesHash* pHash = it.Value();
+		const XnChar* strName = it->Key();
+		XnActualPropertiesHash* pHash = it->Value();
 
 		// fix it first
 		if (strcmp(strName, XN_MODULE_NAME_DEVICE) == 0)
@@ -739,7 +739,7 @@ XnStatus XnDeviceFileReader::SeekTo(XnUInt64 nMinTimestamp, XnUInt32 nMinFrameID
 		nRetVal = GetStreamsList(streams);
 		XN_IS_STATUS_OK(nRetVal);
 
-		for (XnDeviceModuleHolderList::Iterator it = streams.begin(); it != streams.end(); ++it)
+		for (XnDeviceModuleHolderList::Iterator it = streams.Begin(); it != streams.End(); ++it)
 		{
 			XnStreamReaderStream* pStream = (XnStreamReaderStream*)(*it)->GetModule();
 			pStream->ReMarkDataAsNew();
@@ -792,10 +792,10 @@ XnStatus XnDeviceFileReader::OnStreamCollectionChanged(const XnChar* /*StreamNam
 	return XN_STATUS_OK;
 }
 
-void XnDeviceFileReader::StreamCollectionChangedCallback(XnDeviceHandle /*DeviceHandle*/, const XnChar* StreamName, XnStreamsChangeEventType EventType, void* pCookie)
+void XnDeviceFileReader::StreamCollectionChangedCallback(const XnStreamCollectionChangedEventArgs& args, void* pCookie)
 {
 	XnDeviceFileReader* pThis = (XnDeviceFileReader*)pCookie;
-	pThis->OnStreamCollectionChanged(StreamName, EventType);
+	pThis->OnStreamCollectionChanged(args.strStreamName, args.eventType);
 }
 
 XnStatus XnDeviceFileReader::ReadNextData()

@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 #ifndef __XN_DEVICE_BASE_H__
 #define __XN_DEVICE_BASE_H__
 
@@ -26,11 +25,11 @@
 // Includes
 //---------------------------------------------------------------------------
 #include <XnDDK/IXnDevice.h>
-#include <XnStringsHash.h>
+#include <XnStringsHashT.h>
 #include <XnDevice.h>
 #include <XnDDK/XnDeviceModule.h>
 #include "XnDeviceModuleHolder.h"
-#include <XnEvent.h>
+#include <XnEventT.h>
 #include <XnDDK/XnDeviceStream.h>
 #include <XnDDK/XnActualStringProperty.h>
 #include <XnDDK/XnActualIntProperty.h>
@@ -96,11 +95,11 @@ public:
 	virtual XnStatus DoesModuleExist(const XnChar* ModuleName, XnBool* pbDoesExist);
 	virtual XnStatus OpenAllStreams();
 	virtual XnStatus CloseAllStreams();
-	virtual XnStatus RegisterToStreamsChange(XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback);
+	virtual XnStatus RegisterToStreamsChange(XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback);
 	virtual XnStatus UnregisterFromStreamsChange(XnCallbackHandle hCallback);
 	virtual XnStatus CreateStreamData(const XnChar* StreamName, XnStreamData** ppStreamData);
 	static XnStatus DestroyStreamData(XnStreamData** ppStreamData);
-	virtual XnStatus RegisterToNewStreamData(XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback);
+	virtual XnStatus RegisterToNewStreamData(XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback);
 	virtual XnStatus UnregisterFromNewStreamData(XnCallbackHandle hCallback);
 	virtual XnStatus IsNewDataAvailable(const XnChar* StreamName, XnBool* pbNewDataAvailable, XnUInt64* pnTimestamp);
 	virtual XnStatus ReadStream(XnStreamData* pStreamOutput);
@@ -122,14 +121,14 @@ public:
 	virtual XnStatus LoadConfigFromFile(const XnChar* csINIFilePath, const XnChar* csSectionName);
 	virtual XnStatus BatchConfig(const XnPropertySet* pChangeSet);
 	virtual XnStatus GetAllProperties(XnPropertySet* pSet, XnBool bNoStreams = FALSE, const XnChar* strModule = NULL);
-	virtual XnStatus RegisterToPropertyChange(const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback);
+	virtual XnStatus RegisterToPropertyChange(const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback);
 	virtual XnStatus UnregisterFromPropertyChange(const XnChar* Module, const XnChar* PropertyName, XnCallbackHandle hCallback);
 
-	XN_DECLARE_EVENT_3ARG(StreamCollectionChangedEvent, StreamCollectionChangedEventInterface, XnDeviceHandle, DeviceHandle, const XnChar*, StreamName, XnStreamsChangeEventType, EventType);
-	StreamCollectionChangedEventInterface& OnStreamCollectionChangedEvent() { return m_OnStreamsChangeEvent; }
+	typedef XnEventT<XnStreamCollectionChangedEventArgs> StreamCollectionChangedEvent;
+	StreamCollectionChangedEvent::TInterface& OnStreamCollectionChangedEvent() { return m_OnStreamsChangeEvent; }
 
-	XN_DECLARE_EVENT_2ARG(NewStreamDataEvent, NewStreamDataEventInterface, XnDeviceHandle, DeviceHandle, const XnChar*, StreamName);
-	NewStreamDataEventInterface& OnNewStreamDataEvent() { return m_OnNewStreamDataEvent; }
+	typedef XnEventT<XnNewStreamDataEventArgs> NewStreamDataEvent;
+	NewStreamDataEvent::TInterface& OnNewStreamDataEvent() { return m_OnNewStreamDataEvent; }
 
 protected:
 	virtual XnStatus InitImpl(const XnDeviceConfig* pDeviceConfig);
@@ -293,10 +292,24 @@ private:
 
 	static XnStatus XN_CALLBACK_TYPE StreamNewDataCallback(XnDeviceStream* pStream, void* pCookie);
 
-	XnStringsHash m_Modules;
-	XnStringsHash m_SupportedStreams;
+	typedef XnStringsHashT<XnDeviceModuleHolder*> ModuleHoldersHash;
+	ModuleHoldersHash m_Modules;
 
-	XnList m_PropertyCallbacks;
+	XnStringsSet m_SupportedStreams;
+
+	struct XnPropertyCallback
+	{
+		XnPropertyCallback(XnDeviceHandle DeviceHandle, const XnChar* strModule, const XnChar* strProp, XnDeviceOnPropertyChangedEventHandler pHandler, void* pCookie);
+
+		XnDeviceHandle DeviceHandle;
+		XnChar strModule[XN_DEVICE_MAX_STRING_LENGTH];
+		XnChar strProp[XN_DEVICE_MAX_STRING_LENGTH];
+		XnDeviceOnPropertyChangedEventHandler pHandler;
+		void* pCookie;
+		XnCallbackHandle hCallback;
+	};
+	typedef XnListT<XnPropertyCallback*> PropertiesCallbacks;
+	PropertiesCallbacks m_PropertyCallbacks;
 
 	StreamCollectionChangedEvent m_OnStreamsChangeEvent;
 	NewStreamDataEvent m_OnNewStreamDataEvent;

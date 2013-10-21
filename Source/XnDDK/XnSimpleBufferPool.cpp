@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -27,7 +26,8 @@
 //---------------------------------------------------------------------------
 // Code
 //---------------------------------------------------------------------------
-XnSimpleBufferPool::XnSimpleBufferPool(XnUInt32 nBufferCount) : XnBufferPool(nBufferCount)
+XnSimpleBufferPool::XnSimpleBufferPool(XnUInt32 nBufferCount) : 
+	m_nBufferCount(nBufferCount)
 {}
 
 XnSimpleBufferPool::~XnSimpleBufferPool()
@@ -35,33 +35,24 @@ XnSimpleBufferPool::~XnSimpleBufferPool()
 	FreeAll(TRUE);
 }
 
-XnStatus XnSimpleBufferPool::AllocateBuffers()
+XnStatus XnSimpleBufferPool::AllocateBuffers(XnUInt32 nSize)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
-	// first free old ones
-	FreeAll(FALSE);
-
 	// now allocate new
 	for (XnUInt32 i = 0; i < m_nBufferCount; ++i)
 	{
-		XnBufferInPool* pBufferInPool;
-		XN_VALIDATE_NEW(pBufferInPool, XnBufferInPool);
-		nRetVal = pBufferInPool->Allocate(m_nBufferSize);
+		void* pBuffer;
+		XN_VALIDATE_ALIGNED_CALLOC(pBuffer, XnUChar, nSize, XN_DEFAULT_MEM_ALIGN);
+		nRetVal = AddNewBuffer(pBuffer, nSize);
 		XN_IS_STATUS_OK(nRetVal);
-		pBufferInPool->m_nID = i;
-
-		// add it to all list
-		m_AllBuffers.AddLast(pBufferInPool);
-		// and to free list
-		m_FreeBuffers.AddLast(pBufferInPool);
 	}
 	
 	return (XN_STATUS_OK);
 }
 
-void XnSimpleBufferPool::DestroyBuffer(XnBufferInPool* pBuffer)
+void XnSimpleBufferPool::DestroyBuffer(void* pBuffer)
 {
-	XN_DELETE(pBuffer);
+	xnOSFreeAligned(pBuffer);
 }
 

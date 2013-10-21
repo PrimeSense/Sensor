@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -26,7 +25,7 @@
 #include <XnPsVersion.h>
 #include "XnSensorDevice.h"
 #include <XnOpenNI.h>
-#include <XnCommon/XnCommon.h>
+#include <XnCommon.h>
 #include "XnSensorServer.h"
 
 //---------------------------------------------------------------------------
@@ -75,7 +74,7 @@ XnStatus XnExportedSensorDevice::EnumerateProductionTrees(xn::Context& context, 
 	if (nRetVal != XN_STATUS_OUTPUT_BUFFER_OVERFLOW)
 	{
 		// no sensor connected
-		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_NOT_CONNECTED, XN_MASK_DEVICE_SENSOR, "No PS sensor is connected!");
+		return XN_STATUS_DEVICE_NOT_CONNECTED;
 	}
 
 	// allocate according to count
@@ -95,7 +94,7 @@ XnStatus XnExportedSensorDevice::EnumerateProductionTrees(xn::Context& context, 
 	for (XnUInt32 i = 0; i < nCount; ++i)
 	{
 		// Each connection string is a sensor. Return it if it wasn't created already.
-		if (FindCreatedDevice(context.GetUnderlyingObject(), pConnStrings[i]) == m_createdDevices.end())
+		if (FindCreatedDevice(context.GetUnderlyingObject(), pConnStrings[i]) == m_createdDevices.End())
 		{
 			nRetVal = TreesList.Add(Description, pConnStrings[i], NULL);
 			if (nRetVal != XN_STATUS_OK)
@@ -183,6 +182,7 @@ XnStatus XnExportedSensorDevice::Create(xn::Context& context,
 	nRetVal = pDevice->Init();
 	if (nRetVal != XN_STATUS_OK)
 	{
+		XN_DELETE(pDevice);
 		XN_DELETE(pSensor);
 		return (nRetVal);
 	}
@@ -190,6 +190,7 @@ XnStatus XnExportedSensorDevice::Create(xn::Context& context,
 	nRetVal = m_createdDevices.AddLast(DeviceKey(context.GetUnderlyingObject(), strCreationInfo));
 	if (nRetVal != XN_STATUS_OK)
 	{
+		XN_DELETE(pDevice);
 		XN_DELETE(pSensor);
 		return (nRetVal);
 	}
@@ -212,7 +213,7 @@ void XnExportedSensorDevice::Destroy(xn::ModuleProductionNode* pInstance)
 	}
 	XnContext* pContext = pDevice->GetContext().GetUnderlyingObject();
 	CreatedDevices::Iterator it = FindCreatedDevice(pContext, strConnStr);
-	if (it == m_createdDevices.end())
+	if (it == m_createdDevices.End())
 	{
 		xnLogWarning(XN_MASK_DEVICE_SENSOR, "Couldn't find device in created devices ?! :(");
 		XN_ASSERT(FALSE);
@@ -238,8 +239,8 @@ XnExportedSensorDevice::DeviceKey::DeviceKey(XnContext* pContext, const XnChar* 
 XnExportedSensorDevice::CreatedDevices::Iterator XnExportedSensorDevice::FindCreatedDevice(XnContext* pContext, 
 																                           const XnChar* strConnStr)
 {
-	CreatedDevices::Iterator it = m_createdDevices.begin();
-	for (; it != m_createdDevices.end(); it++)
+	CreatedDevices::Iterator it = m_createdDevices.Begin();
+	for (; it != m_createdDevices.End(); it++)
 	{
 		if ((it->m_pContext == pContext) && 
 			 (xnOSStrCmp(it->m_strConnStr, strConnStr) == 0))

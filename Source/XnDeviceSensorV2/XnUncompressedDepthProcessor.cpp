@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -29,8 +28,8 @@
 // Code
 //---------------------------------------------------------------------------
 
-XnUncompressedDepthProcessor::XnUncompressedDepthProcessor(XnSensorDepthStream* pStream, XnSensorStreamHelper* pHelper) :
-	XnDepthProcessor(pStream, pHelper)
+XnUncompressedDepthProcessor::XnUncompressedDepthProcessor(XnSensorDepthStream* pStream, XnSensorStreamHelper* pHelper, XnFrameBufferManager* pBufferManager) :
+	XnDepthProcessor(pStream, pHelper, pBufferManager)
 {
 }
 
@@ -45,8 +44,8 @@ void XnUncompressedDepthProcessor::ProcessFramePacketChunk(const XnSensorProtoco
 	// when depth is uncompressed, we can just copy it directly to write buffer
 	XnBuffer* pWriteBuffer = GetWriteBuffer();
 
-	// make sure we have enough room
-	if (CheckWriteBufferForOverflow(nDataSize))
+	// Check there is enough room for the depth pixels
+	if (CheckDepthBufferForOverflow(nDataSize))
 	{
 		// sometimes, when packets are lost, we get uneven number of bytes, so we need to complete
 		// one byte, in order to keep UINT16 alignment
@@ -59,13 +58,20 @@ void XnUncompressedDepthProcessor::ProcessFramePacketChunk(const XnSensorProtoco
 		// copy values. Make sure we do not get corrupted shifts
 		XnUInt16* pRaw = (XnUInt16*)(pData);
 		XnUInt16* pRawEnd = (XnUInt16*)(pData + nDataSize);
-		XnDepthPixel* pWriteBuf = (XnDepthPixel*)pWriteBuffer->GetUnsafeWritePointer();
+		XnDepthPixel* pDepthBuf = GetDepthOutputBuffer();
+		XnDepthPixel* pShiftBuf = GetShiftsOutputBuffer();
 
+		XnUInt16 shift;
 		while (pRaw < pRawEnd)
 		{
-			*pWriteBuf = GetOutput(XN_MIN(*pRaw, XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1));
+			shift = (((*pRaw) < (XN_DEVICE_SENSOR_MAX_SHIFT_VALUE-1)) ? (*pRaw) : 0);
+			*pShiftBuf = shift;
+			*pDepthBuf = GetOutput(shift);
+
 			++pRaw;
-			++pWriteBuf;
+			++pDepthBuf;
+			++pShiftBuf;
+
 		}
 
  		pWriteBuffer->UnsafeUpdateSize(nDataSize);
@@ -73,3 +79,4 @@ void XnUncompressedDepthProcessor::ProcessFramePacketChunk(const XnSensorProtoco
 
 	XN_PROFILING_END_SECTION
 }
+

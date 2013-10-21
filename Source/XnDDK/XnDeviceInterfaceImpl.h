@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 /**
 * This file is intended to allow any IXnDevice derivative to export its interface for 
 * a "C" environment.
@@ -53,7 +52,11 @@ XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(Create)(XnDeviceHandle* pDeviceHandl
 {
 	IXnDevice* pDevice = XN_NEW(XN_DEVICE_BASE_DERIVATIVE);
 	XnStatus nRetVal = pDevice->Init(pDeviceConfig);
-	XN_IS_STATUS_OK(nRetVal);
+	if (nRetVal != XN_STATUS_OK)
+	{
+		XN_DELETE(pDevice);
+		return (nRetVal);
+	}
 
 	*pDeviceHandle = pDevice->GetDeviceHandle();
 
@@ -126,10 +129,10 @@ XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(DoesModuleExist)(const XnDeviceHandl
 	return pDevice->DoesModuleExist(ModuleName, pbDoesExist);
 }
 
-XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(RegisterToStreamsChange)(const XnDeviceHandle DeviceHandle, XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(RegisterToStreamsChange)(const XnDeviceHandle DeviceHandle, XnDeviceOnStreamsChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 {
 	IXnDevice* pDevice = IXnDevice::GetFromDeviceHandle(DeviceHandle);
-	return pDevice->RegisterToStreamsChange(Handler, pCookie, phCallback);
+	return pDevice->RegisterToStreamsChange(Handler, pCookie, hCallback);
 }
 
 XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(UnregisterFromStreamsChange)(const XnDeviceHandle DeviceHandle, XnCallbackHandle hCallback)
@@ -149,10 +152,10 @@ XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(DestroyStreamData)(XnStreamData** pp
 	return XN_DEVICE_BASE_DERIVATIVE::DestroyStreamData(ppStreamData);
 }
 
-XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(RegisterToNewStreamData)(const XnDeviceHandle DeviceHandle, XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(RegisterToNewStreamData)(const XnDeviceHandle DeviceHandle, XnDeviceOnNewStreamDataEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 {
 	IXnDevice* pDevice = IXnDevice::GetFromDeviceHandle(DeviceHandle);
-	return pDevice->RegisterToNewStreamData(Handler, pCookie, phCallback);
+	return pDevice->RegisterToNewStreamData(Handler, pCookie, hCallback);
 }
 
 XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(UnregisterFromNewStreamData)(const XnDeviceHandle DeviceHandle, XnCallbackHandle hCallback)
@@ -293,10 +296,10 @@ XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(GetAllProperties)(const XnDeviceHand
 	return pDevice->GetAllProperties(pPropertySet, bNoStreams, strModule);
 }
 
-XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(RegisterToPropertyChange)(const XnDeviceHandle DeviceHandle, const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle* phCallback)
+XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(RegisterToPropertyChange)(const XnDeviceHandle DeviceHandle, const XnChar* Module, const XnChar* PropertyName, XnDeviceOnPropertyChangedEventHandler Handler, void* pCookie, XnCallbackHandle& hCallback)
 {
 	IXnDevice* pDevice = IXnDevice::GetFromDeviceHandle(DeviceHandle);
-	return pDevice->RegisterToPropertyChange(Module, PropertyName, Handler, pCookie, phCallback);
+	return pDevice->RegisterToPropertyChange(Module, PropertyName, Handler, pCookie, hCallback);
 }
 
 XN_DEVICE_API XnStatus XN_DEVICE_PROTO_NAME(UnregisterFromPropertyChange)(const XnDeviceHandle DeviceHandle, const XnChar* Module, const XnChar* PropertyName, XnCallbackHandle hCallback)
