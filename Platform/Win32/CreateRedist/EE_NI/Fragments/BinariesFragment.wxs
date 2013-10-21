@@ -4,11 +4,11 @@
   <?include $(sys.CURRENTDIR)Includes\EENIVariables.wxi ?>
     <Fragment>
         <DirectoryRef Id="INSTALLLOCATION">
-            <Component Id="GPL" Guid="*">
-                <File Id="fil04BD68110BAAE6738D69A12AA064B5B9" KeyPath="yes" Source="$(var.EE_NIFilesDir)\GPL.txt" />
+            <Component Id="LICENSE" Guid="*">
+                <File Id="fil8EFDF8514913AD728CF1798610E899A6" KeyPath="yes" Source="$(var.EE_NIFilesDir)\LICENSE" />
             </Component>
-            <Component Id="LGPL" Guid="*">
-                <File Id="fil8EFDF8514913AD728CF1798610E899A6" KeyPath="yes" Source="$(var.EE_NIFilesDir)\LGPL.txt" />
+            <Component Id="NOTICE" Guid="*">
+                <File Id="fil8EFDF8514913AD728CF1798610E899A7" KeyPath="yes" Source="$(var.EE_NIFilesDir)\NOTICE" />
             </Component>
             <Directory Id="dir6EFCBF7ED6CB01D780B79C4D86427BA8" Name="Bin$(var.PlatformSuffix)">
                 <Component Id="XnCore" Guid="*">
@@ -39,8 +39,8 @@
     </Fragment>
     <Fragment>
         <ComponentGroup Id="EE_NIBinaryFiles">            
-            <ComponentRef Id="GPL" />
-            <ComponentRef Id="LGPL" />
+            <ComponentRef Id="LICENSE" />
+            <ComponentRef Id="NOTICE" />
             <ComponentRef Id="XnCore" />
             <ComponentRef Id="XnDDK" />
             <ComponentRef Id="XnDeviceFile" />

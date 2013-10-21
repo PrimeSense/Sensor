@@ -24,7 +24,7 @@ LOCAL_C_INCLUDES := \
 
 LOCAL_CFLAGS:= -fvisibility=hidden -DXN_CORE_EXPORTS
 
-LOCAL_LDFLAGS += -Wl,--export-dynamic --dynamic-linker 
+LOCAL_LDFLAGS += -Wl,--export-dynamic 
 
 LOCAL_SHARED_LIBRARIES := OpenNI libusb
 

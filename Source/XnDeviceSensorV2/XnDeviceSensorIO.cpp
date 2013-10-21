@@ -1,35 +1,29 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
 #include "XnDeviceSensorIO.h"
 #include "XnDeviceSensor.h"
 #include <XnStringsHashT.h>
-
-//---------------------------------------------------------------------------
-// Defines
-//---------------------------------------------------------------------------
-#define XN_SENSOR_VENDOR_ID			0x1D27
 
 //---------------------------------------------------------------------------
 // Enums
@@ -43,11 +37,12 @@ typedef enum
 //---------------------------------------------------------------------------
 // Globals
 //---------------------------------------------------------------------------
-XnUInt16 XnSensorIO::ms_supportedProducts[] = 
+XnSensorIO::XnUsbId XnSensorIO::ms_supportedProducts[] = 
 {
-	0x0500,
-	0x0600,
-	0x0601,
+	{ 0x1D27, 0x0500 },
+	{ 0x1D27, 0x0600 },
+	{ 0x1D27, 0x0601 },
+	{ 0x1D27, 0x0609 },
 };
 
 XnUInt32 XnSensorIO::ms_supportedProductsCount = sizeof(XnSensorIO::ms_supportedProducts) / sizeof(XnSensorIO::ms_supportedProducts[0]);
@@ -70,7 +65,7 @@ XnSensorIO::~XnSensorIO()
 	}
 }
 
-XnStatus XnSensorIO::OpenDevice(const XnChar* strPath)
+XnStatus XnSensorIO::OpenDevice(const XnChar* strPath, XnBool bLeanInit)
 {
 	XnStatus nRetVal;
 	XnUSBDeviceSpeed DevSpeed;
@@ -99,14 +94,6 @@ XnStatus XnSensorIO::OpenDevice(const XnChar* strPath)
 	xnLogVerbose(XN_MASK_DEVICE_IO, "Trying to open sensor '%s'...", strPath);
 	nRetVal = xnUSBOpenDeviceByPath(strPath, &m_pSensorHandle->USBDevice);
 	XN_IS_STATUS_OK(nRetVal);
-
-	nRetVal = xnUSBGetDeviceSpeed(m_pSensorHandle->USBDevice, &DevSpeed);
-	XN_IS_STATUS_OK(nRetVal);
-
-	if (DevSpeed != XN_USB_DEVICE_HIGH_SPEED)
-	{
-		XN_LOG_WARNING_RETURN(XN_STATUS_USB_UNKNOWN_DEVICE_SPEED, XN_MASK_DEVICE_IO, "Device is not high speed!");
-	}
 
 	// on older firmwares, control was sent over BULK endpoints. Check if this is the case
 	xnLogVerbose(XN_MASK_DEVICE_IO, "Trying to open endpoint 0x4 for control out (for old firmwares)...");
@@ -368,14 +355,14 @@ XnStatus XnSensorIO::CloseDevice()
 	return (XN_STATUS_OK);
 }
 
-XnStatus Enumerate(XnUInt16 nProduct, XnStringsSet& devicesSet)
+XnStatus Enumerate(XnUInt16 nVendor, XnUInt16 nProduct, XnStringsSet& devicesSet)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	
 	const XnUSBConnectionString* astrDevicePaths;
 	XnUInt32 nCount;
 
-	nRetVal = xnUSBEnumerateDevices(XN_SENSOR_VENDOR_ID, nProduct, &astrDevicePaths, &nCount);
+	nRetVal = xnUSBEnumerateDevices(nVendor, nProduct, &astrDevicePaths, &nCount);
 	XN_IS_STATUS_OK(nRetVal);
 
 	for (XnUInt32 i = 0; i < nCount; ++i)
@@ -406,7 +393,7 @@ XnStatus XnSensorIO::EnumerateSensors(XnConnectionString* aConnectionStrings, Xn
 		// search for supported devices
 		for (XnUInt32 i = 0; i < ms_supportedProductsCount; ++i)
 		{
-			nRetVal = Enumerate(ms_supportedProducts[i], devicesSet);
+			nRetVal = Enumerate(ms_supportedProducts[i].vendorID, ms_supportedProducts[i].productID, devicesSet);
 			XN_IS_STATUS_OK(nRetVal);
 		}
 	}
@@ -416,7 +403,7 @@ XnStatus XnSensorIO::EnumerateSensors(XnConnectionString* aConnectionStrings, Xn
 	// search for supported devices
 	for (XnUInt32 i = 0; i < ms_supportedProductsCount; ++i)
 	{
-		nRetVal = Enumerate(ms_supportedProducts[i], devicesSet);
+		nRetVal = Enumerate(ms_supportedProducts[i].vendorID, ms_supportedProducts[i].productID, devicesSet);
 		XN_IS_STATUS_OK(nRetVal);
 	}
 #endif
@@ -489,7 +476,7 @@ XnStatus XnSensorIO::SetCallback(XnUSBEventCallbackFunctionPtr pCallbackPtr, voi
 		for (XnUInt32 i = 0; i < ms_supportedProductsCount; ++i)
 		{
 			XnRegistrationHandle hRegistration = NULL;
-			nRetVal = xnUSBRegisterToConnectivityEvents(XN_SENSOR_VENDOR_ID, ms_supportedProducts[i], OnConnectivityEvent, this, &hRegistration);
+			nRetVal = xnUSBRegisterToConnectivityEvents(ms_supportedProducts[i].vendorID, ms_supportedProducts[i].productID, OnConnectivityEvent, this, &hRegistration);
 			XN_IS_STATUS_OK(nRetVal);
 
 			nRetVal = m_aRegistrationHandles.AddLast(hRegistration);

@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 #include "XnDeviceSensorProtocol.h"
 #include "XnHostProtocol.h"
 #include <math.h>
@@ -64,11 +63,15 @@ inline XnInt32 CompareVersion(XnUInt8 nMajor1, XnUInt8 nMinor1, XnUInt16 nBuild1
 
 static XnFWVer GetFWVersion(XnUInt8 nMajor, XnUInt8 nMinor, XnUInt16 nBuild)
 {
-	if (CompareVersion(nMajor, nMinor, nBuild, 5, 7, 0) >= 0)
+	if (CompareVersion(nMajor, nMinor, nBuild, 5, 8, 0) >= 0)
+	{
+		return XN_SENSOR_FW_VER_5_8;
+	}
+	else if (CompareVersion(nMajor, nMinor, nBuild, 5, 7, 0) >= 0)
 	{
 		return XN_SENSOR_FW_VER_5_7;
 	}
-	if (CompareVersion(nMajor, nMinor, nBuild, 5, 6, 0) >= 0)
+	else if (CompareVersion(nMajor, nMinor, nBuild, 5, 6, 0) >= 0)
 	{
 		return XN_SENSOR_FW_VER_5_6;
 	}
@@ -158,6 +161,7 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnU
 	pDevicePrivateData->FWInfo.nOpcodeWriteAHB = OPCODE_V017_WRITE_AHB;
 	pDevicePrivateData->FWInfo.nOpcodeGetPlatformString = OPCODE_INVALID;
 	pDevicePrivateData->FWInfo.nOpcodeGetUsbCore = OPCODE_GET_USB_CORE_TYPE;
+	pDevicePrivateData->FWInfo.nOpcodeSetLedState = OPCODE_INVALID;
 
 
 	pDevicePrivateData->FWInfo.nUSBDelayReceive = 100;
@@ -171,6 +175,8 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnU
 
 	pDevicePrivateData->FWInfo.bGetImageCmosTypeSupported = FALSE;
 	pDevicePrivateData->FWInfo.bImageSupported = TRUE;
+	pDevicePrivateData->FWInfo.bIncreasedFpsCropSupported = FALSE;
+	pDevicePrivateData->FWInfo.bHasFilesystemLock = FALSE;
 
 	// depth cmos modes
 	pDevicePrivateData->FWInfo.depthModes.Clear();
@@ -223,7 +229,6 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnU
 		{ 0, XN_RESOLUTION_QVGA, 30 },
 		{ 0, XN_RESOLUTION_QVGA, 60 },
 		{ 0, XN_RESOLUTION_VGA, 30 },
-		{ 0, XN_RESOLUTION_SXGA, 30 },
 	};
 	nRetVal = pDevicePrivateData->FWInfo.irModes.AddLast(irModes, sizeof(irModes)/sizeof(irModes[0]));
 	XN_IS_STATUS_OK(nRetVal);
@@ -340,7 +345,7 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnU
 			{ XN_IO_DEPTH_FORMAT_UNCOMPRESSED_16_BIT, XN_RESOLUTION_QVGA, 25 },
 			{ XN_IO_DEPTH_FORMAT_UNCOMPRESSED_16_BIT, XN_RESOLUTION_VGA, 25 },
 		};
-		nRetVal = pDevicePrivateData->FWInfo.depthModes.AddLast(depthModes, sizeof(depthModes)/sizeof(depthModes[0]));
+		nRetVal = pDevicePrivateData->FWInfo.depthModes.AddLast(depthModes25FPS, sizeof(depthModes25FPS)/sizeof(depthModes25FPS[0]));
 		XN_IS_STATUS_OK(nRetVal);
 
 		XnCmosPreset imageModes25FpsCommon[] =
@@ -428,6 +433,12 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnU
 		pDevicePrivateData->FWInfo.bGetPresetsSupported = TRUE;
 	}
 
+	if (CompareVersion(nMajor, nMinor, nBuild, 5, 3, 31) >= 0 && CompareVersion(nMajor, nMinor, nBuild, 5, 4, 0) < 0)
+	{
+		// filesystem lock was also added in 5.3.31 (a maintenance release), but it's not in newer versions (5.4 and above)
+		pDevicePrivateData->FWInfo.bHasFilesystemLock = TRUE;
+	}
+
 	if (CompareVersion(nMajor, nMinor, nBuild, 5, 4, 0) >= 0)
 	{
 		pDevicePrivateData->FWInfo.nOpcodeGetSerialNumber = OPCODE_GET_SERIAL_NUMBER;
@@ -471,9 +482,29 @@ XnStatus XnHostProtocolInitFWParams(XnDevicePrivateData* pDevicePrivateData, XnU
 		pDevicePrivateData->FWInfo.nOpcodeGetPlatformString = OPCODE_GET_PLATFORM_STRING;
 	}
 
+	if (CompareVersion(nMajor, nMinor, nBuild, 5, 7, 2) >= 0)
+	{
+		pDevicePrivateData->FWInfo.bIncreasedFpsCropSupported = TRUE;
+	}
+
 	if (CompareVersion(nMajor, nMinor, nBuild, 5, 8, 0) >= 0)
 	{
-		xnLogWarning(XN_MASK_SENSOR_PROTOCOL, "Sensor version %d.%d.%x is newer than latest known. Trying to use 5.7 protocol...", nMajor, nMinor, nBuild);
+		pDevicePrivateData->FWInfo.nOpcodeSetLedState = OPCODE_SET_LED_STATE;
+	}
+	
+	if (CompareVersion(nMajor, nMinor, nBuild, 5, 8, 2) >= 0)
+	{
+		pDevicePrivateData->FWInfo.bHasFilesystemLock = TRUE;	
+	}
+
+	if (CompareVersion(nMajor, nMinor, nBuild, 5, 8, 15) >= 0)
+	{
+		pDevicePrivateData->FWInfo.nOpcodeEnableEmitter = OPCODE_ENABLE_EMITTER;	
+	}
+
+	if (CompareVersion(nMajor, nMinor, nBuild, 5, 9, 0) >= 0)
+	{
+		xnLogWarning(XN_MASK_SENSOR_PROTOCOL, "Sensor version %d.%d.%x is newer than latest known. Trying to use 5.8 protocol...", nMajor, nMinor, nBuild);
 	}
 
 	pDevicePrivateData->FWInfo.nCurrMode = XN_MODE_PS;
@@ -641,6 +672,12 @@ XnStatus ValidateReplyV26(const XnDevicePrivateData* pDevicePrivateData, XnUChar
 			return XN_STATUS_DEVICE_PROTOCOL_BAD_COMMAND_SIZE;
 		case NACK_NOT_READY:
 			return XN_STATUS_DEVICE_PROTOCOL_NOT_READY;
+		case NACK_OVERFLOW:
+			return XN_STATUS_DEVICE_PROTOCOL_OVERFLOW;
+		case NACK_OVERLAY_NOT_LOADED:
+			return XN_STATUS_DEVICE_PROTOCOL_OVERLAY_NOT_LOADED;
+		case NACK_FILE_SYSTEM_LOCKED:
+			return XN_STATUS_DEVICE_PROTOCOL_FILE_SYSTEM_LOCKED;
 		case NACK_UNKNOWN_ERROR:
 		default:
 			return XN_STATUS_DEVICE_PROTOCOL_UNKNOWN_ERROR;
@@ -997,6 +1034,10 @@ XnStatus XnHostProtocolGetVersion(const XnDevicePrivateData* pDevicePrivateData,
 	{
 		Version.HWVer = XN_SENSOR_HW_VER_RD1082;
 	}	
+	else if (Version.nFPGA == XN_FPGA_VER_RD109)
+	{
+		Version.HWVer = XN_SENSOR_HW_VER_RD109;
+	}		
 	else
 	{
 		Version.HWVer = XN_SENSOR_HW_VER_UNKNOWN;
@@ -1039,7 +1080,14 @@ XnStatus XnHostProtocolGetVersion(const XnDevicePrivateData* pDevicePrivateData,
 	}
 	else if (Version.FWVer == XN_SENSOR_FW_VER_5_3)
 	{
-		Version.HWVer = XN_SENSOR_HW_VER_RD1081;
+		if (Version.nBuild < 28)
+		{
+			Version.HWVer = XN_SENSOR_HW_VER_RD1081;
+		}
+		else if (Version.nBuild == 28)
+		{
+			Version.HWVer = XN_SENSOR_HW_VER_RD1082;
+		}
 	}
 	else if (Version.FWVer == XN_SENSOR_FW_VER_5_4)
 	{
@@ -1821,38 +1869,6 @@ XnStatus XnHostProtocolSetMultipleParams(XnDevicePrivateData* pDevicePrivateData
 }
 
 
-XnStatus XnHostProtocolSetIRCropping(XnDevicePrivateData* pDevicePrivateData, XnCropping* pCropping)
-{
-	XnStatus rc = XN_STATUS_OK;
-
-	if (pCropping->bEnabled)
-	{
-		XnInnerParamData anParams[4];
-		XnUInt16 nIndex = 0;
-
-		anParams[nIndex].nParam = PARAM_IR_CROP_SIZE_X;
-		anParams[nIndex].nValue = pCropping->nXSize;
-		nIndex++;
-		anParams[nIndex].nParam = PARAM_IR_CROP_SIZE_Y;
-		anParams[nIndex].nValue = pCropping->nYSize;
-		nIndex++;
-		anParams[nIndex].nParam = PARAM_IR_CROP_OFFSET_X;
-		anParams[nIndex].nValue = pCropping->nXOffset;
-		nIndex++;
-		anParams[nIndex].nParam = PARAM_IR_CROP_OFFSET_Y;
-		anParams[nIndex].nValue = pCropping->nYOffset;
-
-		rc = XnHostProtocolSetMultipleParams(pDevicePrivateData, 4, anParams);
-		if (rc != XN_STATUS_OK)
-			return rc;
-	}
-
-	// commit
-	rc = XnHostProtocolSetParam(pDevicePrivateData, PARAM_IR_CROP_ENABLE, (XnUInt16)pCropping->bEnabled);
-
-	return rc;
-}
-
 
 XnStatus XnDeviceSensorGetDepthAGCParams(XnUInt16 nBin, XnUInt16* pnMinParam, XnUInt16* pnMaxParam)
 {
@@ -2144,4 +2160,66 @@ XnStatus XnHostProtocolGetUsbCoreType(XnDevicePrivateData* pDevicePrivateData, X
 	nValue = (XnHostProtocolUsbCore)XN_PREPARE_VAR16_IN_BUFFER(*pValue);
 
 	return XN_STATUS_OK;
+}
+
+#pragma pack (push, 1)
+
+typedef struct XnVSetLedStateRequest
+{
+	XnUInt16 nLedId;
+	XnUInt16 nState;
+} XnVSetLedStateRequest;
+
+#pragma pack (pop)
+
+XnStatus XnHostProtocolSetLedState(XnDevicePrivateData* pDevicePrivateData, XnUInt16 nLedId, XnUInt16 nState)
+{
+	XnUChar buffer[MAX_PACKET_SIZE] = {0};
+	XnUChar* pDataBuf = buffer + pDevicePrivateData->FWInfo.nProtocolHeaderSize;
+	XnUInt32 nRequestSize;
+
+	XnVSetLedStateRequest* pRequest = (XnVSetLedStateRequest*)pDataBuf;
+	pRequest->nLedId = XN_PREPARE_VAR16_IN_BUFFER(nLedId);
+	pRequest->nState = XN_PREPARE_VAR16_IN_BUFFER(nState);
+	nRequestSize = sizeof(XnVSetLedStateRequest);
+
+	XnHostProtocolInitHeader(pDevicePrivateData, buffer, nRequestSize, pDevicePrivateData->FWInfo.nOpcodeSetLedState);
+
+	XnUInt16 nDataSize;
+	XnStatus rc = XnHostProtocolExecute(pDevicePrivateData,
+		buffer, pDevicePrivateData->FWInfo.nProtocolHeaderSize + (XnUInt16)nRequestSize, pDevicePrivateData->FWInfo.nOpcodeSetLedState,
+		NULL, nDataSize);
+	XN_IS_STATUS_OK(rc);
+
+	return (XN_STATUS_OK);
+}
+
+#pragma pack (push, 1)
+
+typedef struct XnVSetEmitterStateRequest
+{
+	XnUInt16 nActive;
+} XnVSetEmitterStateRequest;
+
+#pragma pack (pop)
+
+XnStatus XnHostProtocolSetEmitterState(XnDevicePrivateData* pDevicePrivateData, XnBool bActive)
+{
+	XnUChar buffer[MAX_PACKET_SIZE] = {0};
+	XnUChar* pDataBuf = buffer + pDevicePrivateData->FWInfo.nProtocolHeaderSize;
+	XnUInt32 nRequestSize;
+
+	XnVSetEmitterStateRequest* pRequest = (XnVSetEmitterStateRequest*)pDataBuf;
+	pRequest->nActive = XN_PREPARE_VAR16_IN_BUFFER((XnUInt16)bActive);
+	nRequestSize = sizeof(XnVSetEmitterStateRequest);
+
+	XnHostProtocolInitHeader(pDevicePrivateData, buffer, nRequestSize, pDevicePrivateData->FWInfo.nOpcodeEnableEmitter);
+
+	XnUInt16 nDataSize;
+	XnStatus rc = XnHostProtocolExecute(pDevicePrivateData,
+		buffer, pDevicePrivateData->FWInfo.nProtocolHeaderSize + (XnUInt16)nRequestSize, pDevicePrivateData->FWInfo.nOpcodeEnableEmitter,
+		NULL, nDataSize);
+	XN_IS_STATUS_OK(rc);
+
+	return (XN_STATUS_OK);
 }

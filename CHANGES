@@ -1,6 +1,43 @@
 Detailed Change log:
 --------------------
 
+Version 5.1.6.5
+---------------
+  * Switched to Apache v2 license
+  * Support for new file type (Vendor data)
+  * Support for getting IR CMOS type
+  * Support for new RD1.09 product ID
+  * Support for toggling emitter while depth stream is running
+  * Remove the USB speed check: firmware goes into safe mode anyway when not in high-speed.
+  * Linux/OSX/Android: Change USB transfer length from 20KB to 16KB in bulk mode.
+  * Adding support for the "Set LED state" command (starting with FW 5.8.0).
+  * Added general debug streams support
+  * Added "startread" command to command console (to read from endpoints)
+  * Added option to turn off auto exposure and AWB (via the XN_PAUSE_AUTO_CONTROL value)
+  * Fix support for old firmwares (5.2.x)
+  * Fix the close range feature
+  * Add support for NESA
+  * Add support for firmware filesystem lock
+  * The current image auto exposure controls where split into on/off (XN_STREAM_PROPERTY_AUTO_EXPOSURE) and manual control (XN_STREAM_PROPERTY_EXPOSURE).
+  * Bug Fix: potential crash when receiving junk from USB (12-bit unpacker tries to translate invalid shift)
+  * RGBViewer new keys:
+    * 'x' - toggle depth close range on/off
+    * 'a' - toggle image CMOS auto-exposure on/off
+    * 'A' - toggle image CMOS auto-white-balance on/off
+    * 'n' - increase image CMOS exposure by one
+    * 'N' - decrease image CMOS exposure by one
+    * 'g' - increase image CMOS gain by 10
+    * 'G' - decrease image CMOS gain by 10
+  * Bug Fix: 25 FPS mode did not work
+  * Adding CroppingMode property. New mode was introduced: INCREASED_FPS. This allows cropping at the CMOS level, and might improve FPS (supported by 5.7.2)
+  * Fixing memory leak during depth stream opening (introduced in 5.1.3)
+  * Added support for the RD1.09 sensor.
+  * Bug Fix: Turning on registration while streaming might cause a crash
+  * Implement the 'GetPixelCoordinatesInViewPoint' method
+  * Software Registration bug fix: take into account padding algorithm params
+  * Added software close range support for pre FW5.6 sensors.
+  * Updated the linux USB rules to use the new udev usb syntax which replaces the old sysfs one that stopped working on kernel 3+. The new rules should work on kernel 2.6.30 and above.
+
 Version 5.1.2.1 (Unstable version - May 15th 2012)
 --------------------------------------------------
   * Redist: fix identification of ARM.

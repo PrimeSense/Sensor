@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 #ifndef HOST_PROTOCOL_H
 #define HOST_PROTOCOL_H
 
@@ -39,6 +38,7 @@
 #define XN_FPGA_VER_RD5		0x3
 #define XN_FPGA_VER_RD1081	0x4
 #define XN_FPGA_VER_RD1082	0x5
+#define XN_FPGA_VER_RD109	0x6
 
 #define XN_CHIP_VER_PS1000	0x00101010
 #define XN_CHIP_VER_PS1080	0x00202020
@@ -65,6 +65,8 @@ enum EPsProtocolOpCodes
 	OPCODE_GET_FAST_CONVERGENCE_TEC = 38,
 	OPCODE_GET_PLATFORM_STRING = 39,
 	OPCODE_GET_USB_CORE_TYPE = 40,
+	OPCODE_SET_LED_STATE = 41,
+	OPCODE_ENABLE_EMITTER = 42,
 	OPCODE_KILL = 999,
 };
 
@@ -137,7 +139,9 @@ enum XnHostProtocolNacks
 	NACK_BAD_PARAMS = 5,
 	NACK_BAD_COMMAND_SIZE = 12,
 	NACK_NOT_READY = 13,
-	NACK_OVERFLOW = 14
+	NACK_OVERFLOW = 14,
+	NACK_OVERLAY_NOT_LOADED = 15,
+	NACK_FILE_SYSTEM_LOCKED = 16,
 };
 
 typedef enum
@@ -205,7 +209,6 @@ XnStatus XnHostProtocolGetFixedParams(XnDevicePrivateData* pDevicePrivateData, X
 XnStatus XnHostProtocolSetAudioSampleRate(XnDevicePrivateData* pDevicePrivateData, XnSampleRate nSampleRate);
 XnStatus XnHostProtocolGetAudioSampleRate(XnDevicePrivateData* pDevicePrivateData, XnSampleRate* pSampleRate);
 
-XnStatus XnHostProtocolSetIRCropping	(XnDevicePrivateData* pDevicePrivateData, XnCropping* pCropping);
 XnStatus XnHostProtocolSetMode			(XnDevicePrivateData* pDevicePrivateData, XnUInt16 nMode);
 XnStatus XnHostProtocolGetMode			(XnDevicePrivateData* pDevicePrivateData, XnUInt16& nMode);
 
@@ -233,6 +236,8 @@ XnStatus XnHostProtocolSetCMOSRegisterI2C (XnDevicePrivateData* pDevicePrivateDa
 XnStatus XnHostProtocolReadAHB			(XnDevicePrivateData* pDevicePrivateData, XnUInt32 nAddress, XnUInt32 &nValue);
 XnStatus XnHostProtocolWriteAHB			(XnDevicePrivateData* pDevicePrivateData, XnUInt32 nAddress, XnUInt32 nValue, XnUInt32 nMask);
 XnStatus XnHostProtocolGetUsbCoreType	(XnDevicePrivateData* pDevicePrivateData, XnHostProtocolUsbCore& nValue);
+XnStatus XnHostProtocolSetLedState	(XnDevicePrivateData* pDevicePrivateData, XnUInt16 nLedId, XnUInt16 nState);
+XnStatus XnHostProtocolSetEmitterState	(XnDevicePrivateData* pDevicePrivateData, XnBool bActive);
 
 
 #endif

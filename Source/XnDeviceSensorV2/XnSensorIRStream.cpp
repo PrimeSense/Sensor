@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -40,14 +39,16 @@ XnSensorIRStream::XnSensorIRStream(const XnChar* StreamName, XnSensorObjects* pO
 	XnIRStream(StreamName, FALSE),
 	m_Helper(pObjects),
 	m_InputFormat(XN_STREAM_PROPERTY_INPUT_FORMAT, 0),
+	m_CroppingMode(XN_STREAM_PROPERTY_CROPPING_MODE, XN_CROPPING_MODE_NORMAL),
 	m_FirmwareCropSizeX("FirmwareCropSizeX", 0, StreamName),
 	m_FirmwareCropSizeY("FirmwareCropSizeY", 0, StreamName),
 	m_FirmwareCropOffsetX("FirmwareCropOffsetX", 0, StreamName),
 	m_FirmwareCropOffsetY("FirmwareCropOffsetY", 0, StreamName),
-	m_FirmwareCropEnabled("FirmwareCropEnabled", FALSE, StreamName),
+	m_FirmwareCropMode("FirmwareCropMode", XN_FIRMWARE_CROPPING_MODE_DISABLED, StreamName),
 	m_ActualRead(XN_STREAM_PROPERTY_ACTUAL_READ_DATA, FALSE)
 {
 	m_ActualRead.UpdateSetCallback(SetActualReadCallback, this);
+	m_CroppingMode.UpdateSetCallback(SetCroppingModeCallback, this);
 }
 
 XnStatus XnSensorIRStream::Init()
@@ -62,7 +63,7 @@ XnStatus XnSensorIRStream::Init()
 	XN_IS_STATUS_OK(nRetVal);
 
 	// add properties
-	XN_VALIDATE_ADD_PROPERTIES(this, &m_InputFormat, &m_ActualRead);
+	XN_VALIDATE_ADD_PROPERTIES(this, &m_InputFormat, &m_ActualRead, &m_CroppingMode);
 
 	// set base properties default values
 	nRetVal = ResolutionProperty().UnsafeUpdateValue(XN_IR_STREAM_DEFAULT_RESOLUTION);
@@ -119,7 +120,7 @@ XnStatus XnSensorIRStream::MapPropertiesToFirmware()
 	XN_IS_STATUS_OK(nRetVal);;
 	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropOffsetY, GetFirmwareParams()->m_IRCropOffsetY, TRUE);
 	XN_IS_STATUS_OK(nRetVal);;
-	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropEnabled, GetFirmwareParams()->m_IRCropEnabled, TRUE);
+	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropMode, GetFirmwareParams()->m_IRCropMode, TRUE);
 	XN_IS_STATUS_OK(nRetVal);;
 
 	return (XN_STATUS_OK);
@@ -187,7 +188,7 @@ XnStatus XnSensorIRStream::OpenStreamImpl()
 	XN_IS_STATUS_OK(nRetVal);
 
 	// Cropping
-	if (m_FirmwareCropEnabled.GetValue() == TRUE)
+	if (m_FirmwareCropMode.GetValue() != XN_FIRMWARE_CROPPING_MODE_DISABLED)
 	{
 		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropSizeX);
 		XN_IS_STATUS_OK(nRetVal);;
@@ -198,7 +199,7 @@ XnStatus XnSensorIRStream::OpenStreamImpl()
 		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropOffsetY);
 		XN_IS_STATUS_OK(nRetVal);;
 	}
-	nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropEnabled);
+	nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropMode);
 	XN_IS_STATUS_OK(nRetVal);;
 
 
@@ -282,9 +283,11 @@ XnStatus XnSensorIRStream::SetResolution(XnResolutions nResolution)
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnSensorIRStream::SetCropping(const XnCropping* pCropping)
+XnStatus XnSensorIRStream::SetCroppingImpl(const XnCropping* pCropping, XnCroppingMode mode)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
+
+	XnFirmwareCroppingMode firmwareMode = m_Helper.GetFirmwareCroppingMode(mode, pCropping->bEnabled);
 
 	nRetVal = ValidateCropping(pCropping);
 	XN_IS_STATUS_OK(nRetVal);
@@ -324,13 +327,13 @@ XnStatus XnSensorIRStream::SetCropping(const XnCropping* pCropping)
 
 		if (nRetVal == XN_STATUS_OK)
 		{
-			nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareCropEnabled, (XnUInt16)pCropping->bEnabled);
+			nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareCropMode, (XnUInt16)firmwareMode);
 		}
 
 		if (nRetVal != XN_STATUS_OK)
 		{
 			m_Helper.RollbackFirmwareTransaction();
-			m_Helper.UpdateFromFirmware(m_FirmwareCropEnabled);
+			m_Helper.UpdateFromFirmware(m_FirmwareCropMode);
 			m_Helper.UpdateFromFirmware(m_FirmwareCropOffsetX);
 			m_Helper.UpdateFromFirmware(m_FirmwareCropOffsetY);
 			m_Helper.UpdateFromFirmware(m_FirmwareCropSizeX);
@@ -342,7 +345,7 @@ XnStatus XnSensorIRStream::SetCropping(const XnCropping* pCropping)
 		nRetVal = m_Helper.CommitFirmwareTransactionAsBatch();
 		if (nRetVal != XN_STATUS_OK)
 		{
-			m_Helper.UpdateFromFirmware(m_FirmwareCropEnabled);
+			m_Helper.UpdateFromFirmware(m_FirmwareCropMode);
 			m_Helper.UpdateFromFirmware(m_FirmwareCropOffsetX);
 			m_Helper.UpdateFromFirmware(m_FirmwareCropOffsetY);
 			m_Helper.UpdateFromFirmware(m_FirmwareCropSizeX);
@@ -352,6 +355,9 @@ XnStatus XnSensorIRStream::SetCropping(const XnCropping* pCropping)
 		}
 	}
 
+	nRetVal = m_CroppingMode.UnsafeUpdateValue(mode);
+	XN_ASSERT(nRetVal == XN_STATUS_OK);
+
 	nRetVal = XnIRStream::SetCropping(pCropping);
 
 
@@ -359,6 +365,28 @@ XnStatus XnSensorIRStream::SetCropping(const XnCropping* pCropping)
 	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensorIRStream::SetCropping(const XnCropping* pCropping)
+{
+	return SetCroppingImpl(pCropping, (XnCroppingMode)m_CroppingMode.GetValue());
+}
+
+XnStatus XnSensorIRStream::SetCroppingMode(XnCroppingMode mode)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	switch (mode)
+	{
+	case XN_CROPPING_MODE_NORMAL:
+	case XN_CROPPING_MODE_INCREASED_FPS:
+	case XN_CROPPING_MODE_SOFTWARE_ONLY:
+		break;
+	default:
+		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Bad cropping mode: %u", mode);
+	}
+
+	return SetCroppingImpl(GetCropping(), mode);
 }
 
 XnStatus XnSensorIRStream::CalcRequiredSize(XnUInt32* pnRequiredSize) const
@@ -407,7 +435,7 @@ XnStatus XnSensorIRStream::CropImpl(XnStreamData* pStreamOutput, const XnCroppin
 	XnStatus nRetVal = XN_STATUS_OK;
 	
 	// if firmware cropping is disabled, crop
-	if (m_FirmwareCropEnabled.GetValue() == FALSE)
+	if (m_FirmwareCropMode.GetValue() == XN_FIRMWARE_CROPPING_MODE_DISABLED)
 	{
 		nRetVal = XnIRStream::CropImpl(pStreamOutput, pCropping);
 		XN_IS_STATUS_OK(nRetVal);
@@ -457,5 +485,11 @@ XnStatus XN_CALLBACK_TYPE XnSensorIRStream::SetActualReadCallback(XnActualIntPro
 {
 	XnSensorIRStream* pThis = (XnSensorIRStream*)pCookie;
 	return pThis->SetActualRead(nValue == TRUE);
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensorIRStream::SetCroppingModeCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
+{
+	XnSensorIRStream* pStream = (XnSensorIRStream*)pCookie;
+	return pStream->SetCroppingMode((XnCroppingMode)nValue);
 }
 

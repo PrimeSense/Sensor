@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -61,7 +60,9 @@ XnSensorDepthStream::XnSensorDepthStream(const XnChar* strName, XnSensorObjects*
 	m_AGCBin(XN_STREAM_PROPERTY_AGC_BIN, NULL, ReadAGCBinsFromFile),
 	m_GMCMode(XN_STREAM_PROPERTY_GMC_MODE, XN_DEPTH_STREAM_DEFAULT_GMC_MODE),
 	m_CloseRange(XN_STREAM_PROPERTY_CLOSE_RANGE, XN_DEPTH_STREAM_DEFAULT_CLOSE_RANGE),
+	m_CroppingMode(XN_STREAM_PROPERTY_CROPPING_MODE, XN_CROPPING_MODE_NORMAL),
 	m_ShiftsMap(XN_STREAM_PROPERTY_SHIFTS_MAP),
+	m_PixelRegistration(XN_STREAM_PROPERTY_PIXEL_REGISTRATION),
 	m_pLastFrameShiftsMap(NULL),
 	m_FirmwareMirror("FirmwareMirror", FALSE, strName),
 	m_FirmwareRegistration("FirmwareRegistration", FALSE, strName),
@@ -69,7 +70,7 @@ XnSensorDepthStream::XnSensorDepthStream(const XnChar* strName, XnSensorObjects*
 	m_FirmwareCropSizeY("FirmwareCropSizeY", 0, strName),
 	m_FirmwareCropOffsetX("FirmwareCropOffsetX", 0, strName),
 	m_FirmwareCropOffsetY("FirmwareCropOffsetY", 0, strName),
-	m_FirmwareCropEnabled("FirmwareCropEnabled", FALSE, strName),
+	m_FirmwareCropMode("FirmwareCropMode", XN_FIRMWARE_CROPPING_MODE_DISABLED, strName),
 	m_ActualRead(XN_STREAM_PROPERTY_ACTUAL_READ_DATA, FALSE),
 	m_hReferenceSizeChangedCallback(NULL)
 {
@@ -97,13 +98,21 @@ XnStatus XnSensorDepthStream::Init()
 	m_AGCBin.UpdateGetCallback(GetAGCBinCallback, this);
 	m_GMCMode.UpdateSetCallback(SetGMCModeCallback, this);
 	m_CloseRange.UpdateSetCallback(SetCloseRangeCallback, this);
+	m_CroppingMode.UpdateSetCallback(SetCroppingModeCallback, this);
 	m_ShiftsMap.UpdateGetCallback(GetShiftsMapCallback, this);
+	m_PixelRegistration.UpdateGetCallback(GetPixelRegistrationCallback, this);
 
 
 	XN_VALIDATE_ADD_PROPERTIES(this, &m_InputFormat, &m_DepthRegistration, &m_HoleFilter, 
 		&m_WhiteBalance, &m_Gain, &m_AGCBin, &m_ActualRead, &m_GMCMode, 
-		&m_CloseRange, &m_RegistrationType, &m_ShiftsMap);
+		&m_CloseRange, &m_CroppingMode, &m_RegistrationType, &m_ShiftsMap, &m_PixelRegistration);
 
+
+	// register supported modes
+	XnCmosPreset* pSupportedModes = m_Helper.GetPrivateData()->FWInfo.depthModes.GetData();
+	XnUInt8 nSupportedModes = m_Helper.GetPrivateData()->FWInfo.depthModes.GetSize();
+	nRetVal = AddSupportedModes(pSupportedModes, nSupportedModes);
+	XN_IS_STATUS_OK(nRetVal);
 
 	if (m_Helper.GetPrivateData()->pSensor->IsLowBandwidth())
 	{
@@ -111,10 +120,28 @@ XnStatus XnSensorDepthStream::Init()
 		XN_IS_STATUS_OK(nRetVal);
 	}
 
-	// set base properties default values
-	nRetVal = ResolutionProperty().UnsafeUpdateValue(XN_DEPTH_STREAM_DEFAULT_RESOLUTION);
+	// make sure default resolution is supported
+	XnBool bResSupported = FALSE;
+	for (XnUInt8 i = 0; i < nSupportedModes; ++i)
+	{
+		if (pSupportedModes[i].nResolution == XN_DEPTH_STREAM_DEFAULT_RESOLUTION)
+		{
+			bResSupported = TRUE;
+			break;
+		}
+	}
+
+	XnUInt64 nDefaultResolution = XN_DEPTH_STREAM_DEFAULT_RESOLUTION;
+	if (!bResSupported)
+	{
+		// QVGA was always supported
+		nDefaultResolution = XN_RESOLUTION_QVGA;
+	}
+
+	nRetVal = ResolutionProperty().UnsafeUpdateValue(nDefaultResolution);
 	XN_IS_STATUS_OK(nRetVal);
 
+	// set other properties default values
 	nRetVal = FPSProperty().UnsafeUpdateValue(XN_DEPTH_STREAM_DEFAULT_FPS);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -194,12 +221,6 @@ XnStatus XnSensorDepthStream::Init()
 	XN_IS_STATUS_OK(nRetVal);
 
 
-	// register supported modes
-	XnCmosPreset* pSupportedModes = m_Helper.GetPrivateData()->FWInfo.depthModes.GetData();
-	XnUInt8 nSupportedModes = m_Helper.GetPrivateData()->FWInfo.depthModes.GetSize();
-	nRetVal = AddSupportedModes(pSupportedModes, nSupportedModes);
-	XN_IS_STATUS_OK(nRetVal);
-
 	return (XN_STATUS_OK);
 }
 
@@ -250,7 +271,7 @@ XnStatus XnSensorDepthStream::MapPropertiesToFirmware()
 	XN_IS_STATUS_OK(nRetVal);;
 	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropOffsetY, GetFirmwareParams()->m_DepthCropOffsetY, TRUE);
 	XN_IS_STATUS_OK(nRetVal);;
-	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropEnabled, GetFirmwareParams()->m_DepthCropEnabled, TRUE);
+	nRetVal = m_Helper.MapFirmwareProperty(m_FirmwareCropMode, GetFirmwareParams()->m_DepthCropMode, TRUE);
 	XN_IS_STATUS_OK(nRetVal);;
 	nRetVal = m_Helper.MapFirmwareProperty(m_GMCMode, GetFirmwareParams()->m_GMCMode, TRUE);
 	XN_IS_STATUS_OK(nRetVal);;
@@ -331,15 +352,30 @@ XnStatus XnSensorDepthStream::OpenStreamImpl()
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
+	// initialize registration
+	if (m_Helper.GetFirmwareVersion() > XN_SENSOR_FW_VER_5_3)
+	{
+		nRetVal = m_Registration.Init(m_Helper.GetPrivateData(), this, GetShiftToDepthTable());
+		XN_IS_STATUS_OK(nRetVal);
+	}
+
+	// Turn stream on
 	nRetVal = GetFirmwareParams()->m_Stream1Mode.SetValue(XN_VIDEO_STREAM_DEPTH);
 	XN_IS_STATUS_OK(nRetVal);
 
 	// CloseRange
-	nRetVal = m_Helper.ConfigureFirmware(m_CloseRange);
-	XN_IS_STATUS_OK(nRetVal);
+	if (m_Helper.GetFirmwareVersion() < XN_SENSOR_FW_VER_5_6)
+	{
+		CloseRangeControl(m_CloseRange.GetValue());
+	}
+	else
+	{
+		nRetVal = m_Helper.ConfigureFirmware(m_CloseRange);
+		XN_IS_STATUS_OK(nRetVal);
+	}
 
 	// Cropping
-	if (m_FirmwareCropEnabled.GetValue() == TRUE)
+	if (m_FirmwareCropMode.GetValue() != XN_FIRMWARE_CROPPING_MODE_DISABLED)
 	{
 		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropSizeX);
 		XN_IS_STATUS_OK(nRetVal);;
@@ -350,7 +386,7 @@ XnStatus XnSensorDepthStream::OpenStreamImpl()
 		nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropOffsetY);
 		XN_IS_STATUS_OK(nRetVal);;
 	}
-	nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropEnabled);
+	nRetVal = m_Helper.ConfigureFirmware(m_FirmwareCropMode);
 	XN_IS_STATUS_OK(nRetVal);;
 
 	nRetVal = XnDepthStream::Open();
@@ -564,10 +600,37 @@ XnStatus XnSensorDepthStream::SetCloseRange(XnBool bCloseRange)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 
-	nRetVal = m_Helper.SimpleSetFirmwareParam(m_CloseRange, (XnUInt16)bCloseRange);
-	XN_IS_STATUS_OK(nRetVal);
+    if (m_Helper.GetFirmwareVersion() < XN_SENSOR_FW_VER_5_6)
+	{
+		CloseRangeControl(bCloseRange);
+
+		nRetVal = m_CloseRange.UnsafeUpdateValue(bCloseRange);
+		XN_IS_STATUS_OK(nRetVal);
+	}
+	else
+	{
+		nRetVal = m_Helper.SimpleSetFirmwareParam(m_CloseRange, (XnUInt16)bCloseRange);
+		XN_IS_STATUS_OK(nRetVal);
+	}
 
 	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensorDepthStream::SetCroppingMode(XnCroppingMode mode)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	switch (mode)
+	{
+	case XN_CROPPING_MODE_NORMAL:
+	case XN_CROPPING_MODE_INCREASED_FPS:
+	case XN_CROPPING_MODE_SOFTWARE_ONLY:
+		break;
+	default:
+		XN_LOG_WARNING_RETURN(XN_STATUS_DEVICE_BAD_PARAM, XN_MASK_DEVICE_SENSOR, "Bad cropping mode: %u", mode);
+	}
+
+	return SetCroppingImpl(GetCropping(), mode);
 }
 
 
@@ -617,9 +680,11 @@ XnStatus XnSensorDepthStream::GetAGCBin(XnDepthAGCBin* pBin)
 	return (XN_STATUS_OK);
 }
 
-XnStatus XnSensorDepthStream::SetCropping(const XnCropping* pCropping)
+XnStatus XnSensorDepthStream::SetCroppingImpl(const XnCropping* pCropping, XnCroppingMode mode)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
+
+	XnFirmwareCroppingMode firmwareMode = m_Helper.GetFirmwareCroppingMode(mode, pCropping->bEnabled);
 
 	nRetVal = ValidateCropping(pCropping);
 	XN_IS_STATUS_OK(nRetVal);
@@ -651,13 +716,13 @@ XnStatus XnSensorDepthStream::SetCropping(const XnCropping* pCropping)
 
 		if (nRetVal == XN_STATUS_OK)
 		{
-			nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareCropEnabled, (XnUInt16)pCropping->bEnabled);
+			nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareCropMode, (XnUInt16)firmwareMode);
 		}
 
 		if (nRetVal != XN_STATUS_OK)
 		{
 			m_Helper.RollbackFirmwareTransaction();
-			m_Helper.UpdateFromFirmware(m_FirmwareCropEnabled);
+			m_Helper.UpdateFromFirmware(m_FirmwareCropMode);
 			m_Helper.UpdateFromFirmware(m_FirmwareCropOffsetX);
 			m_Helper.UpdateFromFirmware(m_FirmwareCropOffsetY);
 			m_Helper.UpdateFromFirmware(m_FirmwareCropSizeX);
@@ -669,7 +734,7 @@ XnStatus XnSensorDepthStream::SetCropping(const XnCropping* pCropping)
 		nRetVal = m_Helper.CommitFirmwareTransactionAsBatch();
 		if (nRetVal != XN_STATUS_OK)
 		{
-			m_Helper.UpdateFromFirmware(m_FirmwareCropEnabled);
+			m_Helper.UpdateFromFirmware(m_FirmwareCropMode);
 			m_Helper.UpdateFromFirmware(m_FirmwareCropOffsetX);
 			m_Helper.UpdateFromFirmware(m_FirmwareCropOffsetY);
 			m_Helper.UpdateFromFirmware(m_FirmwareCropSizeX);
@@ -679,11 +744,52 @@ XnStatus XnSensorDepthStream::SetCropping(const XnCropping* pCropping)
 		}
 	}
 
+	nRetVal = m_CroppingMode.UnsafeUpdateValue(mode);
+	XN_ASSERT(nRetVal == XN_STATUS_OK);
+
 	nRetVal = XnDepthStream::SetCropping(pCropping);
 	xnOSLeaveCriticalSection(GetLock());
 	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensorDepthStream::CloseRangeControl(XnBool bEnabled)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+
+	if (bEnabled)
+	{
+		nRetVal = XnHostProtocolWriteAHB(m_Helper.GetPrivateData(), 0x2a0038d4, 0x0, 0xFFF); 	
+		XN_IS_STATUS_OK(nRetVal);  
+
+		nRetVal = XnHostProtocolWriteAHB(m_Helper.GetPrivateData(), 0x2a003820, 0x00001009, 0xFFFFFFFF); 	
+		XN_IS_STATUS_OK(nRetVal);  
+
+		nRetVal = m_Helper.SimpleSetFirmwareParam(m_Gain, 1);
+		XN_IS_STATUS_OK(nRetVal); 
+	}
+	else
+	{
+		if (m_CloseRange.GetValue() == TRUE)
+		{
+			nRetVal = XnHostProtocolWriteAHB(m_Helper.GetPrivateData(), 0x2a0038d4, 0x190, 0xFFF); 	
+			XN_IS_STATUS_OK(nRetVal);  
+
+			nRetVal = XnHostProtocolWriteAHB(m_Helper.GetPrivateData(), 0x2a003820, 0x00001051, 0xFFFFFFFF); 	
+			XN_IS_STATUS_OK(nRetVal);  
+
+			nRetVal = m_Helper.SimpleSetFirmwareParam(m_Gain, 42);
+			XN_IS_STATUS_OK(nRetVal); 
+		}
+	}
+
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensorDepthStream::SetCropping(const XnCropping* pCropping)
+{
+	return SetCroppingImpl(pCropping, (XnCroppingMode)m_CroppingMode.GetValue());
 }
 
 XnStatus XnSensorDepthStream::PostProcessFrame(XnStreamData* pFrameData)
@@ -751,7 +857,7 @@ XnStatus XnSensorDepthStream::CropImpl(XnStreamData* pStreamOutput, const XnCrop
 	XnStatus nRetVal = XN_STATUS_OK;
 
 	// if firmware cropping is disabled, crop
-	if (m_FirmwareCropEnabled.GetValue() == FALSE)
+	if (m_FirmwareCropMode.GetValue() == XN_FIRMWARE_CROPPING_MODE_DISABLED)
 	{
 		nRetVal = XnDepthStream::CropImpl(pStreamOutput, pCropping);
 		XN_IS_STATUS_OK(nRetVal);
@@ -843,16 +949,6 @@ XnStatus XnSensorDepthStream::DecideFirmwareRegistration(XnBool bRegistration, X
 		}
 	}
 
-	if (bRegistration && !bFirmwareRegistration)
-	{
-		// make sure software registration is initialized
-		if (!m_Registration.IsInitialized())
-		{
-			nRetVal = m_Registration.Init(m_Helper.GetPrivateData(), this, GetDepthToShiftTable());
-			XN_IS_STATUS_OK(nRetVal);
-		}
-	}
-
 	nRetVal = m_Helper.SimpleSetFirmwareParam(m_FirmwareRegistration, (XnUInt16)bFirmwareRegistration);
 	XN_IS_STATUS_OK(nRetVal);
 
@@ -890,6 +986,48 @@ XnStatus XnSensorDepthStream::DecidePixelSizeFactor()
 		PixelSizeFactorProperty().UnsafeUpdateValue(nPixelSizeFactor);
 	}
 	
+	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensorDepthStream::GetImageCoordinatesOfDepthPixel(XnUInt32 x, XnUInt32 y, XnDepthPixel z, XnUInt32 imageXRes, XnUInt32 imageYRes, XnUInt32& imageX, XnUInt32& imageY)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+	
+	// first translate to same resolution
+	nRetVal = m_Registration.TranslateSinglePixel(x, y, z, imageX, imageY);
+	XN_IS_STATUS_OK(nRetVal);
+
+	// We assume image resolution is for the entire FOV, unless a wide (16:9) resolution is used. In this case,
+	// we assume the matching 5:4 resolution is the entire FOV, and the wide is a crop from it.
+	XnDouble fullXRes = imageXRes;
+	XnDouble fullYRes;
+	XnBool bCrop = FALSE;
+
+	if ((9 * imageXRes / imageYRes) == 16)
+	{
+		fullYRes = imageXRes * 4 / 5;
+		bCrop = TRUE;
+	}
+	else
+	{
+		fullYRes = imageYRes;
+		bCrop = FALSE;
+	}
+
+	// inflate to full res
+	imageX = (XnUInt32)(fullXRes / GetXRes() * imageX);
+	imageY = (XnUInt32)(fullYRes / GetYRes() * imageY);
+
+	if (bCrop)
+	{
+		// crop from center
+		imageY -= (fullYRes - imageYRes)/2;
+		if (imageY > imageYRes)
+		{
+			return XN_STATUS_BAD_PARAM;
+		}
+	}
+
 	return (XN_STATUS_OK);
 }
 
@@ -939,6 +1077,12 @@ XnStatus XN_CALLBACK_TYPE XnSensorDepthStream::SetCloseRangeCallback(XnActualInt
 {
 	XnSensorDepthStream* pStream = (XnSensorDepthStream*)pCookie;
 	return pStream->SetCloseRange((XnBool)nValue);
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensorDepthStream::SetCroppingModeCallback(XnActualIntProperty* /*pSender*/, XnUInt64 nValue, void* pCookie)
+{
+	XnSensorDepthStream* pStream = (XnSensorDepthStream*)pCookie;
+	return pStream->SetCroppingMode((XnCroppingMode)nValue);
 }
 
 
@@ -1045,3 +1189,19 @@ XnStatus XN_CALLBACK_TYPE XnSensorDepthStream::GetShiftsMapCallback(const XnGene
 	
 	return (XN_STATUS_OK);
 }
+
+XnStatus XN_CALLBACK_TYPE XnSensorDepthStream::GetPixelRegistrationCallback(const XnGeneralProperty* /*pSender*/, const XnGeneralBuffer& gbValue, void* pCookie)
+{
+	XnStatus nRetVal = XN_STATUS_OK;
+	XnSensorDepthStream* pThis = (XnSensorDepthStream*)pCookie;
+
+	if (gbValue.nDataSize != sizeof(XnPixelRegistration))
+	{
+		return XN_STATUS_DEVICE_PROPERTY_SIZE_DONT_MATCH;
+	}
+
+	XnPixelRegistration* pArgs = (XnPixelRegistration*)gbValue.pData;
+
+	return pThis->GetImageCoordinatesOfDepthPixel(pArgs->nDepthX, pArgs->nDepthY, pArgs->nDepthValue, pArgs->nImageXRes, pArgs->nImageYRes, pArgs->nImageX, pArgs->nImageY);
+}
+

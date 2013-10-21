@@ -78,8 +78,8 @@ mkdir -p ../$REDIST_DIR/Install
 mkdir -p ../$REDIST_DIR/Config
 
 # copy files to redist
-cp ../../../GPL.txt ../$REDIST_DIR
-cp ../../../LGPL.txt ../$REDIST_DIR
+cp ../../../LICENSE ../$REDIST_DIR
+cp ../../../NOTICE ../$REDIST_DIR
 cp ../Bin/$PLATFORM-Release/libXnDeviceSensorV2.* ../$REDIST_DIR/Lib
 cp ../Bin/$PLATFORM-Release/libXnDeviceFile.* ../$REDIST_DIR/Lib
 cp ../Bin/$PLATFORM-Release/libXnDDK.* ../$REDIST_DIR/Lib

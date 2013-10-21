@@ -1,24 +1,23 @@
-/****************************************************************************
-*                                                                           *
-*  PrimeSense Sensor 5.x Alpha                                              *
-*  Copyright (C) 2011 PrimeSense Ltd.                                       *
-*                                                                           *
-*  This file is part of PrimeSense Sensor.                                  *
-*                                                                           *
-*  PrimeSense Sensor is free software: you can redistribute it and/or modify*
-*  it under the terms of the GNU Lesser General Public License as published *
-*  by the Free Software Foundation, either version 3 of the License, or     *
-*  (at your option) any later version.                                      *
-*                                                                           *
-*  PrimeSense Sensor is distributed in the hope that it will be useful,     *
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             *
-*  GNU Lesser General Public License for more details.                      *
-*                                                                           *
-*  You should have received a copy of the GNU Lesser General Public License *
-*  along with PrimeSense Sensor. If not, see <http://www.gnu.org/licenses/>.*
-*                                                                           *
-****************************************************************************/
+/*****************************************************************************
+*                                                                            *
+*  PrimeSense Sensor 5.x Alpha                                               *
+*  Copyright (C) 2012 PrimeSense Ltd.                                        *
+*                                                                            *
+*  This file is part of PrimeSense Sensor                                    *
+*                                                                            *
+*  Licensed under the Apache License, Version 2.0 (the "License");           *
+*  you may not use this file except in compliance with the License.          *
+*  You may obtain a copy of the License at                                   *
+*                                                                            *
+*      http://www.apache.org/licenses/LICENSE-2.0                            *
+*                                                                            *
+*  Unless required by applicable law or agreed to in writing, software       *
+*  distributed under the License is distributed on an "AS IS" BASIS,         *
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
+*  See the License for the specific language governing permissions and       *
+*  limitations under the License.                                            *
+*                                                                            *
+*****************************************************************************/
 //---------------------------------------------------------------------------
 // Includes
 //---------------------------------------------------------------------------
@@ -93,6 +92,8 @@ XnSensor::XnSensor(XnBool bResetOnStartup /* = TRUE */, XnBool bLeanInit /* = FA
 	m_ImageControl(XN_MODULE_PROPERTY_IMAGE_CONTROL, NULL),
 	m_DepthControl(XN_MODULE_PROPERTY_DEPTH_CONTROL, NULL),
 	m_AHB(XN_MODULE_PROPERTY_AHB, NULL),
+	m_LedState(XN_MODULE_PROPERTY_LED_STATE, NULL),
+	m_EmitterEnabled(XN_MODULE_PROPERTY_EMITTER_STATE, NULL),
 	m_Firmware(&m_DevicePrivateData),
 	m_SensorIO(&m_DevicePrivateData.SensorHandle),
 	m_FPS(),
@@ -134,6 +135,8 @@ XnSensor::XnSensor(XnBool bResetOnStartup /* = TRUE */, XnBool bLeanInit /* = FA
 	m_DepthControl.UpdateGetCallback(GetDepthCmosRegisterCallback, this);
 	m_AHB.UpdateSetCallback(WriteAHBCallback, this);
 	m_AHB.UpdateGetCallback(ReadAHBCallback, this);
+	m_LedState.UpdateSetCallback(SetLedStateCallback, this);
+	m_EmitterEnabled.UpdateSetCallback(SetEmitterStateCallback, this);
 
 }
 
@@ -234,7 +237,7 @@ XnStatus XnSensor::InitSensor(const XnDeviceConfig* pDeviceConfig)
 	#endif
 
 	// open IO
-	nRetVal = m_SensorIO.OpenDevice(pDeviceConfig->cpConnectionString);
+	nRetVal = m_SensorIO.OpenDevice(pDeviceConfig->cpConnectionString, (XnBool)m_LeanInit.GetValue());
 	XN_IS_STATUS_OK(nRetVal);
 
 	nRetVal = m_USBPath.UnsafeUpdateValue(m_SensorIO.GetDevicePath());
@@ -286,7 +289,8 @@ XnStatus XnSensor::Destroy()
 
 
 	// if needed, close the streams
-	if (m_bInitialized && m_CloseStreamsOnShutdown.GetValue() == TRUE && m_ReadData.GetValue() == TRUE)
+	if (m_bInitialized && m_CloseStreamsOnShutdown.GetValue() == TRUE && 
+		m_ReadData.GetValue() == TRUE && m_ErrorState.GetValue() != XN_STATUS_DEVICE_NOT_CONNECTED)
 	{
 		nRetVal = m_Firmware.GetParams()->m_Stream0Mode.SetValue(XN_VIDEO_STREAM_OFF);
 		nRetVal = m_Firmware.GetParams()->m_Stream1Mode.SetValue(XN_VIDEO_STREAM_OFF);
@@ -349,7 +353,7 @@ XnStatus XnSensor::CreateDeviceModule(XnDeviceModuleHolder** ppModuleHolder)
 		&m_CmosBlankingUnits, &m_CmosBlankingTime, &m_Reset, &m_FirmwareMode, &m_Version, 
 		&m_FixedParam, &m_FrameSync, &m_CloseStreamsOnShutdown, &m_InstancePointer, &m_ID,
 		&m_USBPath, &m_DeviceName, &m_VendorSpecificData, &m_AudioSupported, &m_ImageSupported,
-		&m_ImageControl, &m_DepthControl, &m_AHB, &m_HostTimestamps, &m_PlatformString,
+		&m_ImageControl, &m_DepthControl, &m_AHB, &m_HostTimestamps, &m_PlatformString, &m_LedState, &m_EmitterEnabled,
 	};
 
 	nRetVal = pModule->AddProperties(pProps, sizeof(pProps)/sizeof(XnProperty*));
@@ -899,6 +903,16 @@ XnStatus XnSensor::WriteAHB(const XnAHBData* pAHB)
 	XN_IS_STATUS_OK(nRetVal);
 
 	return (XN_STATUS_OK);
+}
+
+XnStatus XnSensor::SetLedState(XnUInt16 nLedId, XnUInt16 nState)
+{
+	return XnHostProtocolSetLedState(&m_DevicePrivateData, nLedId, nState);
+}
+
+XnStatus XnSensor::SetEmitterState(XnBool bActive)
+{
+	return XnHostProtocolSetEmitterState(&m_DevicePrivateData, bActive);
 }
 
 
@@ -1525,5 +1539,19 @@ XnStatus XN_CALLBACK_TYPE XnSensor::ReadAHBCallback(const XnGeneralProperty* /*p
 	XN_VALIDATE_GENERAL_BUFFER_TYPE(gbValue, XnAHBData);
 	XnSensor* pThis = (XnSensor*)pCookie;
 	return pThis->ReadAHB((XnAHBData*)gbValue.pData);
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensor::SetLedStateCallback(XnGeneralProperty* /*pSender*/, const XnGeneralBuffer& gbValue, void* pCookie)
+{
+	XN_VALIDATE_GENERAL_BUFFER_TYPE(gbValue, XnLedState);
+	XnSensor* pThis = (XnSensor*)pCookie;
+	const XnLedState* pLedState = (const XnLedState*)gbValue.pData;
+	return pThis->SetLedState(pLedState->nLedID, pLedState->nState);
+}
+
+XnStatus XN_CALLBACK_TYPE XnSensor::SetEmitterStateCallback(XnIntProperty* pSender, XnUInt64 nValue, void* pCookie)
+{
+	XnSensor* pThis = (XnSensor*)pCookie;
+	return pThis->SetEmitterState(nValue == TRUE);
 }
 
