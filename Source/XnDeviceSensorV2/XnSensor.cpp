@@ -42,7 +42,7 @@
 #define XN_GLOBAL_CONFIG_FILE_NAME						"GlobalDefaults.ini"
 
 // on weak platforms (Arm), we prefer to use BULK
-#if (XN_PLATFORM == XN_PLATFORM_LINUX_ARM || XN_PLATFORM == XN_PLATFORM_ANDROID_ARM)
+#if (XN_PLATFORM == XN_PLATFORM_LINUX_ARM || XN_PLATFORM == XN_PLATFORM_ANDROID_ARM || XN_PLATFORM == XN_PLATFORM_ANDROID_X86)
 	#define XN_SENSOR_DEFAULT_USB_INTERFACE				XN_SENSOR_USB_INTERFACE_BULK_ENDPOINTS
 #else
 	#define XN_SENSOR_DEFAULT_USB_INTERFACE				XN_SENSOR_USB_INTERFACE_ISO_ENDPOINTS
@@ -964,6 +964,7 @@ XnStatus XnSensor::GetFirmwareMode(XnParamCurrentMode* pnMode)
 	{
 		*pnMode = m_Firmware.GetInfo()->nCurrMode;
 	}
+
 	else
 	{
 		XnUInt16 nMode;

@@ -42,7 +42,7 @@ XnStatus XnDeviceSensorInit(XnDevicePrivateData* pDevicePrivateData)
 	nRetVal = XnDeviceSensorAllocateBuffers(pDevicePrivateData);
 	XN_IS_STATUS_OK(nRetVal);
 
-#if XN_PLATFORM == XN_PLATFORM_ANDROID_ARM
+#if (XN_PLATFORM == XN_PLATFORM_ANDROID_ARM || XN_PLATFORM == XN_PLATFORM_ANDROID_X86)
 	nRetVal = xnOSCreateMutex(&pDevicePrivateData->hExecuteMutex);
 	XN_IS_STATUS_OK(nRetVal);
 #else

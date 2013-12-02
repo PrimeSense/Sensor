@@ -32,7 +32,7 @@
 // Defines
 //---------------------------------------------------------------------------
 // On weak platforms (like Arm), the default is not to use multi-process. 
-#if (XN_PLATFORM == XN_PLATFORM_LINUX_ARM || XN_PLATFORM == XN_PLATFORM_ANDROID_ARM)
+#if (XN_PLATFORM == XN_PLATFORM_LINUX_ARM || XN_PLATFORM == XN_PLATFORM_ANDROID_ARM || XN_PLATFORM == XN_PLATFORM_ANDROID_X86)
 	#define XN_SENSOR_DEFAULT_MULTI_PROCESS	(FALSE)
 #else
 	#define XN_SENSOR_DEFAULT_MULTI_PROCESS	(TRUE)
